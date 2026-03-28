@@ -1,0 +1,36 @@
+# Binaries
+/bin/
+/dist/
+/build/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binaries and coverage
+*.test
+*.out
+coverage.out
+
+# Go workspace / vendoring
+vendor/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Local configuration overrides
+*.local
+
+# IDE / editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,81 @@
+{{define "content"}}
+<div class="centered-view">
+    <div
+        style="
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        "
+    >
+        <h2>Read-it-Later Inbox</h2>
+        <button class="outline" title="Add link manually">+</button>
+    </div>
+
+    <input
+        type="search"
+        placeholder="Search archive..."
+        style="
+            width: 100%;
+            margin-bottom: 20px;
+            background: var(--pane-bg);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            border-radius: 4px;
+        "
+    />
+
+    <div class="list-item">
+        <div>
+            <h4><a href="#">SQLite: The database that actually scales</a></h4>
+            <small style="color: var(--text-muted)"
+                >medium.com • Saved 2 hours ago</small
+            >
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px">
+            <span class="tag">Unread</span>
+            <button class="outline" style="padding: 2px 8px; font-size: 0.8rem">
+                Archive
+            </button>
+        </div>
+    </div>
+
+    <div class="list-item">
+        <div>
+            <h4><a href="#">Why PWA is the future of mobile apps</a></h4>
+            <small style="color: var(--text-muted)"
+                >smashingmagazine.com • Saved yesterday</small
+            >
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px">
+            <span class="tag">Unread</span>
+            <button class="outline" style="padding: 2px 8px; font-size: 0.8rem">
+                Archive
+            </button>
+        </div>
+    </div>
+
+    <div class="list-item">
+        <div>
+            <h4><a href="#">Go 1.22: What's new in the standard library</a></h4>
+            <small style="color: var(--text-muted)"
+                >go.dev • Saved 3 days ago</small
+            >
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px">
+            <span
+                class="tag"
+                style="
+                    background: transparent;
+                    border-color: var(--text-muted);
+                    color: var(--text-muted);
+                "
+                >Read</span
+            >
+            <button class="outline" style="padding: 2px 8px; font-size: 0.8rem">
+                Delete
+            </button>
+        </div>
+    </div>
+</div>
+{{end}}
