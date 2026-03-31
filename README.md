@@ -10,3 +10,28 @@ Instead of scattering your attention across Pocket, Feedly, Notion, and local Ma
 
 > [!WARNING]
 > 🚧 **Work in Progress** > Atria is currently under active development as an online-first app with offline reading support.
+
+
+## Usage
+
+<details>
+<summary>Click to show <code>atria help</code> output</summary>
+
+```
+Atria is a unified tool for managing your knowledge base, reading list, and RSS feeds.
+
+Usage:
+  atria [command]
+
+Available Commands:
+  completion  Generate the autocompletion script for the specified shell
+  db          System and database administration
+  help        Help about any command
+
+Flags:
+  -h, --help   help for atria
+
+Use "atria [command] --help" for more information about a command.
+```
+
+</details>
