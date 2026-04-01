@@ -27,6 +27,7 @@ Available Commands:
   completion  Generate the autocompletion script for the specified shell
   db          System and database administration
   help        Help about any command
+  user        User management
 
 Flags:
   -h, --help   help for atria
