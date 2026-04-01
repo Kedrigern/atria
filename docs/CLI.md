@@ -53,10 +53,26 @@ Used to manage instance accounts and access. No user context required.
 ### Knowledge Base (`note`)
 * `atria note list [--format=table|csv|json]`
   Lists existing notes in the knowledge base.
-* `atria note add "My new thought" --tags="ideas,project-x"`
-  Quick-captures a markdown note.
-* `atria note show <uuid>`
-  Displays the raw markdown content of a specific note.
+* `atria note add <"Title"> [--path="/virtual/path"] [--tags="..."] [--file=<local_path>]`
+  Creates a new note with the specified title. Missing parent folders in `--path` are created automatically.
+  Examples:
+  - Inline content: `echo "My quick thought" | atria note add "Quick thought" --path="/inbox"`
+  - From file: `atria note add "Solar setup" --path="/home/solar" --file=./draft.md`
+* `atria note show <uuid|short-uuid|"Title"> [--path="/virtual/path"]`
+  Displays the raw markdown content of a specific note. 
+  Resolution order:
+  1. Exact UUID match.
+  2. Prefix UUID match (Git-style short UUID, e.g., `550e840`).
+  3. Title match across the ENTIRE knowledge base (Option II). If `--path` is provided, it narrows down the search.
+  4. If multiple notes share the same title (or short UUID), the command fails safely and outputs a disambiguation list (UUID + Path) so the user can re-run the command with a specific identifier.
+* `atria note export <uuid|short-uuid|"Title"> [--path="/virtual/path"] --out=<local_directory>`
+  Exports a note or an entire folder hierarchy to the local filesystem.
+  - Generates `.md` files containing the raw markdown content.
+  - Recreates the virtual folder structure as physical directories inside the specified `--out` directory.
+* `atria note rm <uuid|short-uuid|"Title"> [--path="/virtual/path"] [--recursive]`
+  Deletes a note or folder. 
+  - If the target is a single note, it deletes it.
+  - If the target is a folder, the command will fail safely UNLESS the `--recursive` (or `-r`) flag is provided. This prevents accidental mass deletion.
 
 ### Spreadsheets (`table` or alias `tab`)
 * `atria table list`
