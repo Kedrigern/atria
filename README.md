@@ -39,11 +39,13 @@ Use "atria [command] --help" for more information about a command.
 
 ## Dev and compilation
 
+Go package: `golang` (Fedora 43)
+
 Run tests:
 
 ```console
-go test ./... 
-go test ./... -v    # verbose
+go test ./... -p 1
+go test ./... -p 1 -v    # verbose
 ```
 
 Build app:

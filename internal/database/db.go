@@ -6,6 +6,9 @@ import (
 	"embed"
 	"fmt"
 	"log"
+	"net/url"
+	"os"
+	"strings"
 	"time"
 
 	// Anonymous import of the PostgreSQL driver so it registers with database/sql
@@ -18,7 +21,14 @@ var embedMigrations embed.FS
 
 // InitDB establishes a connection to the database and verifies it is reachable.
 func InitDB(dsn string) (*sql.DB, error) {
-	log.Println("Connecting to PostgreSQL...")
+	debug := os.Getenv("ATRIA_DEBUG") == "1"
+
+	if u, err := url.Parse(dsn); err == nil {
+		dbName := strings.TrimPrefix(u.Path, "/")
+		log.Printf("Connecting to PostgreSQL (Host: %s, DB: %s)...", u.Host, dbName)
+	} else {
+		log.Println("Connecting to PostgreSQL...")
+	}
 
 	// Open the connection pool
 	db, err := sql.Open("postgres", dsn)
@@ -35,8 +45,9 @@ func InitDB(dsn string) (*sql.DB, error) {
 		return nil, fmt.Errorf("database is unreachable (ping failed): %w", err)
 	}
 
-	log.Println("Successfully connected to the database.")
-
+	if debug {
+		log.Println("Successfully connected to the database.")
+	}
 	// Configure the connection pool for optimal performance
 	db.SetMaxOpenConns(25)
 	db.SetMaxIdleConns(25)
