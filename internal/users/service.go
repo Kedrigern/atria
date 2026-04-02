@@ -71,45 +71,10 @@ func ListUsers(ctx context.Context, db *sql.DB) ([]*core.User, error) {
 	return usersList, nil
 }
 
-// GetUser retrieves a single user by either UUID or exact email match.
-func GetUser(ctx context.Context, db *sql.DB, identifier string) (*core.User, error) {
-	var query string
-	var arg interface{}
-
-	// Determine if the identifier is a valid UUID or an email string
-	if id, err := core.ParseUUID(identifier); err == nil {
-		query = `SELECT id, email, display_name, role, created_at, last_login_at FROM users WHERE id = $1`
-		arg = id
-	} else {
-		query = `SELECT id, email, display_name, role, created_at, last_login_at FROM users WHERE email = $1`
-		arg = identifier
-	}
-
-	var user core.User
-	var lastLogin sql.NullTime
-
-	err := db.QueryRowContext(ctx, query, arg).Scan(
-		&user.ID, &user.Email, &user.DisplayName, &user.Role, &user.CreatedAt, &lastLogin,
-	)
-
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("user not found")
-		}
-		return nil, fmt.Errorf("failed to get user: %w", err)
-	}
-
-	if lastLogin.Valid {
-		user.LastLoginAt = &lastLogin.Time
-	}
-
-	return &user, nil
-}
-
 // UpdateUserRole changes the permission role of an existing user.
 func UpdateUserRole(ctx context.Context, db *sql.DB, identifier string, newRole core.Role) error {
 	// First, fetch the user to ensure they exist and resolve their exact ID
-	user, err := GetUser(ctx, db, identifier)
+	user, err := core.FindUser(ctx, db, identifier)
 	if err != nil {
 		return err
 	}

@@ -14,7 +14,6 @@ import (
 )
 
 func setupTestDB(t *testing.T) *sql.DB {
-	// Pokusíme se načíst .env z kořene projektu (o dvě úrovně výš)
 	_ = godotenv.Load("../../.env")
 
 	dsn := os.Getenv("TEST_DATABASE_URL")
@@ -33,7 +32,6 @@ func setupTestDB(t *testing.T) *sql.DB {
 	return db
 }
 
-// ... (zbytek souboru TestUserLifecycle zůstává naprosto stejný jako v předchozí zprávě) ...
 func TestUserLifecycle(t *testing.T) {
 	db := setupTestDB(t)
 	defer db.Close()
@@ -51,7 +49,8 @@ func TestUserLifecycle(t *testing.T) {
 	}
 
 	// --- 2. Get the User (by email) ---
-	fetchedUser, err := users.GetUser(ctx, db, email)
+	// CHANGED: calling core.FindUser instead of users.GetUser
+	fetchedUser, err := core.FindUser(ctx, db, email)
 	if err != nil {
 		t.Fatalf("Expected to find the created user by email, got error: %v", err)
 	}
@@ -60,7 +59,8 @@ func TestUserLifecycle(t *testing.T) {
 	}
 
 	// --- 3. Get the User (by UUID) ---
-	fetchedByID, err := users.GetUser(ctx, db, user.ID.String())
+	// CHANGED: calling core.FindUser instead of users.GetUser
+	fetchedByID, err := core.FindUser(ctx, db, user.ID.String())
 	if err != nil {
 		t.Fatalf("Expected to find the created user by UUID, got error: %v", err)
 	}
@@ -74,7 +74,8 @@ func TestUserLifecycle(t *testing.T) {
 		t.Fatalf("Expected no error on role update, got: %v", err)
 	}
 
-	adminUser, _ := users.GetUser(ctx, db, email)
+	// CHANGED: calling core.FindUser instead of users.GetUser
+	adminUser, _ := core.FindUser(ctx, db, email)
 	if adminUser.Role != core.RoleAdmin {
 		t.Errorf("Expected user role to be 'admin', got '%s'", adminUser.Role)
 	}

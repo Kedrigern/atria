@@ -92,7 +92,7 @@ var userShowCmd = &cobra.Command{
 		}
 		defer db.Close()
 
-		user, err := users.GetUser(context.Background(), db, identifier)
+		user, err := core.FindUser(context.Background(), db, identifier)
 		if err != nil {
 			log.Fatalf("Error: %v", err)
 		}

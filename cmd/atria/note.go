@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"io"
 	"log"
@@ -11,13 +10,13 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.com/gofrs/uuid/v5"
 	"github.com/spf13/cobra"
 
 	"atria/internal/core"
 	"atria/internal/database"
 	"atria/internal/notes"
-	"atria/internal/users"
+
+	"github.com/russross/blackfriday/v2"
 )
 
 var (
@@ -26,16 +25,8 @@ var (
 	exportPath string // used by note export
 	recursive  bool
 	hardDelete bool
+	showFormat string
 )
-
-// Helper: Retrieves the active user based on the ATRIA_USER environment variable
-func getActiveUser(ctx context.Context, db *sql.DB) (*core.User, error) {
-	atriaUser := os.Getenv("ATRIA_USER")
-	if atriaUser == "" {
-		return nil, fmt.Errorf("ATRIA_USER environment variable is not set.\nPlease define it in your .env file")
-	}
-	return users.GetUser(ctx, db, atriaUser)
-}
 
 var noteCmd = &cobra.Command{
 	Use:   "note",
@@ -121,35 +112,11 @@ var noteListCmd = &cobra.Command{
 	},
 }
 
-// resolveNote is a helper to execute the resolution and disambiguation logic
-func resolveNote(ctx context.Context, db *sql.DB, ownerID uuid.UUID, identifier string, includeDeleted bool) (*notes.NoteSummary, error) {
-	results, err := notes.FindNotes(ctx, db, ownerID, identifier, includeDeleted)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(results) == 0 {
-		return nil, fmt.Errorf("no note found matching '%s'", identifier)
-	}
-
-	if len(results) > 1 {
-		fmt.Println("⚠️  This identifier is not unique. Please re-run with a specific UUID:")
-		for _, r := range results {
-			// Aktualizováno: Nyní vypisujeme i cestu k dané poznámce!
-			fmt.Printf("  %s  %-20s %s\n", r.ID.String()[:8], r.Title, r.Path)
-		}
-		return nil, fmt.Errorf("ambiguous identifier")
-	}
-
-	return &results[0], nil
-}
-
 var noteShowCmd = &cobra.Command{
 	Use:   "show <uuid|short-uuid|\"Title\">",
-	Short: "Displays the raw markdown content of a specific note",
+	Short: "Displays the content of a specific note",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		identifier := args[0]
 
 		db, err := database.InitDB(os.Getenv("DATABASE_URL"))
 		if err != nil {
@@ -162,20 +129,27 @@ var noteShowCmd = &cobra.Command{
 		if err != nil {
 			log.Fatalf("Authentication failed: %v", err)
 		}
-
-		// 1. Resolve note
-		targetNote, err := resolveNote(ctx, db, owner.ID, identifier, false)
+		targetNote := resolveEntityOrExit(ctx, db, owner.ID, core.TypeNote, args[0], false)
 		if err != nil {
-			os.Exit(1) // Error is already printed nicely in resolveNote
+			os.Exit(1)
 		}
 
-		// 2. Fetch content
 		content, err := notes.GetNoteContent(ctx, db, targetNote.ID)
 		if err != nil {
 			log.Fatalf("Failed to fetch content: %v", err)
 		}
 
-		fmt.Println(content)
+		switch showFormat {
+		case "html":
+			htmlOutput := blackfriday.Run([]byte(content))
+			fmt.Println(string(htmlOutput))
+		case "plain":
+			fmt.Println(content)
+		case "md":
+			fallthrough
+		default:
+			fmt.Println(content)
+		}
 	},
 }
 
@@ -184,7 +158,6 @@ var noteExportCmd = &cobra.Command{
 	Short: "Exports a note to the local filesystem as a markdown file",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		identifier := args[0]
 
 		db, err := database.InitDB(os.Getenv("DATABASE_URL"))
 		if err != nil {
@@ -198,7 +171,7 @@ var noteExportCmd = &cobra.Command{
 			log.Fatalf("Authentication failed: %v", err)
 		}
 
-		targetNote, err := resolveNote(ctx, db, owner.ID, identifier, false)
+		targetNote := resolveEntityOrExit(ctx, db, owner.ID, core.TypeNote, args[0], false)
 		if err != nil {
 			os.Exit(1)
 		}
@@ -228,7 +201,6 @@ var noteRmCmd = &cobra.Command{
 	Short: "Deletes a note or folder (soft delete by default)",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		identifier := args[0]
 
 		db, err := database.InitDB(os.Getenv("DATABASE_URL"))
 		if err != nil {
@@ -242,7 +214,7 @@ var noteRmCmd = &cobra.Command{
 			log.Fatalf("Authentication failed: %v", err)
 		}
 
-		targetNote, err := resolveNote(ctx, db, owner.ID, identifier, true)
+		targetNote := resolveEntityOrExit(ctx, db, owner.ID, core.TypeNote, args[0], false)
 		if err != nil {
 			os.Exit(1)
 		}
