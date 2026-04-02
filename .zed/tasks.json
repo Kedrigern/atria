@@ -1,7 +1,7 @@
 [
   {
     "label": "1 Tests",
-    "command": "go test ./...",
+    "command": "go test ./... -p 1",
     "use_new_terminal": false,
     "allow_concurrent_runs": false,
     "reveal": "always",

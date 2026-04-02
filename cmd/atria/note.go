@@ -209,7 +209,10 @@ var noteExportCmd = &cobra.Command{
 		}
 
 		// Sanitize title for filename
-		filename := strings.ToLower(strings.ReplaceAll(targetNote.Title, " ", "_")) + ".md"
+		safeTitle := strings.ReplaceAll(targetNote.Title, " ", "_")
+		safeTitle = strings.ReplaceAll(safeTitle, "/", "-")
+		safeTitle = strings.ReplaceAll(safeTitle, "\\", "-")
+		filename := strings.ToLower(safeTitle) + ".md"
 		fullPath := filepath.Join(exportPath, filename)
 
 		if err := os.WriteFile(fullPath, []byte(content), 0644); err != nil {

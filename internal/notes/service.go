@@ -27,7 +27,7 @@ func EnsurePath(ctx context.Context, tx *sql.Tx, ownerID uuid.UUID, path string)
 		var folderID uuid.UUID
 
 		// 1. Try to find the folder at the current level
-		queryFind := `SELECT id FROM entities WHERE owner_id = $1 AND type = $2 AND title = $3 AND parent_id IS NOT DISTINCT FROM $4`
+		queryFind := `SELECT id FROM entities WHERE owner_id = $1 AND type = $2 AND title = $3 AND parent_id IS NOT DISTINCT FROM $4 AND deleted_at IS NULL`
 		err := tx.QueryRowContext(ctx, queryFind, ownerID, core.TypeFolder, part, currentParentID).Scan(&folderID)
 
 		if err == sql.ErrNoRows {
