@@ -36,3 +36,18 @@ Use "atria [command] --help" for more information about a command.
 ```
 
 </details>
+
+## Dev and compilation
+
+Run tests:
+
+```console
+go test ./... 
+go test ./... -v    # verbose
+```
+
+Build app:
+
+```console
+go build -o atria cmd/atria/*.go
+```
