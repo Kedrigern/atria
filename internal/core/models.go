@@ -87,15 +87,17 @@ type Note struct {
 }
 
 type RSSFeed struct {
-	ID                 uuid.UUID  `json:"id" db:"id"`
-	FeedURL            string     `json:"feed_url" db:"feed_url"`
-	SiteURL            *string    `json:"site_url,omitempty" db:"site_url"`
-	Description        *string    `json:"description,omitempty" db:"description"`
-	EtagHeader         *string    `json:"etag_header,omitempty" db:"etag_header"`
-	LastModifiedHeader *string    `json:"last_modified_header,omitempty" db:"last_modified_header"`
-	ErrorCount         int        `json:"error_count" db:"error_count"`
-	LastFetchedAt      *time.Time `json:"last_fetched_at,omitempty" db:"last_fetched_at"`
-	NextFetchAt        time.Time  `json:"next_fetch_at" db:"next_fetch_at"`
+	ID                 uuid.UUID `json:"id" db:"id"`
+	FeedURL            string    `json:"feed_url" db:"feed_url"`
+	SiteURL            *string   `json:"site_url,omitempty" db:"site_url"`
+	EtagHeader         *string   `json:"etag_header,omitempty" db:"etag_header"`
+	LastModifiedHeader *string   `json:"last_modified_header,omitempty" db:"last_modified_header"`
+	NextFetchAt        time.Time `json:"next_fetch_at" db:"next_fetch_at"`
+
+	// Add these diagnostic fields to match the V1 schema
+	LastFetchedAt   *time.Time `json:"last_fetched_at,omitempty" db:"last_fetched_at"`
+	LastFetchStatus *int       `json:"last_fetch_status,omitempty" db:"last_fetch_status"`
+	LastFetchError  *string    `json:"last_fetch_error,omitempty" db:"last_fetch_error"`
 }
 
 type Tag struct {

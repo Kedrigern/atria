@@ -24,13 +24,17 @@ Usage:
   atria [command]
 
 Available Commands:
+  article     Read-it-Later and article management
   completion  Generate the autocompletion script for the specified shell
   db          System and database administration
   help        Help about any command
+  note        Knowledge base and markdown notes management
+  rss         RSS feed management and triage
   user        User management
 
 Flags:
-  -h, --help   help for atria
+  -h, --help      help for atria
+  -v, --version   version for atria
 
 Use "atria [command] --help" for more information about a command.
 ```
