@@ -9,7 +9,7 @@ import (
 // NewUUID generates a new chronological UUIDv7.
 // It panics on error because UUID generation failure means catastrophic system entropy loss.
 func NewUUID() uuid.UUID {
-	// ZDE SPECIFIKUJEME VERZI 7!
+	/// Explicitly using version 7
 	id, err := uuid.NewV7()
 	if err != nil {
 		log.Fatalf("CRITICAL: Failed to generate UUIDv7: %v", err)

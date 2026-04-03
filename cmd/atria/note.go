@@ -101,7 +101,6 @@ var noteListCmd = &cobra.Command{
 			log.Fatalf("Failed to list notes: %v", err)
 		}
 
-		// Aktualizováno: Přidán sloupec PATH
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
 		fmt.Fprintln(w, "ID\tPATH\tTITLE\tCREATED")
 		for _, n := range noteList {
@@ -219,7 +218,6 @@ var noteRmCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		// Přidán parametr hardDelete
 		err = notes.DeleteEntity(ctx, db, owner.ID, targetNote.ID, recursive, hardDelete)
 		if err != nil {
 			log.Fatalf("Delete failed: %v", err)

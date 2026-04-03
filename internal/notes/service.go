@@ -116,7 +116,7 @@ func CreateNote(ctx context.Context, db *sql.DB, ownerID uuid.UUID, title, path,
 type NoteSummary struct {
 	ID        uuid.UUID
 	Title     string
-	Path      string // NOVÉ: Předpočítaná virtuální cesta z databáze
+	Path      string
 	CreatedAt time.Time
 }
 
@@ -138,7 +138,6 @@ func ListNotes(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]core.Entit
 	var noteList []core.Entity
 	for rows.Next() {
 		var n core.Entity
-		// Nyní skenujeme 10 polí (včetně n.Path)
 		err := rows.Scan(
 			&n.ID, &n.ParentID, &n.OwnerID, &n.Type, &n.Visibility,
 			&n.Title, &n.Slug, &n.Path, &n.CreatedAt, &n.UpdatedAt,
@@ -185,7 +184,7 @@ func FindNotes(ctx context.Context, db *sql.DB, ownerID uuid.UUID, identifier st
 		`, delCondN)
 		args = []interface{}{ownerID, parsedID}
 	} else {
-		// Pozor na '%%' v Sprintf, které se přeloží na jedno '%' pro SQL LIKE operátor
+		// Be careful with '%%' in Sprintf, which translate to onw '%' foe SQL LIKE operator
 		query = baseCTE + fmt.Sprintf(`
 			SELECT n.id, n.title, COALESCE('/' || ft.path, '/') AS path, n.created_at
 			FROM entities n
@@ -232,7 +231,6 @@ func DeleteEntity(ctx context.Context, db *sql.DB, ownerID uuid.UUID, entityID u
 		return fmt.Errorf("target is a folder. You must use the --recursive flag to delete it and all its contents")
 	}
 
-	// Pokud chceme jen soft delete, ale už to smazané je, upozorníme uživatele
 	if !hard && deletedAt.Valid {
 		return fmt.Errorf("entity is already in the trash. Use --hard to permanently delete it")
 	}

@@ -10,7 +10,6 @@ import (
 )
 
 func TestDBInitialization(t *testing.T) {
-	// Pokusíme se načíst .env z kořene projektu (o dvě úrovně výš)
 	_ = godotenv.Load("../../.env")
 
 	dsn := os.Getenv("TEST_DATABASE_URL")
