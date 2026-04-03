@@ -89,12 +89,10 @@ func CreateNote(ctx context.Context, db *sql.DB, ownerID uuid.UUID, title, path,
 	}
 
 	queryEntity := `
-		INSERT INTO entities (id, parent_id, owner_id, type, visibility, title, slug, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-	`
-	_, err = tx.ExecContext(ctx, queryEntity,
-		entity.ID, entity.ParentID, entity.OwnerID, entity.Type, entity.Visibility, entity.Title, entity.Slug, entity.CreatedAt, entity.UpdatedAt,
-	)
+        INSERT INTO entities (id, owner_id, type, visibility, title, slug, path, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    `
+	_, err = tx.ExecContext(ctx, queryEntity, entityID, ownerID, core.TypeNote, core.VisibilityPrivate, title, slug, path, now, now)
 	if err != nil {
 		return nil, fmt.Errorf("failed to insert entity: %w", err)
 	}
@@ -123,43 +121,34 @@ type NoteSummary struct {
 }
 
 // ListNotes retrieves all active (non-deleted) notes for a specific user.
-func ListNotes(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]NoteSummary, error) {
-	// Přidáno: Filtrování 'deleted_at IS NULL' ve všech úrovních stromu
+func ListNotes(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]core.Entity, error) {
 	query := `
-		WITH RECURSIVE folder_tree AS (
-			SELECT id, slug::text AS path
-			FROM entities
-			WHERE owner_id = $1 AND type = 'folder' AND parent_id IS NULL AND deleted_at IS NULL
-
-			UNION ALL
-
-			SELECT e.id, ft.path || '/' || e.slug
-			FROM entities e
-			INNER JOIN folder_tree ft ON e.parent_id = ft.id
-			WHERE e.type = 'folder' AND e.deleted_at IS NULL
-		)
-		SELECT n.id, n.title, COALESCE('/' || ft.path, '/') AS path, n.created_at
-		FROM entities n
-		LEFT JOIN folder_tree ft ON n.parent_id = ft.id
-		WHERE n.owner_id = $1 AND n.type = 'note' AND n.deleted_at IS NULL
-		ORDER BY n.created_at DESC
-	`
+			SELECT id, parent_id, owner_id, type, visibility, title, slug, path, created_at, updated_at
+			FROM notes_full_view
+			WHERE owner_id = $1
+			ORDER BY path ASC, title ASC
+		`
 
 	rows, err := db.QueryContext(ctx, query, ownerID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query notes: %w", err)
+		return nil, fmt.Errorf("failed to list notes: %w", err)
 	}
 	defer rows.Close()
 
-	var notes []NoteSummary
+	var noteList []core.Entity
 	for rows.Next() {
-		var n NoteSummary
-		if err := rows.Scan(&n.ID, &n.Title, &n.Path, &n.CreatedAt); err != nil {
+		var n core.Entity
+		// Nyní skenujeme 10 polí (včetně n.Path)
+		err := rows.Scan(
+			&n.ID, &n.ParentID, &n.OwnerID, &n.Type, &n.Visibility,
+			&n.Title, &n.Slug, &n.Path, &n.CreatedAt, &n.UpdatedAt,
+		)
+		if err != nil {
 			return nil, fmt.Errorf("failed to scan note: %w", err)
 		}
-		notes = append(notes, n)
+		noteList = append(noteList, n)
 	}
-	return notes, nil
+	return noteList, nil
 }
 
 // FindNotes resolves an identifier and returns matching notes.

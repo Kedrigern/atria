@@ -151,24 +151,21 @@ type ArticleSummary struct {
 	CreatedAt time.Time
 }
 
-// ListArticles retrieves all active articles for a specific user.
+// ListArticles retrieves articles using the dedicated full view.
 func ListArticles(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]ArticleSummary, error) {
-	query := `
-		SELECT e.id, e.title, a.domain, e.created_at
-		FROM entities e
-		JOIN articles a ON e.id = a.id
-		WHERE e.owner_id = $1 AND e.type = 'article' AND e.deleted_at IS NULL
-		ORDER BY e.created_at DESC
-	`
+	// View vrací metadata i doménu
+	query := `SELECT id, title, domain, created_at FROM articles_full_view WHERE owner_id = $1`
+
 	rows, err := db.QueryContext(ctx, query, ownerID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query articles: %w", err)
+		return nil, fmt.Errorf("failed to list articles: %w", err)
 	}
 	defer rows.Close()
 
 	var articlesList []ArticleSummary
 	for rows.Next() {
 		var a ArticleSummary
+		// Skenujeme 4 pole definovaná v ArticleSummary
 		if err := rows.Scan(&a.ID, &a.Title, &a.Domain, &a.CreatedAt); err != nil {
 			return nil, fmt.Errorf("failed to scan article: %w", err)
 		}

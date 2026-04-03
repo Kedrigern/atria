@@ -49,6 +49,7 @@ type User struct {
 	CreatedAt    time.Time  `json:"created_at" db:"created_at"`
 }
 
+// Entity represents the core polymorphic record in Atria.
 type Entity struct {
 	ID         uuid.UUID  `json:"id" db:"id"`
 	ParentID   *uuid.UUID `json:"parent_id,omitempty" db:"parent_id"` // Pointer, because it can be NULL (root)
@@ -57,15 +58,16 @@ type Entity struct {
 	Visibility Visibility `json:"visibility" db:"visibility"`
 	Title      string     `json:"title" db:"title"`
 	Slug       string     `json:"slug" db:"slug"`
+	Path       string     `json:"path"`
 
 	// Pessimistic Locking
-	LockedBy   *uuid.UUID `json:"locked_by,omitempty" db:"locked_by"`
-	LockedAt   *time.Time `json:"locked_at,omitempty" db:"locked_at"`
+	LockedBy *uuid.UUID `json:"locked_by,omitempty" db:"locked_by"`
+	LockedAt *time.Time `json:"locked_at,omitempty" db:"locked_at"`
 
-	UpdatedBy  *uuid.UUID `json:"updated_by,omitempty" db:"updated_by"`
-	CreatedAt  time.Time  `json:"created_at" db:"created_at"`
-	UpdatedAt  time.Time  `json:"updated_at" db:"updated_at"`
-	DeletedAt  *time.Time `json:"deleted_at,omitempty" db:"deleted_at"` // Soft delete
+	UpdatedBy *uuid.UUID `json:"updated_by,omitempty" db:"updated_by"`
+	CreatedAt time.Time  `json:"created_at" db:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at" db:"updated_at"`
+	DeletedAt *time.Time `json:"deleted_at,omitempty" db:"deleted_at"` // Soft delete
 }
 
 type Article struct {
