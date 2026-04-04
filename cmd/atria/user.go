@@ -30,7 +30,7 @@ var userCmd = &cobra.Command{
 var userAddCmd = &cobra.Command{
 	Use:   "add",
 	Short: "Creates a new user",
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		if userEmail == "" || userPassword == "" || userName == "" {
 			log.Fatal("ERROR: --email, --name, and --password are required fields")
 		}
@@ -52,13 +52,14 @@ var userAddCmd = &cobra.Command{
 		}
 
 		fmt.Printf("✅ User successfully created!\nID: %s\nEmail: %s\nRole: %s\n", user.ID, user.Email, user.Role)
+		return nil
 	},
 }
 
 var userListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "Outputs a tabular list of all users on the instance",
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		db, err := database.InitDB(os.Getenv("DATABASE_URL"))
 		if err != nil {
 			log.Fatalf("Database connection failed: %v", err)
@@ -73,9 +74,10 @@ var userListCmd = &cobra.Command{
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
 		fmt.Fprintln(w, "ID\tEMAIL\tNAME\tROLE\tCREATED")
 		for _, u := range userList {
-			fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n", u.ID, u.Email, u.DisplayName, u.Role, u.CreatedAt.Format("2006-01-02 15:04"))
+			fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n", FormatID(u.ID, showLong), u.Email, u.DisplayName, u.Role, u.CreatedAt.Format("2006-01-02 15:04"))
 		}
 		w.Flush()
+		return nil
 	},
 }
 
@@ -83,7 +85,7 @@ var userShowCmd = &cobra.Command{
 	Use:   "show <email|uuid>",
 	Short: "Displays detailed information about a specific user",
 	Args:  cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		identifier := args[0]
 
 		db, err := database.InitDB(os.Getenv("DATABASE_URL"))
@@ -108,6 +110,7 @@ var userShowCmd = &cobra.Command{
 		} else {
 			fmt.Printf("Last Login:    Never\n")
 		}
+		return nil
 	},
 }
 
@@ -115,7 +118,7 @@ var userRoleCmd = &cobra.Command{
 	Use:   "role <email|uuid> <user|admin>",
 	Short: "Changes the permission role of an existing user",
 	Args:  cobra.ExactArgs(2),
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		identifier := args[0]
 		newRole := core.Role(args[1])
 
@@ -134,6 +137,7 @@ var userRoleCmd = &cobra.Command{
 		}
 
 		fmt.Printf("✅ User %s role successfully updated to '%s'.\n", identifier, newRole)
+		return nil
 	},
 }
 
@@ -145,4 +149,6 @@ func init() {
 	userAddCmd.Flags().StringVar(&userName, "name", "", "User's display name (required)")
 	userAddCmd.Flags().StringVar(&userPassword, "password", "", "User's password (required)")
 	userAddCmd.Flags().StringVar(&userRole, "role", "user", "User's role: 'admin' or 'user' (default 'user')")
+
+	userListCmd.Flags().BoolVarP(&showLong, "long", "l", false, "Show full UUIDs")
 }

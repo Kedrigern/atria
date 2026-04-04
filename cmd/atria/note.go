@@ -1,10 +1,8 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -13,7 +11,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"atria/internal/core"
-	"atria/internal/database"
 	"atria/internal/notes"
 
 	"github.com/russross/blackfriday/v2"
@@ -22,22 +19,23 @@ import (
 var (
 	notePath   string
 	noteFile   string
-	exportPath string // used by note export
+	exportPath string
 	recursive  bool
 	hardDelete bool
 	showFormat string
 )
 
 var noteCmd = &cobra.Command{
-	Use:   "note",
-	Short: "Knowledge base and markdown notes management",
+	Use:               "note",
+	Short:             "Knowledge base and markdown notes management",
+	PersistentPreRunE: RequireUserContext,
 }
 
 var noteAddCmd = &cobra.Command{
 	Use:   "add <title>",
 	Short: "Creates a new note (reads from --file or stdin)",
 	Args:  cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		title := args[0]
 		var content []byte
 		var err error
@@ -45,69 +43,46 @@ var noteAddCmd = &cobra.Command{
 		if noteFile != "" {
 			content, err = os.ReadFile(noteFile)
 			if err != nil {
-				log.Fatalf("Failed to read file: %v", err)
+				return fmt.Errorf("failed to read file: %w", err)
 			}
 		} else {
 			stat, _ := os.Stdin.Stat()
 			if (stat.Mode() & os.ModeCharDevice) == 0 {
 				content, err = io.ReadAll(os.Stdin)
 				if err != nil {
-					log.Fatalf("Failed to read from stdin: %v", err)
+					return fmt.Errorf("failed to read from stdin: %w", err)
 				}
 			} else {
-				log.Fatal("ERROR: No content provided. Use --file or pipe content via stdin.")
+				return fmt.Errorf("no content provided. Use --file or pipe content via stdin")
 			}
 		}
 
-		db, err := database.InitDB(os.Getenv("DATABASE_URL"))
+		entity, err := notes.CreateNote(app.Ctx, app.DB, app.Owner.ID, title, notePath, string(content))
 		if err != nil {
-			log.Fatalf("Connection failed: %v", err)
-		}
-		defer db.Close()
-		ctx := context.Background()
-
-		owner, err := getActiveUser(ctx, db)
-		if err != nil {
-			log.Fatalf("Authentication failed: %v", err)
-		}
-
-		entity, err := notes.CreateNote(ctx, db, owner.ID, title, notePath, string(content))
-		if err != nil {
-			log.Fatalf("Failed to create note: %v", err)
+			return fmt.Errorf("failed to create note: %w", err)
 		}
 
 		fmt.Printf("✅ Note created successfully!\nID: %s\nTitle: %s\n", entity.ID, entity.Title)
+		return nil
 	},
 }
 
 var noteListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "Lists existing notes in the knowledge base",
-	Run: func(cmd *cobra.Command, args []string) {
-		db, err := database.InitDB(os.Getenv("DATABASE_URL"))
+	RunE: func(cmd *cobra.Command, args []string) error {
+		noteList, err := notes.ListNotes(app.Ctx, app.DB, app.Owner.ID)
 		if err != nil {
-			log.Fatalf("Connection failed: %v", err)
-		}
-		defer db.Close()
-		ctx := context.Background()
-
-		owner, err := getActiveUser(ctx, db)
-		if err != nil {
-			log.Fatalf("Authentication failed: %v", err)
-		}
-
-		noteList, err := notes.ListNotes(ctx, db, owner.ID)
-		if err != nil {
-			log.Fatalf("Failed to list notes: %v", err)
+			return fmt.Errorf("failed to list notes: %w", err)
 		}
 
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
 		fmt.Fprintln(w, "ID\tPATH\tTITLE\tCREATED")
 		for _, n := range noteList {
-			shortID := ShortID(n.ID)
-			fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", shortID, n.Path, n.Title, n.CreatedAt.Format("2006-01-02 15:04"))
+			fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", FormatID(n.ID, showLong), n.Path, n.Title, n.CreatedAt.Format("2006-01-02 15:04"))
 		}
 		w.Flush()
+		return nil
 	},
 }
 
@@ -115,27 +90,15 @@ var noteShowCmd = &cobra.Command{
 	Use:   "show <uuid|short-uuid|\"Title\">",
 	Short: "Displays the content of a specific note",
 	Args:  cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-
-		db, err := database.InitDB(os.Getenv("DATABASE_URL"))
+	RunE: func(cmd *cobra.Command, args []string) error {
+		targetNote, err := resolveEntity(app.Ctx, app.DB, app.Owner.ID, core.TypeNote, args[0], false)
 		if err != nil {
-			log.Fatalf("Connection failed: %v", err)
-		}
-		defer db.Close()
-		ctx := context.Background()
-
-		owner, err := getActiveUser(ctx, db)
-		if err != nil {
-			log.Fatalf("Authentication failed: %v", err)
-		}
-		targetNote := resolveEntityOrExit(ctx, db, owner.ID, core.TypeNote, args[0], false)
-		if err != nil {
-			os.Exit(1)
+			return err
 		}
 
-		content, err := notes.GetNoteContent(ctx, db, targetNote.ID)
+		content, err := notes.GetNoteContent(app.Ctx, app.DB, targetNote.ID)
 		if err != nil {
-			log.Fatalf("Failed to fetch content: %v", err)
+			return fmt.Errorf("failed to fetch content: %w", err)
 		}
 
 		switch showFormat {
@@ -143,12 +106,13 @@ var noteShowCmd = &cobra.Command{
 			htmlOutput := blackfriday.Run([]byte(content))
 			fmt.Println(string(htmlOutput))
 		case "plain":
-			fmt.Println(content)
+			fallthrough
 		case "md":
 			fallthrough
 		default:
 			fmt.Println(content)
 		}
+		return nil
 	},
 }
 
@@ -156,28 +120,15 @@ var noteExportCmd = &cobra.Command{
 	Use:   "export <uuid|short-uuid|\"Title\">",
 	Short: "Exports a note to the local filesystem as a markdown file",
 	Args:  cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-
-		db, err := database.InitDB(os.Getenv("DATABASE_URL"))
+	RunE: func(cmd *cobra.Command, args []string) error {
+		targetNote, err := resolveEntity(app.Ctx, app.DB, app.Owner.ID, core.TypeNote, args[0], false)
 		if err != nil {
-			log.Fatalf("Connection failed: %v", err)
-		}
-		defer db.Close()
-		ctx := context.Background()
-
-		owner, err := getActiveUser(ctx, db)
-		if err != nil {
-			log.Fatalf("Authentication failed: %v", err)
+			return err
 		}
 
-		targetNote := resolveEntityOrExit(ctx, db, owner.ID, core.TypeNote, args[0], false)
+		content, err := notes.GetNoteContent(app.Ctx, app.DB, targetNote.ID)
 		if err != nil {
-			os.Exit(1)
-		}
-
-		content, err := notes.GetNoteContent(ctx, db, targetNote.ID)
-		if err != nil {
-			log.Fatalf("Failed to fetch content: %v", err)
+			return fmt.Errorf("failed to fetch content: %w", err)
 		}
 
 		// Sanitize title for filename
@@ -188,10 +139,11 @@ var noteExportCmd = &cobra.Command{
 		fullPath := filepath.Join(exportPath, filename)
 
 		if err := os.WriteFile(fullPath, []byte(content), 0644); err != nil {
-			log.Fatalf("Failed to write file to disk: %v", err)
+			return fmt.Errorf("failed to write file to disk: %w", err)
 		}
 
 		fmt.Printf("✅ Successfully exported to: %s\n", fullPath)
+		return nil
 	},
 }
 
@@ -199,28 +151,15 @@ var noteRmCmd = &cobra.Command{
 	Use:   "rm <uuid|short-uuid|\"Title\">",
 	Short: "Deletes a note or folder (soft delete by default)",
 	Args:  cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-
-		db, err := database.InitDB(os.Getenv("DATABASE_URL"))
+	RunE: func(cmd *cobra.Command, args []string) error {
+		targetNote, err := resolveEntity(app.Ctx, app.DB, app.Owner.ID, core.TypeNote, args[0], false)
 		if err != nil {
-			log.Fatalf("Connection failed: %v", err)
-		}
-		defer db.Close()
-		ctx := context.Background()
-
-		owner, err := getActiveUser(ctx, db)
-		if err != nil {
-			log.Fatalf("Authentication failed: %v", err)
+			return err
 		}
 
-		targetNote := resolveEntityOrExit(ctx, db, owner.ID, core.TypeNote, args[0], false)
+		err = notes.DeleteEntity(app.Ctx, app.DB, app.Owner.ID, targetNote.ID, recursive, hardDelete)
 		if err != nil {
-			os.Exit(1)
-		}
-
-		err = notes.DeleteEntity(ctx, db, owner.ID, targetNote.ID, recursive, hardDelete)
-		if err != nil {
-			log.Fatalf("Delete failed: %v", err)
+			return fmt.Errorf("delete failed: %w", err)
 		}
 
 		if hardDelete {
@@ -228,6 +167,7 @@ var noteRmCmd = &cobra.Command{
 		} else {
 			fmt.Printf("🗑️  Moved to trash (soft deleted): %s (%s)\n", targetNote.Title, targetNote.ID)
 		}
+		return nil
 	},
 }
 
@@ -237,8 +177,9 @@ func init() {
 
 	noteAddCmd.Flags().StringVar(&notePath, "path", "/", "Virtual path (e.g., /home/solar)")
 	noteAddCmd.Flags().StringVar(&noteFile, "file", "", "Path to a local .md file to read content from")
+	noteShowCmd.Flags().StringVar(&showFormat, "format", "md", "Output format (md, html, plain)")
 	noteRmCmd.Flags().BoolVarP(&recursive, "recursive", "r", false, "Recursively delete folders and their contents")
 	noteRmCmd.Flags().BoolVar(&hardDelete, "hard", false, "Permanently delete the item from the database (cannot be undone)")
-
 	noteExportCmd.Flags().StringVar(&exportPath, "out", ".", "Local directory to export the markdown file to")
+	noteListCmd.Flags().BoolVarP(&showLong, "long", "l", false, "Show full UUIDs")
 }

@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -20,59 +19,62 @@ var dbCmd = &cobra.Command{
 var dbPingCmd = &cobra.Command{
 	Use:   "ping",
 	Short: "Verifies the connection to the PostgreSQL database",
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		dsn := os.Getenv("DATABASE_URL")
 		if dsn == "" {
-			log.Fatal("ERROR: DATABASE_URL environment variable is not set")
+			return fmt.Errorf("DATABASE_URL environment variable is not set")
 		}
 
 		db, err := database.InitDB(dsn)
 		if err != nil {
-			log.Fatalf("Ping failed: %v", err)
+			return fmt.Errorf("ping failed: %w", err)
 		}
 		defer db.Close()
 
 		fmt.Println("✅ PONG! Database connection is healthy.")
+		return nil
 	},
 }
 
 var dbMigrateCmd = &cobra.Command{
 	Use:   "migrate",
 	Short: "Applies all pending database migrations",
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		dsn := os.Getenv("DATABASE_URL")
 		db, err := database.InitDB(dsn)
 		if err != nil {
-			log.Fatalf("Connection failed: %v", err)
+			return fmt.Errorf("connection failed: %w", err)
 		}
 		defer db.Close()
 
 		if err := database.MigrateUp(db); err != nil {
-			log.Fatalf("Migration failed: %v", err)
+			return fmt.Errorf("migration failed: %w", err)
 		}
 		fmt.Println("✅ All migrations applied successfully.")
+		return nil
 	},
 }
 
 var dbDropCmd = &cobra.Command{
 	Use:   "drop",
 	Short: "Drops all tables and resets the database (requires --force)",
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		if !forceDrop {
-			log.Fatal("ERROR: This is a destructive action. You must use the --force flag to drop the database.")
+			return fmt.Errorf("this is a destructive action. You must use the --force flag to drop the database")
 		}
 
 		dsn := os.Getenv("DATABASE_URL")
 		db, err := database.InitDB(dsn)
 		if err != nil {
-			log.Fatalf("Connection failed: %v", err)
+			return fmt.Errorf("connection failed: %w", err)
 		}
 		defer db.Close()
 
 		if err := database.ResetDB(db); err != nil {
-			log.Fatalf("Drop failed: %v", err)
+			return fmt.Errorf("drop failed: %w", err)
 		}
 		fmt.Println("✅ Database dropped. You can now run 'atria db migrate' again.")
+		return nil
 	},
 }
 
