@@ -155,7 +155,7 @@ var articleListCmd = &cobra.Command{
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
 		fmt.Fprintln(w, "ID\tDOMAIN\tTITLE\tSAVED")
 		for _, a := range articleList {
-			shortID := a.ID.String()[:8]
+			shortID := ShortID(a.ID)
 			fmt.Fprintf(w, "%s\t%s\t%s\t%s\n",
 				shortID,
 				a.Domain,

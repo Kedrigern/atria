@@ -100,7 +100,7 @@ var rssListCmd = &cobra.Command{
 			if f.LastFetchedAt != nil {
 				lastTime = f.LastFetchedAt.Format("2006-01-02 15:04")
 			}
-			fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", f.ID.String()[:8], status, f.FeedURL, lastTime)
+			fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", ShortID(f.ID), status, f.FeedURL, lastTime)
 		}
 		w.Flush()
 	},
@@ -195,7 +195,7 @@ var rssShowCmd = &cobra.Command{
 			if rssShowLong {
 				fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\n", i.ID, i.FeedID, published, i.SourceName, i.Title, i.Link)
 			} else {
-				fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", i.ID.String()[:8], published, i.SourceName, i.Title)
+				fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", ShortID(i.ID), published, i.SourceName, i.Title)
 			}
 		}
 		w.Flush()

@@ -96,6 +96,10 @@ To prevent the application from bloating, Atria employs strict storage managemen
 * **Workflow Pruning (Garbage Collection):** Background workers clean up orphaned attachments when items are archived or hard-deleted.
 * **X-Accel-Redirect:** The backend handles authentication for private files and generated downloads, but delegates the actual file serving to a reverse proxy (Nginx/Caddy).
 
+### 4.3. Identifiers & Discovery
+* **UUIDv7 Suffixes:** While the system uses full UUIDv7 for storage, the CLI and UI prioritize the **last 8 characters** (suffix) for display and resolution. 
+* **Rationale:** UUIDv7 starts with a timestamp. Items created in quick succession share identical prefixes. Using the random suffix ensures visual uniqueness in lists.
+* **Resolution:** The system supports resolving entities by full UUID, title, or the 8-character suffix.
 
 ## 5. Concurrency & Collaborative Editing
 

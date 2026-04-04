@@ -59,3 +59,14 @@ func resolveEntityOrExit(ctx context.Context, db *sql.DB, ownerID uuid.UUID, ent
 
 	return &results[0]
 }
+
+// ShortID extracts the last 8 characters of a UUID for consistent CLI display.
+// We use the end of the UUID because for UUIDv7, the beginning is a timestamp
+// which can be identical for items created in the same millisecond.
+func ShortID(id uuid.UUID) string {
+	s := id.String()
+	if len(s) < 8 {
+		return s
+	}
+	return s[len(s)-8:]
+}

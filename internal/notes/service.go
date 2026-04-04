@@ -190,7 +190,7 @@ func FindNotes(ctx context.Context, db *sql.DB, ownerID uuid.UUID, identifier st
 			FROM entities n
 			LEFT JOIN folder_tree ft ON n.parent_id = ft.id
 			WHERE n.owner_id = $1 AND n.type = 'note' %s
-			AND (n.id::text LIKE $2 || '%%' OR n.title = $3)
+			AND (n.id::text LIKE '%%' || $2 OR n.title = $3)
 		`, delCondN)
 		args = []interface{}{ownerID, identifier, identifier}
 	}

@@ -30,6 +30,7 @@ Available Commands:
   help        Help about any command
   note        Knowledge base and markdown notes management
   rss         RSS feed management and triage
+  tag         Tag management for all entities
   user        User management
 
 Flags:

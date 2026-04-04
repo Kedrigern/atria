@@ -15,7 +15,7 @@ type EntitySummary struct {
 	Type  EntityType
 }
 
-// FindEntities resolves an entity by full UUID, short UUID prefix, or exact title.
+// FindEntities resolves an entity by full UUID, short UUID suffix (last 8 chars), or exact title.
 func FindEntities(ctx context.Context, db *sql.DB, ownerID uuid.UUID, entityType EntityType, identifier string, includeDeleted bool) ([]EntitySummary, error) {
 	delCond := "AND deleted_at IS NULL"
 	if includeDeleted {
@@ -29,8 +29,7 @@ func FindEntities(ctx context.Context, db *sql.DB, ownerID uuid.UUID, entityType
 		query = fmt.Sprintf(`SELECT id, title, type FROM entities WHERE id = $1 AND owner_id = $2 AND type = $3 %s`, delCond)
 		args = []interface{}{parsedID, ownerID, entityType}
 	} else {
-		// Double percent %% in Sprintf translates to a single % for the SQL LIKE operator
-		query = fmt.Sprintf(`SELECT id, title, type FROM entities WHERE owner_id = $1 AND type = $2 %s AND (id::text LIKE $3 || '%%' OR title = $4)`, delCond)
+		query = fmt.Sprintf(`SELECT id, title, type FROM entities WHERE owner_id = $1 AND type = $2 %s AND (id::text LIKE '%%' || $3 OR title = $4)`, delCond)
 		args = []interface{}{ownerID, entityType, identifier, identifier}
 	}
 

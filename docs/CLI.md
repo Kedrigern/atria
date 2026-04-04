@@ -80,12 +80,14 @@ Used to manage instance accounts and access. No user context required.
 * `atria table show <uuid> [--format=csv]`
   Displays the table content. Easily exportable to CSV using the format flag.
 
-### RSS Feeds (`rss` or alias `feed`)
-* `atria rss list`
-  Lists all subscribed feeds and their health/error status.
-* `atria rss add <url>`
-  Subscribes to a new RSS/Atom feed.
-
+### RSS Feeds (`rss`)
+* `atria rss list`: Lists all subscribed feeds, including their health status (`last_fetch_status`) and last sync time.
+* `atria rss fetch`: Manually triggers the background worker to pull updates for all pending feeds.
+* `atria rss show [--format=table|json|csv] [-l, --long]`: Displays the **Triage (unread items)**. 
+    * Default view shows the 8-char **Item ID suffix**.
+    * `--long` flag displays full URLs and Feed IDs.
+* `atria rss save <item-id-suffix>`: The core bridge. Converts an RSS item into a permanent `article`, runs readability extraction, and marks the item as read.
+* `atria rss rm <feed-id-suffix>`: Removes the feed subscription (and its metadata).
 ---
 
 ## 4. Bulk Exports (`export`)

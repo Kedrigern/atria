@@ -104,7 +104,7 @@ var noteListCmd = &cobra.Command{
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
 		fmt.Fprintln(w, "ID\tPATH\tTITLE\tCREATED")
 		for _, n := range noteList {
-			shortID := n.ID.String()[:8]
+			shortID := ShortID(n.ID)
 			fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", shortID, n.Path, n.Title, n.CreatedAt.Format("2006-01-02 15:04"))
 		}
 		w.Flush()

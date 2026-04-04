@@ -8,11 +8,13 @@ This document outlines the core architectural decisions and database schema desi
 3. **Universal Identifiers:** Every object in the system is globally addressable via a UUID.
 4. **Framework Agnostic:** The database schema enforces its own integrity (cascades, check constraints) and does not rely on application-layer ORM logic to maintain state.
 
-## 2. Primary Keys: Why UUIDv7?
+## 2. Primary Keys: UUIDv7 & CLI ShortID
 Atria uses **UUIDv7** for all primary keys instead of standard auto-incrementing integers or UUIDv4.
 
 * **Why UUIDs?** It prevents users from guessing the total number of notes/articles in the system, makes merging databases easier, and leaves room for future distributed clients if needed.
 * **Why v7 over v4?** UUIDv4 is completely random, which causes severe index fragmentation in B-Tree databases like PostgreSQL at scale. UUIDv7 embeds a UNIX timestamp in the first 48 bits. This means IDs are naturally sorted chronologically, keeping database inserts blazing fast and indices perfectly organized.
+* **CLI Display:** To keep the interface clean, Atria displays the **last 8 characters** of the UUID. 
+* **Searching:** SQL queries are optimized to look for these suffixes using `LIKE '%suffix'`. While standard B-Tree indexes don't support leading wildcards, the performance is sufficient for personal-scale data. For larger instances, `pg_trgm` (trigram) indexes can be enabled.
 
 ## 3. The Polymorphic Data Model (Class Table Inheritance)
 To allow any item to link to any other item without complex schema hacks, Atria uses the **Class Table Inheritance** pattern. Instead of having completely independent tables for Notes and Articles, we use a central `entities` table that holds shared metadata, and specific subtype tables that hold the unique content.
