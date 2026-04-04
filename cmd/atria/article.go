@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"sync"
 
 	"github.com/spf13/cobra"
 
@@ -20,18 +21,39 @@ var articleCmd = &cobra.Command{
 }
 
 var articleAddCmd = &cobra.Command{
-	Use:   "add <url>",
-	Short: "Fetches a URL, runs Readability extraction, and saves it to the Inbox",
-	Args:  cobra.ExactArgs(1),
+	Use:   "add <url> [url2...]",
+	Short: "Fetches one or more URLs, runs Readability extraction, and saves them to the Inbox",
+	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		urlStr := args[0]
+		urls := args
 
-		entity, err := articles.CreateArticle(app.Ctx, app.DB, app.Owner.ID, urlStr)
-		if err != nil {
-			return fmt.Errorf("failed to save article: %w", err)
+		const maxWorkers = 5
+		sem := make(chan struct{}, maxWorkers)
+		var wg sync.WaitGroup
+
+		fmt.Printf("🚀 Starting import of %d articles...\n", len(urls))
+
+		for _, u := range urls {
+			wg.Add(1)
+
+			go func(urlStr string) {
+				defer wg.Done()
+
+				sem <- struct{}{}
+				defer func() { <-sem }()
+
+				entity, err := articles.CreateArticle(app.Ctx, app.DB, app.Owner.ID, urlStr)
+				if err != nil {
+					fmt.Printf("❌ Failed: %s\n   Error: %v\n", urlStr, err)
+					return
+				}
+
+				fmt.Printf("✅ Saved: %s (ID: %s)\n", entity.Title, ShortID(entity.ID))
+			}(u)
 		}
 
-		fmt.Printf("✅ Article saved successfully!\nID: %s\nTitle: %s\n", entity.ID, entity.Title)
+		wg.Wait()
+		fmt.Println("🎉 All imports completed!")
 		return nil
 	},
 }
