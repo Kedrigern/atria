@@ -31,25 +31,23 @@ var tagAddCmd = &cobra.Command{
 }
 
 var tagAttachCmd = &cobra.Command{
-	Use:   "attach <entity-uuid> <tag-name>",
+	Use:   "attach <entity-uuid|short-uuid|\"Title\"> <tag-name>",
 	Short: "Attaches a tag to an article, note, or RSS feed",
 	Args:  cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		entityIDStr, tagName := args[0], args[1]
 
-		// For now, require the exact UUID. Searching across all types requires
-		// extending FindEntities to accept empty type (TypeAny).
-		entityID, err := core.ParseUUID(entityIDStr)
+		targetEntity, err := resolveEntity(app.Ctx, app.DB, app.Owner.ID, "", entityIDStr, false)
 		if err != nil {
-			return fmt.Errorf("please provide a valid full UUID for the entity in this version: %w", err)
+			return err
 		}
 
-		err = core.AttachTagByTitle(app.Ctx, app.DB, app.Owner.ID, entityID, tagName)
+		err = core.AttachTagByTitle(app.Ctx, app.DB, app.Owner.ID, targetEntity.ID, tagName)
 		if err != nil {
 			return fmt.Errorf("failed to attach tag: %w", err)
 		}
 
-		fmt.Printf("✅ Tag '#%s' attached to entity %s\n", tagName, entityID)
+		fmt.Printf("✅ Tag '#%s' attached to %s '%s' (%s)\n", tagName, targetEntity.Type, targetEntity.Title, FormatID(targetEntity.ID, showLong))
 		return nil
 	},
 }
