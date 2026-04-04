@@ -28,6 +28,7 @@ Available Commands:
   attachment  File uploads and attachment management
   completion  Generate the autocompletion script for the specified shell
   db          System and database administration
+  export      Bulk export functionalities
   help        Help about any command
   link        Knowledge graph and entity relations management
   note        Knowledge base and markdown notes management
