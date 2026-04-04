@@ -25,9 +25,11 @@ Usage:
 
 Available Commands:
   article     Read-it-Later and article management
+  attachment  File uploads and attachment management
   completion  Generate the autocompletion script for the specified shell
   db          System and database administration
   help        Help about any command
+  link        Knowledge graph and entity relations management
   note        Knowledge base and markdown notes management
   rss         RSS feed management and triage
   tag         Tag management for all entities
