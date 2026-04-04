@@ -187,12 +187,12 @@ func FindNotes(ctx context.Context, db *sql.DB, ownerID uuid.UUID, identifier st
 		// Be careful with '%%' in Sprintf, which translate to onw '%' foe SQL LIKE operator
 		query = baseCTE + fmt.Sprintf(`
 			SELECT n.id, n.title, COALESCE('/' || ft.path, '/') AS path, n.created_at
-			FROM entities n
-			LEFT JOIN folder_tree ft ON n.parent_id = ft.id
-			WHERE n.owner_id = $1 AND n.type = 'note' %s
-			AND (n.id::text LIKE '%%' || $2 OR n.title = $3)
+		    FROM entities n
+		    LEFT JOIN folder_tree ft ON n.parent_id = ft.id
+		    WHERE n.owner_id = $1 AND n.type = 'note' %s
+		    AND (n.id::text LIKE $2 OR n.title = $3)
 		`, delCondN)
-		args = []interface{}{ownerID, identifier, identifier}
+		args = []interface{}{ownerID, "%" + identifier, identifier}
 	}
 
 	rows, err := db.QueryContext(ctx, query, args...)

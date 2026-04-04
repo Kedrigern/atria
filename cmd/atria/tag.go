@@ -3,10 +3,10 @@ package main
 import (
 	"fmt"
 	"os"
-	"text/tabwriter"
 
 	"github.com/spf13/cobra"
 
+	"atria/internal/cli"
 	"atria/internal/core"
 )
 
@@ -68,8 +68,8 @@ var tagListCmd = &cobra.Command{
 			return nil
 		}
 
-		w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
-		fmt.Fprintln(w, "ID\tNAME\tSYSTEM\tCOLOR")
+		headers := []string{"ID", "NAME", "SYSTEM", "COLOR"}
+		var rows [][]string
 		for _, t := range tags {
 			isSys := ""
 			if t.IsSystem {
@@ -79,10 +79,14 @@ var tagListCmd = &cobra.Command{
 			if t.Color != nil {
 				color = *t.Color
 			}
-			fmt.Fprintf(w, "%s\t#%s\t%s\t%s\n", FormatID(t.ID, showLong), t.Name, isSys, color)
+			rows = append(rows, []string{
+				FormatID(t.ID, showLong),
+				t.Name,
+				isSys,
+				color})
 		}
-		w.Flush()
-		return nil
+
+		return cli.Render(os.Stdout, listFormat, headers, rows, tags)
 	},
 }
 
@@ -90,4 +94,6 @@ func init() {
 	rootCmd.AddCommand(tagCmd)
 	tagCmd.AddCommand(tagAddCmd, tagAttachCmd, tagListCmd)
 	tagListCmd.Flags().BoolVarP(&showLong, "long", "l", false, "Show full UUIDs")
+	tagListCmd.Flags().StringVarP(&listFormat, "format", "f", "table", "Output format (table, json, csv, html)")
+
 }

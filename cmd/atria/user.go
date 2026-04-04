@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"text/tabwriter"
 	"time"
 
 	"github.com/spf13/cobra"
 
+	"atria/internal/cli"
 	"atria/internal/core"
 	"atria/internal/database"
 	"atria/internal/users"
@@ -71,13 +71,19 @@ var userListCmd = &cobra.Command{
 			log.Fatalf("Failed to fetch users: %v", err)
 		}
 
-		w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
-		fmt.Fprintln(w, "ID\tEMAIL\tNAME\tROLE\tCREATED")
-		for _, u := range userList {
-			fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n", FormatID(u.ID, showLong), u.Email, u.DisplayName, u.Role, u.CreatedAt.Format("2006-01-02 15:04"))
+		headers := []string{"ID", "EMAIL", "NAME", "ROLE", "CREATED"}
+		var rows [][]string
+		for _, n := range userList {
+			rows = append(rows, []string{
+				FormatID(n.ID, showLong),
+				n.Email,
+				n.DisplayName,
+				string(n.Role),
+				n.CreatedAt.Format("2006-01-02 15:04"),
+			})
 		}
-		w.Flush()
-		return nil
+
+		return cli.Render(os.Stdout, listFormat, headers, rows, userList)
 	},
 }
 
@@ -151,4 +157,5 @@ func init() {
 	userAddCmd.Flags().StringVar(&userRole, "role", "user", "User's role: 'admin' or 'user' (default 'user')")
 
 	userListCmd.Flags().BoolVarP(&showLong, "long", "l", false, "Show full UUIDs")
+	userListCmd.Flags().StringVarP(&listFormat, "format", "f", "table", "Output format (table, json, csv, html)")
 }

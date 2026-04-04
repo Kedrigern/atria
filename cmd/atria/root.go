@@ -24,6 +24,7 @@ type AppContext struct {
 var app *AppContext
 var globalUserFlag string
 var showLong bool
+var listFormat string
 
 var rootCmd = &cobra.Command{
 	Use:           "atria",
@@ -84,7 +85,7 @@ func resolveEntity(ctx context.Context, db *sql.DB, ownerID uuid.UUID, entityTyp
 		for _, r := range results {
 			errMsg += fmt.Sprintf("  %s  %s\n", r.ID.String()[:8], r.Title)
 		}
-		return nil, fmt.Errorf(errMsg)
+		return nil, fmt.Errorf("%s", errMsg)
 	}
 
 	return &results[0], nil

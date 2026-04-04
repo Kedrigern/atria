@@ -3,11 +3,11 @@ package main
 import (
 	"fmt"
 	"os"
-	"text/tabwriter"
 
 	"github.com/spf13/cobra"
 
 	"atria/internal/articles"
+	"atria/internal/cli"
 	"atria/internal/core"
 )
 
@@ -82,13 +82,18 @@ var articleListCmd = &cobra.Command{
 			return fmt.Errorf("failed to list articles: %w", err)
 		}
 
-		w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
-		fmt.Fprintln(w, "ID\tDOMAIN\tTITLE\tSAVED")
+		headers := []string{"ID", "DOMAIN", "TITLE", "SAVED"}
+		var rows [][]string
 		for _, a := range articleList {
-			fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", FormatID(a.ID, showLong), a.Domain, a.Title, a.CreatedAt.Format("2006-01-02 15:04"))
+			rows = append(rows, []string{
+				FormatID(a.ID, showLong),
+				a.Domain,
+				a.Title,
+				a.CreatedAt.Format("2006-01-02 15:04"),
+			})
 		}
-		w.Flush()
-		return nil
+
+		return cli.Render(os.Stdout, listFormat, headers, rows, articleList)
 	},
 }
 
@@ -98,4 +103,5 @@ func init() {
 
 	articleShowCmd.Flags().StringVar(&articleShowFormat, "format", "md", "Output format (md, html, plain)")
 	articleListCmd.Flags().BoolVarP(&showLong, "long", "l", false, "Show full UUIDs")
+	articleListCmd.Flags().StringVarP(&listFormat, "format", "f", "table", "Output format (table, json, csv, html)")
 }

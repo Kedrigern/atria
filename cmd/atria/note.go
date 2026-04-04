@@ -6,10 +6,10 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"text/tabwriter"
 
 	"github.com/spf13/cobra"
 
+	"atria/internal/cli"
 	"atria/internal/core"
 	"atria/internal/notes"
 
@@ -76,13 +76,18 @@ var noteListCmd = &cobra.Command{
 			return fmt.Errorf("failed to list notes: %w", err)
 		}
 
-		w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
-		fmt.Fprintln(w, "ID\tPATH\tTITLE\tCREATED")
+		headers := []string{"ID", "PATH", "TITLE", "CREATED"}
+		var rows [][]string
 		for _, n := range noteList {
-			fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", FormatID(n.ID, showLong), n.Path, n.Title, n.CreatedAt.Format("2006-01-02 15:04"))
+			rows = append(rows, []string{
+				FormatID(n.ID, showLong),
+				n.Path,
+				n.Title,
+				n.CreatedAt.Format("2006-01-02 15:04"),
+			})
 		}
-		w.Flush()
-		return nil
+
+		return cli.Render(os.Stdout, listFormat, headers, rows, noteList)
 	},
 }
 
@@ -182,4 +187,5 @@ func init() {
 	noteRmCmd.Flags().BoolVar(&hardDelete, "hard", false, "Permanently delete the item from the database (cannot be undone)")
 	noteExportCmd.Flags().StringVar(&exportPath, "out", ".", "Local directory to export the markdown file to")
 	noteListCmd.Flags().BoolVarP(&showLong, "long", "l", false, "Show full UUIDs")
+	noteListCmd.Flags().StringVarP(&listFormat, "format", "f", "table", "Output format (table, json, csv, html)")
 }

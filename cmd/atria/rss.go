@@ -1,20 +1,16 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
-	"text/tabwriter"
-	"time"
 
+	"atria/internal/cli"
 	"atria/internal/core"
 	"atria/internal/notes"
 	"atria/internal/rss"
 
 	"github.com/spf13/cobra"
 )
-
-var rssShowFormat string
 
 var rssCmd = &cobra.Command{
 	Use:               "rss",
@@ -61,8 +57,8 @@ var rssListCmd = &cobra.Command{
 			return fmt.Errorf("failed to list feeds: %w", err)
 		}
 
-		w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-		fmt.Fprintln(w, "ID\tSTATUS\tURL\tLAST FETCH")
+		headers := []string{"ID", "STATUS", "URL", "LAST FETCH"}
+		var rows [][]string
 		for _, f := range feeds {
 			status := "Never"
 			if f.LastFetchStatus != nil {
@@ -72,10 +68,15 @@ var rssListCmd = &cobra.Command{
 			if f.LastFetchedAt != nil {
 				lastTime = f.LastFetchedAt.Format("2006-01-02 15:04")
 			}
-			fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", FormatID(f.ID, showLong), status, f.FeedURL, lastTime)
+			rows = append(rows, []string{
+				FormatID(f.ID, showLong),
+				status,
+				f.FeedURL,
+				lastTime,
+			})
 		}
-		w.Flush()
-		return nil
+
+		return cli.Render(os.Stdout, listFormat, headers, rows, feeds)
 	},
 }
 
@@ -113,39 +114,36 @@ var rssShowCmd = &cobra.Command{
 			return nil
 		}
 
-		switch rssShowFormat {
-		case "json":
-			encoder := json.NewEncoder(os.Stdout)
-			encoder.SetIndent("", "  ")
-			if err := encoder.Encode(items); err != nil {
-				return fmt.Errorf("failed to encode JSON: %w", err)
-			}
-			return nil
-		case "csv":
-			fmt.Println("ITEM_ID,FEED_ID,PUBLISHED,SOURCE,TITLE,LINK")
-			for _, i := range items {
-				fmt.Printf("%s,%s,%s,%s,\"%s\",%s\n", i.ID, i.FeedID, i.CreatedAt.Format(time.RFC3339), i.SourceName, i.Title, i.Link)
-			}
-			return nil
-		}
-
-		w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+		var headers []string
 		if showLong {
-			fmt.Fprintln(w, "ITEM ID\tFEED ID\tPUBLISHED\tSOURCE\tTITLE\tLINK")
+			headers = []string{"ITEM ID", "FEED ID", "PUBLISHED", "SOURCE", "TITLE", "LINK"}
 		} else {
-			fmt.Fprintln(w, "ID\tPUBLISHED\tSOURCE\tTITLE")
+			headers = []string{"ID", "PUBLISHED", "SOURCE", "TITLE"}
 		}
 
+		var rows [][]string
 		for _, i := range items {
 			published := i.CreatedAt.Format("2006-01-02 15:04")
 			if showLong {
-				fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\n", FormatID(i.ID, showLong), FormatID(i.FeedID, showLong), published, i.SourceName, i.Title, i.Link)
+				rows = append(rows, []string{
+					FormatID(i.ID, showLong),
+					FormatID(i.FeedID, showLong),
+					published,
+					i.SourceName,
+					i.Title,
+					i.Link,
+				})
 			} else {
-				fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", FormatID(i.ID, showLong), published, i.SourceName, i.Title)
+				rows = append(rows, []string{
+					FormatID(i.ID, showLong),
+					published,
+					i.SourceName,
+					i.Title,
+				})
 			}
 		}
-		w.Flush()
-		return nil
+
+		return cli.Render(os.Stdout, listFormat, headers, rows, items)
 	},
 }
 
@@ -154,7 +152,6 @@ var rssSaveCmd = &cobra.Command{
 	Short: "Converts an RSS item to a Read-it-Later article",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		// Use core.ParseUUID instead of direct uuid.FromString
 		itemID, err := core.ParseUUID(args[0])
 		if err != nil {
 			return fmt.Errorf("invalid UUID format: %w", err)
@@ -174,8 +171,9 @@ func init() {
 	rootCmd.AddCommand(rssCmd)
 	rssCmd.AddCommand(rssFetchCmd, rssAddCmd, rssListCmd, rssRmCmd, rssShowCmd, rssSaveCmd)
 
-	rssShowCmd.Flags().StringVar(&rssShowFormat, "format", "table", "Output format (table, json, csv)")
-
 	rssListCmd.Flags().BoolVarP(&showLong, "long", "l", false, "Show full UUIDs")
+	rssListCmd.Flags().StringVarP(&listFormat, "format", "f", "table", "Output format (table, json, csv, html)")
+
 	rssShowCmd.Flags().BoolVarP(&showLong, "long", "l", false, "Show full IDs and URLs")
+	rssShowCmd.Flags().StringVarP(&listFormat, "format", "f", "table", "Output format (table, json, csv, html)")
 }
