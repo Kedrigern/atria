@@ -155,13 +155,12 @@ type ArticleSummary struct {
 // ListArticles retrieves paginated, unarchived articles for the inbox.
 func ListArticles(ctx context.Context, db *sql.DB, ownerID uuid.UUID, limit, offset int) ([]ArticleSummary, error) {
 	query := `
-		SELECT e.id, e.title, a.domain, e.created_at, a.is_archived
-		FROM entities e
-		JOIN articles a ON e.id = a.id
-		WHERE e.owner_id = $1 AND e.deleted_at IS NULL AND a.is_archived = FALSE
-		ORDER BY e.created_at DESC
-		LIMIT $2 OFFSET $3
-	`
+			SELECT id, title, domain, created_at, is_archived
+			FROM articles_full_view
+			WHERE owner_id = $1 AND is_archived = FALSE
+			ORDER BY created_at DESC
+			LIMIT $2 OFFSET $3
+		`
 
 	rows, err := db.QueryContext(ctx, query, ownerID, limit, offset)
 	if err != nil {

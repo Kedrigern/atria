@@ -13,15 +13,13 @@ import (
 func (s *Server) handleRSS(c *gin.Context) {
 	user := s.getDummyUser(c)
 
-	// Paginace: defaultně stránka 1
 	page := 1
 	if p, err := strconv.Atoi(c.Query("page")); err == nil && p > 0 {
 		page = p
 	}
-	limit := 30 // Zobrazíme 30 položek na stránku
+	limit := 30
 	offset := (page - 1) * limit
 
-	// Trik pro paginaci: řekneme si o limit + 1. Pokud se jich tolik vrátí, víme, že existuje další stránka!
 	items, err := rss.ListItemsToRead(c.Request.Context(), s.db, user.ID, limit+1, offset)
 	if err != nil {
 		s.renderError(c, http.StatusInternalServerError, "Failed to load RSS items: "+err.Error())
@@ -31,7 +29,7 @@ func (s *Server) handleRSS(c *gin.Context) {
 	hasNext := false
 	if len(items) > limit {
 		hasNext = true
-		items = items[:limit] // Odřízneme ten jeden navíc
+		items = items[:limit]
 	}
 
 	s.render(c, "rss.html", gin.H{

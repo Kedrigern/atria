@@ -105,12 +105,11 @@ func CreateFeed(ctx context.Context, db *sql.DB, ownerID uuid.UUID, title, feedU
 // ListFeeds retrieves all RSS subscriptions for a user, including their titles.
 func ListFeeds(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]FeedSummary, error) {
 	query := `
-		SELECT f.id, e.title, f.feed_url, f.site_url, f.last_fetch_at, f.last_fetch_status, f.last_fetch_error
-		FROM rss_feeds f
-		JOIN entities e ON f.id = e.id
-		WHERE e.owner_id = $1 AND e.deleted_at IS NULL
-		ORDER BY e.created_at DESC
-	`
+			SELECT id, title, feed_url, site_url, last_fetch_at, last_fetch_status, last_fetch_error
+			FROM rss_feeds_full_view
+			WHERE owner_id = $1
+			ORDER BY created_at DESC
+		`
 	rows, err := db.QueryContext(ctx, query, ownerID)
 	if err != nil {
 		return nil, err
@@ -131,23 +130,21 @@ func ListFeeds(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]FeedSummar
 
 // ListItemsToRead retrieves unread items using the database view.
 func ListItemsToRead(ctx context.Context, db *sql.DB, ownerID uuid.UUID, limit, offset int) ([]RSSItem, error) {
-	// Joining with entities to get the feed's title if site_url is missing
 	query := `
-			SELECT
-				v.id,
-				v.feed_id,
-				COALESCE(NULLIF(v.site_url, ''), e.title) as source_name,
-				v.title,
-				v.link,
-				COALESCE(v.description, '') as description,
-				v.published_at,
-				v.created_at
-			FROM rss_to_read_view v
-			JOIN entities e ON v.feed_id = e.id
-			WHERE e.owner_id = $1
-			ORDER BY v.published_at DESC
-			LIMIT $2 OFFSET $3
-		`
+		SELECT
+			id,
+			feed_id,
+			source_name,
+			title,
+			link,
+			description,
+			published_at,
+			created_at
+		FROM rss_to_read_view
+		WHERE owner_id = $1
+		ORDER BY published_at DESC
+		LIMIT $2 OFFSET $3
+	`
 	rows, err := db.QueryContext(ctx, query, ownerID, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query triage items: %w", err)
@@ -157,7 +154,10 @@ func ListItemsToRead(ctx context.Context, db *sql.DB, ownerID uuid.UUID, limit, 
 	var items []RSSItem
 	for rows.Next() {
 		var i RSSItem
-		err := rows.Scan(&i.ID, &i.FeedID, &i.SourceName, &i.Title, &i.Link, &i.Description, &i.PublishedAt, &i.CreatedAt)
+		err := rows.Scan(
+			&i.ID, &i.FeedID, &i.SourceName, &i.Title,
+			&i.Link, &i.Description, &i.PublishedAt, &i.CreatedAt,
+		)
 		if err != nil {
 			return nil, err
 		}

@@ -12,6 +12,14 @@ import (
 	"atria/internal/core"
 )
 
+// NoteSummary is a lightweight struct for listing and disambiguation.
+type NoteSummary struct {
+	ID        uuid.UUID
+	Title     string
+	Path      string
+	CreatedAt time.Time
+}
+
 // EnsurePath traverses the virtual path (e.g., "/home/solar") and creates missing folders.
 // It returns the UUID of the final folder, or nil if the path is empty (root).
 func EnsurePath(ctx context.Context, tx *sql.Tx, ownerID uuid.UUID, path string) (*uuid.UUID, error) {
@@ -89,10 +97,10 @@ func CreateNote(ctx context.Context, db *sql.DB, ownerID uuid.UUID, title, path,
 	}
 
 	queryEntity := `
-        INSERT INTO entities (id, owner_id, type, visibility, title, slug, path, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-    `
-	_, err = tx.ExecContext(ctx, queryEntity, entityID, ownerID, core.TypeNote, core.VisibilityPrivate, title, slug, path, now, now)
+	    INSERT INTO entities (id, parent_id, owner_id, type, visibility, title, slug, path, created_at, updated_at)
+	    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+	`
+	_, err = tx.ExecContext(ctx, queryEntity, entityID, parentID, ownerID, core.TypeNote, core.VisibilityPrivate, title, slug, path, now, now)
 	if err != nil {
 		return nil, fmt.Errorf("failed to insert entity: %w", err)
 	}
@@ -110,14 +118,6 @@ func CreateNote(ctx context.Context, db *sql.DB, ownerID uuid.UUID, title, path,
 	}
 
 	return entity, nil
-}
-
-// NoteSummary is a lightweight struct for listing and disambiguation.
-type NoteSummary struct {
-	ID        uuid.UUID
-	Title     string
-	Path      string
-	CreatedAt time.Time
 }
 
 // ListNotes retrieves all active (non-deleted) notes for a specific user.
@@ -153,45 +153,23 @@ func ListNotes(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]core.Entit
 // FindNotes resolves an identifier and returns matching notes.
 // If includeDeleted is true, it also searches the "trash" (soft-deleted items).
 func FindNotes(ctx context.Context, db *sql.DB, ownerID uuid.UUID, identifier string, includeDeleted bool) ([]NoteSummary, error) {
-	// Dynamické sestavení podmínek pro smazané položky
-	delCond, delCondE, delCondN := "AND deleted_at IS NULL", "AND e.deleted_at IS NULL", "AND n.deleted_at IS NULL"
-	if includeDeleted {
-		delCond, delCondE, delCondN = "", "", ""
-	}
-
-	baseCTE := fmt.Sprintf(`
-		WITH RECURSIVE folder_tree AS (
-			SELECT id, slug::text AS path
-			FROM entities
-			WHERE owner_id = $1 AND type = 'folder' AND parent_id IS NULL %s
-			UNION ALL
-			SELECT e.id, ft.path || '/' || e.slug
-			FROM entities e
-			INNER JOIN folder_tree ft ON e.parent_id = ft.id
-			WHERE e.type = 'folder' %s
-		)
-	`, delCond, delCondE)
-
-	var query string
+	query := `
+		SELECT n.id, n.title, COALESCE(p.full_path, '/') AS path, n.created_at
+		FROM entities n
+		LEFT JOIN entity_paths_view p ON n.parent_id = p.id
+		WHERE n.owner_id = $1 AND n.type = 'note'
+	`
 	var args []interface{}
 
+	if !includeDeleted {
+		query += ` AND n.deleted_at IS NULL`
+	}
+
 	if parsedID, err := uuid.FromString(identifier); err == nil {
-		query = baseCTE + fmt.Sprintf(`
-			SELECT n.id, n.title, COALESCE('/' || ft.path, '/') AS path, n.created_at
-			FROM entities n
-			LEFT JOIN folder_tree ft ON n.parent_id = ft.id
-			WHERE n.id = $2 AND n.owner_id = $1 AND n.type = 'note' %s
-		`, delCondN)
+		query += ` AND n.id = $2`
 		args = []interface{}{ownerID, parsedID}
 	} else {
-		// Be careful with '%%' in Sprintf, which translate to onw '%' foe SQL LIKE operator
-		query = baseCTE + fmt.Sprintf(`
-			SELECT n.id, n.title, COALESCE('/' || ft.path, '/') AS path, n.created_at
-		    FROM entities n
-		    LEFT JOIN folder_tree ft ON n.parent_id = ft.id
-		    WHERE n.owner_id = $1 AND n.type = 'note' %s
-		    AND (n.id::text LIKE $2 OR n.title = $3)
-		`, delCondN)
+		query += ` AND (n.id::text LIKE $2 OR n.title = $3)`
 		args = []interface{}{ownerID, "%" + identifier, identifier}
 	}
 

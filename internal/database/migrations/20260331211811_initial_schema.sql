@@ -140,11 +140,54 @@ CREATE TABLE rel_entity_attachments (
     PRIMARY KEY (entity_id, attachment_id)
 );
 
--- Simplified Triage for RSS
+-------------------------------------
+-- VIEWS
+-------------------------------------
+
+CREATE VIEW entity_paths_view AS
+WITH RECURSIVE tree AS (
+    -- Root entities (without parrent)
+    SELECT id, owner_id, type, deleted_at, '/' || slug::text AS full_path
+    FROM entities
+    WHERE parent_id IS NULL
+
+    UNION ALL
+
+    -- Child entities
+    SELECT e.id, e.owner_id, e.type, e.deleted_at, t.full_path || '/' || e.slug
+    FROM entities e
+    INNER JOIN tree t ON e.parent_id = t.id
+)
+SELECT * FROM tree;
+
+-- RSS item to view
 CREATE VIEW rss_to_read_view AS
-SELECT i.id, i.feed_id, f.site_url, i.title, i.link, i.description, i.published_at, i.created_at
-FROM rss_items i JOIN rss_feeds f ON i.feed_id = f.id
-WHERE i.read_at IS NULL ORDER BY i.published_at DESC;
+SELECT
+    i.id,
+    i.feed_id,
+    e.owner_id,
+    COALESCE(NULLIF(f.site_url, ''), e.title) AS source_name,
+    i.title,
+    i.link,
+    COALESCE(i.description, '') AS description,
+    i.published_at,
+    i.created_at
+FROM rss_items i
+JOIN rss_feeds f ON i.feed_id = f.id
+JOIN entities e ON i.feed_id = e.id
+WHERE i.read_at IS NULL
+  AND e.deleted_at IS NULL
+ORDER BY i.published_at DESC;
+
+-- RSS feeds (sources) view
+CREATE VIEW rss_feeds_full_view AS
+SELECT
+    e.id, e.owner_id, e.title, e.slug, e.visibility, e.created_at, e.updated_at, e.deleted_at,
+    f.feed_url, f.site_url, f.etag_header, f.last_modified_header,
+    f.next_fetch_at, f.last_fetch_at, f.last_fetch_status, f.last_fetch_error
+FROM entities e
+JOIN rss_feeds f ON e.id = f.id
+WHERE e.deleted_at IS NULL;
 
 -- Clean candidates for automated pruning
 CREATE VIEW rss_cleanup_candidates_view AS
@@ -155,22 +198,30 @@ SELECT id FROM (
 
 -- Full Note with metadata
 CREATE VIEW notes_full_view AS
-SELECT e.id, e.parent_id, e.owner_id, e.type, e.visibility, e.title, e.slug,
-       e.path,e.created_at, e.updated_at
-FROM entities e JOIN notes n ON e.id = n.id
+SELECT
+    e.id, e.parent_id, e.owner_id, e.type, e.visibility, e.title, e.slug,
+    e.created_at, e.updated_at, e.deleted_at,
+    COALESCE(p.full_path, '/') AS path,  -- Dynamicaly calculate path
+    n.icon,
+    n.markdown_content
+FROM entities e
+JOIN notes n ON e.id = n.id
+LEFT JOIN entity_paths_view p ON e.parent_id = p.id
 WHERE e.deleted_at IS NULL;
 
 -- Full Article with metadata
 CREATE VIEW articles_full_view AS
-SELECT e.*, a.original_url, a.domain, a.user_note, a.html_content, a.text_content
+SELECT e.*, a.original_url, a.domain, a.user_note, a.html_content, a.text_content, a.is_archived
 FROM entities e JOIN articles a ON e.id = a.id
 WHERE e.deleted_at IS NULL;
+
 
 -- +goose Down
 DROP VIEW IF EXISTS articles_full_view;
 DROP VIEW IF EXISTS notes_full_view;
 DROP VIEW IF EXISTS rss_cleanup_candidates_view;
 DROP VIEW IF EXISTS rss_to_read_view;
+DROP VIEW IF EXISTS entity_paths_view;
 DROP TABLE IF EXISTS rel_entity_attachments;
 DROP TABLE IF EXISTS attachments;
 DROP TABLE IF EXISTS notes;
