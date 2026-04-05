@@ -1,0 +1,106 @@
+{{define "content"}}
+<div class="centered-view" data-mobile-title="ATRIA: Articles">
+    {{if .Flash}}
+    <div class="flash-message {{.Flash.Type}}">
+        <div class="action-row" style="justify-content: space-between">
+            <span>{{.Flash.Message}}</span>
+            <button
+                type="button"
+                class="outline"
+                data-flash-close
+                style="min-height: auto; padding: 4px 8px"
+            >
+                ×
+            </button>
+        </div>
+    </div>
+    {{end}}
+
+    <div class="page-header-row">
+        <h2 class="hide-mobile">Read-it-Later Inbox</h2>
+        <button class="outline" title="Add link manually">+</button>
+    </div>
+
+    <input
+        type="search"
+        placeholder="Search archive..."
+        class="form-input"
+        style="margin-bottom: 20px"
+    />
+
+    {{range .Articles}}
+    <div class="list-item">
+        <div>
+            <h4>
+                <a
+                    href="/read/{{.ID}}"
+                    hx-get="/read/{{.ID}}"
+                    hx-target="#main-content"
+                    hx-push-url="true"
+                    >{{.Title}}</a
+                >
+            </h4>
+            <small style="color: var(--text-muted)"
+                >{{.Domain}} • Saved {{formatDate .CreatedAt}}</small
+            >
+        </div>
+        <div class="action-row">
+            <form
+                method="post"
+                action="/api/read/archive/{{.ID}}?page={{$.Page}}"
+                style="margin: 0; display: flex"
+            >
+                <button
+                    type="submit"
+                    class="outline"
+                    title="Archive article"
+                    style="padding: 6px; display: flex; align-items: center"
+                >
+                    <svg
+                        class="icon-sm"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        style="pointer-events: none"
+                    >
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                </button>
+            </form>
+        </div>
+    </div>
+    {{else}} {{if gt .Page 1}}
+    <p class="page-empty-hint">
+        No inbox articles remain on this page. You can go back to the previous
+        page.
+    </p>
+    {{else}}
+    <p>Your Inbox is empty.</p>
+    {{end}} {{end}} {{if or .Articles (gt .Page 1)}}
+    <div class="pagination-bar">
+        <div class="action-row">
+            {{if gt .Page 1}}
+            <a
+                href="/read?page={{.PrevPage}}"
+                class="button-link outline"
+                style="margin: 0"
+            >
+                &laquo; Previous
+            </a>
+            {{end}} {{if .HasNext}}
+            <a
+                href="/read?page={{.NextPage}}"
+                class="button-link outline"
+                style="margin: 0"
+            >
+                Next &raquo;
+            </a>
+            {{end}}
+        </div>
+    </div>
+    {{end}}
+</div>
+{{end}}

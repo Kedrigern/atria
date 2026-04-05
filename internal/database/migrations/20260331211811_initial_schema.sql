@@ -79,6 +79,7 @@ CREATE TABLE rss_items (
     description TEXT,
     content TEXT,
     guid TEXT,
+    published_at TIMESTAMP NOT NULL,
     read_at TIMESTAMP, -- NULL = unread
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(feed_id, guid)
@@ -141,14 +142,14 @@ CREATE TABLE rel_entity_attachments (
 
 -- Simplified Triage for RSS
 CREATE VIEW rss_to_read_view AS
-SELECT i.id, i.feed_id, f.site_url, i.title, i.link, i.description, i.created_at
+SELECT i.id, i.feed_id, f.site_url, i.title, i.link, i.description, i.published_at, i.created_at
 FROM rss_items i JOIN rss_feeds f ON i.feed_id = f.id
-WHERE i.read_at IS NULL ORDER BY i.created_at DESC;
+WHERE i.read_at IS NULL ORDER BY i.published_at DESC;
 
 -- Clean candidates for automated pruning
 CREATE VIEW rss_cleanup_candidates_view AS
 SELECT id FROM (
-    SELECT id, read_at, ROW_NUMBER() OVER (PARTITION BY feed_id ORDER BY created_at DESC) as item_rank
+    SELECT id, read_at, ROW_NUMBER() OVER (PARTITION BY feed_id ORDER BY published_at DESC) as item_rank
     FROM rss_items WHERE read_at IS NOT NULL
 ) ranked WHERE item_rank > 10 AND read_at < NOW() - INTERVAL '60 days';
 

@@ -1,0 +1,46 @@
+{{define "content"}}
+
+<div class="centered-view" data-mobile-title="ATRIA: Notes">
+    {{if .Flash}}
+    <div class="flash-message {{.Flash.Type}}">
+        <div class="action-row" style="justify-content: space-between">
+            <span>{{.Flash.Message}}</span>
+            <button
+                type="button"
+                class="outline"
+                data-flash-close
+                style="min-height: auto; padding: 4px 8px"
+            >
+                ×
+            </button>
+        </div>
+    </div>
+    {{end}}
+
+    <div class="page-header-row">
+        <h2 class="hide-mobile">Knowledge Base</h2>
+        <button>+ New Note</button>
+    </div>
+
+    {{range .Notes}}
+    <div class="list-item">
+        <div>
+            <h4>
+                <a
+                    href="/notes/{{.ID}}"
+                    hx-get="/notes/{{.ID}}"
+                    hx-target="#main-content"
+                    hx-push-url="true"
+                    >{{.Title}}</a
+                >
+            </h4>
+            <small style="color: var(--text-muted)"
+                >Folder: {{.Path}} • Created {{formatDate .CreatedAt}}</small
+            >
+        </div>
+    </div>
+    {{else}}
+    <p>No notes found in your knowledge base.</p>
+    {{end}}
+</div>
+{{end}}

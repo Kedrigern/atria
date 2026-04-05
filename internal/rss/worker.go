@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"log"
 	"sync"
+	"time"
 
 	"atria/internal/core"
 
@@ -62,13 +63,20 @@ func FetchAllActiveFeeds(ctx context.Context, db *sql.DB) error {
 			for _, item := range feed.Items {
 				itemID := core.NewUUID()
 
+				pubDate := time.Now().UTC()
+				if item.PublishedParsed != nil {
+					pubDate = item.PublishedParsed.UTC()
+				} else if item.UpdatedParsed != nil {
+					pubDate = item.UpdatedParsed.UTC()
+				}
+
 				queryItem := `
-					INSERT INTO rss_items (id, feed_id, title, link, description, content, guid)
-					VALUES ($1, $2, $3, $4, $5, $6, $7)
-					ON CONFLICT (feed_id, guid) DO NOTHING
-				`
+								INSERT INTO rss_items (id, feed_id, title, link, description, content, guid, published_at)
+								VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+								ON CONFLICT (feed_id, guid) DO NOTHING
+							`
 				_, err = db.ExecContext(ctx, queryItem,
-					itemID, feedInfo.ID, item.Title, item.Link, item.Description, item.Content, item.GUID,
+					itemID, feedInfo.ID, item.Title, item.Link, item.Description, item.Content, item.GUID, pubDate,
 				)
 				if err != nil {
 					log.Printf("RSS Worker: failed to save item %s: %v", item.Link, err)

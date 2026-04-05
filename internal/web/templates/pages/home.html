@@ -1,0 +1,99 @@
+{{define "content"}}
+<div class="centered-view">
+    <div
+        style="
+            background: rgba(245, 158, 11, 0.1);
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            margin-bottom: 30px;
+            border-radius: 4px;
+        "
+    >
+        <strong style="color: #f59e0b">🚧 Proof of Concept</strong>
+        <p
+            style="
+                margin: 5px 0 0 0;
+                font-size: 0.95rem;
+                color: var(--text-main);
+            "
+        >
+            Tato verze Atria slouží jako technologická ukázka (Go + HTMX +
+            PostgreSQL). Některé funkce mohou být stále ve vývoji.
+        </p>
+    </div>
+
+    <h2>Dashboard</h2>
+    <div
+        style="
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        "
+    >
+        <div
+            style="
+                border: 1px solid var(--border-color);
+                padding: 20px;
+                border-radius: 6px;
+                background: var(--pane-bg);
+            "
+        >
+            <h4 style="margin-top: 0; color: var(--accent)">📡 RSS Triage</h4>
+            <p>Unread items: <strong>{{.UnreadCount}}</strong></p>
+            <a
+                href="/rss"
+                hx-get="/rss"
+                hx-target="#main-content"
+                hx-push-url="true"
+                >Go to unread →</a
+            >
+        </div>
+        <div
+            style="
+                border: 1px solid var(--border-color);
+                padding: 20px;
+                border-radius: 6px;
+                background: var(--pane-bg);
+            "
+        >
+            <h4 style="margin-top: 0; color: var(--accent)">
+                📑 Read-it-Later
+            </h4>
+            <p>Items in Inbox: <strong>{{.InboxCount}}</strong></p>
+            <a
+                href="/read"
+                hx-get="/read"
+                hx-target="#main-content"
+                hx-push-url="true"
+                >Start reading →</a
+            >
+        </div>
+        <div
+            style="
+                border: 1px solid var(--border-color);
+                padding: 20px;
+                border-radius: 6px;
+                background: var(--pane-bg);
+                grid-column: 1 / -1;
+            "
+        >
+            <h4 style="margin-top: 0; color: var(--accent)">📝 Recent Notes</h4>
+            <ul style="padding-left: 20px">
+                {{range .RecentNotes}}
+                <li>
+                    <a
+                        href="/notes/{{.ID}}"
+                        hx-get="/notes/{{.ID}}"
+                        hx-target="#main-content"
+                        hx-push-url="true"
+                        >{{.Title}}</a
+                    >
+                </li>
+                {{else}}
+                <li>No recent notes found. Time to write something!</li>
+                {{end}}
+            </ul>
+        </div>
+    </div>
+</div>
+{{end}}

@@ -94,7 +94,7 @@ func TestRSSLifecycle(t *testing.T) {
 	}
 
 	// 4. Get item from triage (rss_to_read_view)
-	items, err := rss.ListItemsToRead(ctx, db, user.ID)
+	items, err := rss.ListItemsToRead(ctx, db, user.ID, 100, 0)
 	if err != nil || len(items) != 1 {
 		t.Fatalf("Expected 1 item in triage, got %d", len(items))
 	}
@@ -114,7 +114,7 @@ func TestRSSLifecycle(t *testing.T) {
 	}
 
 	// 7. Verify Triage is now empty
-	itemsAfter, _ := rss.ListItemsToRead(ctx, db, user.ID)
+	itemsAfter, _ := rss.ListItemsToRead(ctx, db, user.ID, 100, 0)
 	if len(itemsAfter) != 0 {
 		t.Errorf("Expected triage to be empty, got %d", len(itemsAfter))
 	}

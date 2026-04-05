@@ -57,7 +57,7 @@ var rssListCmd = &cobra.Command{
 			return fmt.Errorf("failed to list feeds: %w", err)
 		}
 
-		headers := []string{"ID", "STATUS", "URL", "LAST FETCH"}
+		headers := []string{"ID", "TITLE", "STATUS", "URL", "LAST FETCH"}
 		var rows [][]string
 		for _, f := range feeds {
 			status := "Never"
@@ -70,6 +70,7 @@ var rssListCmd = &cobra.Command{
 			}
 			rows = append(rows, []string{
 				FormatID(f.ID, showLong),
+				f.Title,
 				status,
 				f.FeedURL,
 				lastTime,
@@ -104,7 +105,7 @@ var rssShowCmd = &cobra.Command{
 	Use:   "show",
 	Short: "Displays unread items from all subscribed feeds (Triage)",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		items, err := rss.ListItemsToRead(app.Ctx, app.DB, app.Owner.ID)
+		items, err := rss.ListItemsToRead(app.Ctx, app.DB, app.Owner.ID, 100, 0)
 		if err != nil {
 			return fmt.Errorf("failed to list items: %w", err)
 		}
@@ -123,8 +124,9 @@ var rssShowCmd = &cobra.Command{
 
 		var rows [][]string
 		for _, i := range items {
-			published := i.CreatedAt.Format("2006-01-02 15:04")
+			published := i.PublishedAt.Format("2006-01-02 15:04")
 			if showLong {
+
 				rows = append(rows, []string{
 					FormatID(i.ID, showLong),
 					FormatID(i.FeedID, showLong),

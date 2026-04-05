@@ -1,0 +1,194 @@
+{{define "content"}}
+
+<div class="centered-view" data-mobile-title="ATRIA: RSS">
+    <h2 class="hide-mobile">RSS</h2>
+
+    {{if .Flash}}
+    <div class="flash-message {{.Flash.Type}}">
+        <div class="action-row" style="justify-content: space-between">
+            <span>{{.Flash.Message}}</span>
+            <button
+                type="button"
+                class="outline"
+                data-flash-close
+                style="padding: 4px 8px; min-height: auto"
+            >
+                ×
+            </button>
+        </div>
+    </div>
+    {{end}}
+
+    <div style="margin-bottom: 30px; font-size: 1.1rem">
+        <a href="/rss" style="font-weight: bold; color: var(--accent)"
+            >Unread Items</a
+        >
+        <span style="color: var(--text-muted); margin: 0 10px">|</span>
+        <a href="/rss/feeds" style="color: var(--text-muted)">Manage Feeds</a>
+    </div>
+
+    <div id="rss-page-items">
+        {{range .Items}}
+        <input type="hidden" name="ids" value="{{.ID}}" />
+
+        <div
+            class="list-item"
+            style="flex-direction: column; align-items: flex-start; gap: 8px"
+        >
+            <div class="page-header-row" style="width: 100%">
+                <div>
+                    <h4 style="margin: 0 0 5px 0">
+                        <a href="{{.Link}}" target="_blank">{{.Title}}</a>
+                    </h4>
+                    <small style="color: var(--text-muted)"
+                        >{{.SourceName}} • {{formatDate .PublishedAt}}</small
+                    >
+                </div>
+
+                <div class="action-row">
+                    <form
+                        method="post"
+                        action="/api/rss/save/{{.ID}}"
+                        style="margin: 0"
+                    >
+                        <button
+                            type="submit"
+                            class="outline"
+                            title="Save to Read-it-Later"
+                            style="
+                                padding: 6px;
+                                display: flex;
+                                align-items: center;
+                            "
+                        >
+                            <svg
+                                class="icon-sm"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                style="pointer-events: none"
+                            >
+                                <path
+                                    d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"
+                                ></path>
+                            </svg>
+                        </button>
+                    </form>
+
+                    <form
+                        method="post"
+                        action="/api/rss/archive/{{.ID}}"
+                        style="margin: 0"
+                    >
+                        <button
+                            type="submit"
+                            class="outline"
+                            title="Archive (Mark as Read)"
+                            style="
+                                padding: 6px;
+                                display: flex;
+                                align-items: center;
+                            "
+                        >
+                            <svg
+                                class="icon-sm"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                style="pointer-events: none"
+                            >
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            {{if .Description}}
+            <div
+                style="
+                    font-size: 0.95rem;
+                    color: var(--text-main);
+                    opacity: 0.85;
+                    line-height: 1.5;
+                "
+            >
+                {{truncate (stripHTML .Description) 220}}
+            </div>
+            {{end}}
+        </div>
+        {{else}} {{if gt .Page 1}}
+        <p class="page-empty-hint">
+            No unread RSS items remain on this page. You can go back to the
+            previous page.
+        </p>
+        {{else}}
+        <p>Your triage is empty! 🎉 No unread RSS items.</p>
+        {{end}} {{end}}
+    </div>
+
+    {{if or .Items (gt .Page 1)}}
+    <div
+        class="pagination-bar"
+        style="border-top: 1px solid var(--border-color)"
+    >
+        <div class="action-row">
+            {{if gt .Page 1}}
+            <a
+                href="/rss?page={{.PrevPage}}"
+                class="button-link outline"
+                style="margin: 0"
+            >
+                &laquo; Previous
+            </a>
+            {{end}} {{if .HasNext}}
+            <a
+                href="/rss?page={{.NextPage}}"
+                class="button-link outline"
+                style="margin: 0"
+            >
+                Next &raquo;
+            </a>
+            {{end}}
+        </div>
+
+        <div class="action-row">
+            {{if .Items}}
+            <form
+                method="post"
+                action="/api/rss/archive-batch"
+                style="margin: 0"
+                onsubmit="return confirm('Archive all items on this page?')"
+            >
+                {{range .Items}}
+                <input type="hidden" name="ids" value="{{.ID}}" />
+                {{end}}
+                <input type="hidden" name="page" value="{{.Page}}" />
+                <button
+                    type="submit"
+                    class="button-link outline"
+                    style="margin: 0"
+                >
+                    ✓ Archive page
+                </button>
+            </form>
+            {{end}}
+            <button
+                type="button"
+                class="button-link outline"
+                style="margin: 0"
+                onclick="document.querySelector('.centered-view').scrollTo({top:0, behavior:'smooth'})"
+            >
+                ↑ Top
+            </button>
+        </div>
+    </div>
+    {{end}}
+</div>
+{{end}}

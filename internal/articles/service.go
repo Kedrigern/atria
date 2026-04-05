@@ -145,18 +145,25 @@ func GetArticleMarkdown(ctx context.Context, db *sql.DB, articleID uuid.UUID) (s
 
 // ArticleSummary is a lightweight struct for listing articles.
 type ArticleSummary struct {
-	ID        uuid.UUID
-	Title     string
-	Domain    string
-	CreatedAt time.Time
+	ID         uuid.UUID
+	Title      string
+	Domain     string
+	CreatedAt  time.Time
+	IsArchived bool
 }
 
-// ListArticles retrieves articles using the dedicated full view.
-func ListArticles(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]ArticleSummary, error) {
-	// View vrací metadata i doménu
-	query := `SELECT id, title, domain, created_at FROM articles_full_view WHERE owner_id = $1`
+// ListArticles retrieves paginated, unarchived articles for the inbox.
+func ListArticles(ctx context.Context, db *sql.DB, ownerID uuid.UUID, limit, offset int) ([]ArticleSummary, error) {
+	query := `
+		SELECT e.id, e.title, a.domain, e.created_at, a.is_archived
+		FROM entities e
+		JOIN articles a ON e.id = a.id
+		WHERE e.owner_id = $1 AND e.deleted_at IS NULL AND a.is_archived = FALSE
+		ORDER BY e.created_at DESC
+		LIMIT $2 OFFSET $3
+	`
 
-	rows, err := db.QueryContext(ctx, query, ownerID)
+	rows, err := db.QueryContext(ctx, query, ownerID, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list articles: %w", err)
 	}
@@ -165,11 +172,28 @@ func ListArticles(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]Article
 	var articlesList []ArticleSummary
 	for rows.Next() {
 		var a ArticleSummary
-		// Skenujeme 4 pole definovaná v ArticleSummary
-		if err := rows.Scan(&a.ID, &a.Title, &a.Domain, &a.CreatedAt); err != nil {
+		if err := rows.Scan(&a.ID, &a.Title, &a.Domain, &a.CreatedAt, &a.IsArchived); err != nil {
 			return nil, fmt.Errorf("failed to scan article: %w", err)
 		}
 		articlesList = append(articlesList, a)
 	}
 	return articlesList, nil
+}
+
+// ArchiveArticle marks an article as archived.
+func ArchiveArticle(ctx context.Context, db *sql.DB, ownerID, articleID uuid.UUID) error {
+	query := `
+		UPDATE articles
+		SET is_archived = TRUE
+		WHERE id IN (
+			SELECT id
+			FROM entities
+			WHERE id = $1 AND owner_id = $2 AND type = $3 AND deleted_at IS NULL
+		)
+	`
+	_, err := db.ExecContext(ctx, query, articleID, ownerID, core.TypeArticle)
+	if err != nil {
+		return fmt.Errorf("failed to archive article: %w", err)
+	}
+	return nil
 }

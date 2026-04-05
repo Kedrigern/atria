@@ -1,0 +1,33 @@
+{{define "content"}}
+<div class="centered-view">
+    <div class="doc-header" style="margin-bottom: 30px">
+        <a
+            href="/read"
+            hx-get="/read"
+            hx-target="#main-content"
+            hx-push-url="true"
+            class="toggle-btn"
+            style="font-weight: bold"
+        >
+            ← Back to Inbox
+        </a>
+    </div>
+
+    <h1 style="margin-top: 0; color: var(--text-heading)">{{.Title}}</h1>
+    <p
+        style="
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        "
+    >
+        Saved from <strong>{{.Domain}}</strong> • Extracted via Atria
+        Readability
+    </p>
+
+    <div style="font-size: 1.1rem; line-height: 1.7; color: var(--text-main)">
+        {{.Content}}
+    </div>
+</div>
+{{end}}

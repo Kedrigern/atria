@@ -28,7 +28,19 @@ type RSSItem struct {
 	Title       string    `json:"title"`
 	Link        string    `json:"link"`
 	Description string    `json:"description"`
+	PublishedAt time.Time `json:"published_at"`
 	CreatedAt   time.Time `json:"created_at"`
+}
+
+// FeedSummary is a lightweight struct for listing subscribed feeds.
+type FeedSummary struct {
+	ID              uuid.UUID
+	Title           string
+	FeedURL         string
+	SiteURL         *string
+	LastFetchedAt   *time.Time
+	LastFetchStatus *int
+	LastFetchError  *string
 }
 
 // UpdateFetchStatus uloží výsledek pokusu o stažení (úspěch i chybu)
@@ -90,13 +102,14 @@ func CreateFeed(ctx context.Context, db *sql.DB, ownerID uuid.UUID, title, feedU
 	return &core.Entity{ID: entityID, Title: title}, tx.Commit()
 }
 
-// ListFeeds retrieves all RSS subscriptions for a user.
-func ListFeeds(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]core.RSSFeed, error) {
+// ListFeeds retrieves all RSS subscriptions for a user, including their titles.
+func ListFeeds(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]FeedSummary, error) {
 	query := `
-		SELECT f.id, f.feed_url, f.site_url, f.next_fetch_at, f.last_fetch_at, f.last_fetch_status, f.last_fetch_error
+		SELECT f.id, e.title, f.feed_url, f.site_url, f.last_fetch_at, f.last_fetch_status, f.last_fetch_error
 		FROM rss_feeds f
 		JOIN entities e ON f.id = e.id
 		WHERE e.owner_id = $1 AND e.deleted_at IS NULL
+		ORDER BY e.created_at DESC
 	`
 	rows, err := db.QueryContext(ctx, query, ownerID)
 	if err != nil {
@@ -104,11 +117,10 @@ func ListFeeds(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]core.RSSFe
 	}
 	defer rows.Close()
 
-	var feeds []core.RSSFeed
+	var feeds []FeedSummary
 	for rows.Next() {
-		var f core.RSSFeed
-		// Scanning into pointers/nullable types
-		err := rows.Scan(&f.ID, &f.FeedURL, &f.SiteURL, &f.NextFetchAt, &f.LastFetchedAt, &f.LastFetchStatus, &f.LastFetchError)
+		var f FeedSummary
+		err := rows.Scan(&f.ID, &f.Title, &f.FeedURL, &f.SiteURL, &f.LastFetchedAt, &f.LastFetchStatus, &f.LastFetchError)
 		if err != nil {
 			return nil, err
 		}
@@ -118,23 +130,25 @@ func ListFeeds(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]core.RSSFe
 }
 
 // ListItemsToRead retrieves unread items using the database view.
-func ListItemsToRead(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]RSSItem, error) {
+func ListItemsToRead(ctx context.Context, db *sql.DB, ownerID uuid.UUID, limit, offset int) ([]RSSItem, error) {
 	// Joining with entities to get the feed's title if site_url is missing
 	query := `
-		SELECT
-			v.id,
-			v.feed_id,
-			COALESCE(NULLIF(v.site_url, ''), e.title) as source_name,
-			v.title,
-			v.link,
-			COALESCE(v.description, '') as description,
-			v.created_at
-		FROM rss_to_read_view v
-		JOIN entities e ON v.feed_id = e.id
-		WHERE e.owner_id = $1
-		ORDER BY v.created_at DESC
-	`
-	rows, err := db.QueryContext(ctx, query, ownerID)
+			SELECT
+				v.id,
+				v.feed_id,
+				COALESCE(NULLIF(v.site_url, ''), e.title) as source_name,
+				v.title,
+				v.link,
+				COALESCE(v.description, '') as description,
+				v.published_at,
+				v.created_at
+			FROM rss_to_read_view v
+			JOIN entities e ON v.feed_id = e.id
+			WHERE e.owner_id = $1
+			ORDER BY v.published_at DESC
+			LIMIT $2 OFFSET $3
+		`
+	rows, err := db.QueryContext(ctx, query, ownerID, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query triage items: %w", err)
 	}
@@ -143,7 +157,7 @@ func ListItemsToRead(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]RSSI
 	var items []RSSItem
 	for rows.Next() {
 		var i RSSItem
-		err := rows.Scan(&i.ID, &i.FeedID, &i.SourceName, &i.Title, &i.Link, &i.Description, &i.CreatedAt)
+		err := rows.Scan(&i.ID, &i.FeedID, &i.SourceName, &i.Title, &i.Link, &i.Description, &i.PublishedAt, &i.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -194,4 +208,38 @@ func MarkAsRead(ctx context.Context, db *sql.DB, ownerID, itemID uuid.UUID) erro
 	`
 	_, err := db.ExecContext(ctx, query, itemID, ownerID)
 	return err
+}
+
+// MarkBatchAsRead marks a specific list of RSS items as read.
+func MarkBatchAsRead(ctx context.Context, db *sql.DB, ownerID uuid.UUID, itemIDs []uuid.UUID) error {
+	if len(itemIDs) == 0 {
+		return nil
+	}
+
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	query := `
+		UPDATE rss_items
+		SET read_at = NOW()
+		WHERE id = $1 AND read_at IS NULL
+		  AND feed_id IN (SELECT id FROM entities WHERE owner_id = $2)
+	`
+	stmt, err := tx.PrepareContext(ctx, query)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	for _, id := range itemIDs {
+		_, err := stmt.ExecContext(ctx, id, ownerID)
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
 }

@@ -1,0 +1,25 @@
+{{define "content"}}
+<div class="centered-view">
+    <div class="doc-header" style="margin-bottom: 30px">
+        <a
+            href="/note"
+            hx-get="/note"
+            hx-target="#main-content"
+            hx-push-url="true"
+            class="toggle-btn"
+            style="font-weight: bold"
+        >
+            ← Back to Inbox
+        </a>
+        <div class="doc-actions">
+            <span class="tag">Folder: {{.Path}}</span>
+        </div>
+    </div>
+
+    <h1 style="margin-top: 0; color: var(--text-heading)">{{.Title}}</h1>
+
+    <div style="font-size: 1.1rem; line-height: 1.7; color: var(--text-main)">
+        {{.Content}}
+    </div>
+</div>
+{{end}}

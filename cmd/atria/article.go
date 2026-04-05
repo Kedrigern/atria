@@ -99,7 +99,7 @@ var articleListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "Lists saved articles in the Inbox",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		articleList, err := articles.ListArticles(app.Ctx, app.DB, app.Owner.ID)
+		articleList, err := articles.ListArticles(app.Ctx, app.DB, app.Owner.ID, 1000, 0)
 		if err != nil {
 			return fmt.Errorf("failed to list articles: %w", err)
 		}
