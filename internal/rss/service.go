@@ -28,6 +28,7 @@ type RSSItem struct {
 	Title       string    `json:"title"`
 	Link        string    `json:"link"`
 	Description string    `json:"description"`
+	Content     string    `json:"content"`
 	PublishedAt time.Time `json:"published_at"`
 	CreatedAt   time.Time `json:"created_at"`
 }
@@ -131,15 +132,7 @@ func ListFeeds(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]FeedSummar
 // ListItemsToRead retrieves unread items using the database view.
 func ListItemsToRead(ctx context.Context, db *sql.DB, ownerID uuid.UUID, limit, offset int) ([]RSSItem, error) {
 	query := `
-		SELECT
-			id,
-			feed_id,
-			source_name,
-			title,
-			link,
-			description,
-			published_at,
-			created_at
+		SELECT id, feed_id, source_name, title, link, description, content, published_at, created_at
 		FROM rss_to_read_view
 		WHERE owner_id = $1
 		ORDER BY published_at DESC
@@ -156,7 +149,7 @@ func ListItemsToRead(ctx context.Context, db *sql.DB, ownerID uuid.UUID, limit, 
 		var i RSSItem
 		err := rows.Scan(
 			&i.ID, &i.FeedID, &i.SourceName, &i.Title,
-			&i.Link, &i.Description, &i.PublishedAt, &i.CreatedAt,
+			&i.Link, &i.Description, &i.Content, &i.PublishedAt, &i.CreatedAt,
 		)
 		if err != nil {
 			return nil, err

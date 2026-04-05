@@ -121,6 +121,41 @@
             >
                 {{truncate (stripHTML .Description) 220}}
             </div>
+            {{end}} {{if or .Content .Description}}
+            <details
+                style="background: transparent; padding: 0; margin-top: 8px"
+            >
+                <summary
+                    style="
+                        background: transparent;
+                        margin: 0;
+                        padding: 0;
+                        color: var(--links);
+                        font-size: 0.9rem;
+                        font-weight: bold;
+                        border: none;
+                        outline: none;
+                    "
+                >
+                    Read inline ↓
+                </summary>
+
+                <div
+                    style="
+                        margin-top: 15px;
+                        padding: 15px;
+                        background: var(--background);
+                        border-radius: 6px;
+                        border: 1px solid var(--border);
+                        font-size: 0.95rem;
+                        line-height: 1.6;
+                        overflow-x: auto;
+                    "
+                >
+                    {{if .Content}} {{safeHTML .Content}} {{else}} {{safeHTML
+                    .Description}} {{end}}
+                </div>
+            </details>
             {{end}}
         </div>
         {{else}} {{if gt .Page 1}}

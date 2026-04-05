@@ -107,6 +107,9 @@ func (s *Server) render(c *gin.Context, tmplName string, data gin.H) {
 			}
 			return s
 		},
+		"safeHTML": func(s string) template.HTML {
+			return template.HTML(s)
+		},
 	}
 
 	if c.GetHeader("HX-Request") == "true" {

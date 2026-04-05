@@ -170,6 +170,7 @@ SELECT
     i.title,
     i.link,
     COALESCE(i.description, '') AS description,
+    COALESCE(i.content, '') AS content,
     i.published_at,
     i.created_at
 FROM rss_items i
