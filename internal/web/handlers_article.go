@@ -3,9 +3,11 @@ package web
 import (
 	"atria/internal/articles"
 	"atria/internal/core"
+	"database/sql"
 	"html/template"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -49,8 +51,15 @@ func (s *Server) handleReadDetail(c *gin.Context) {
 		return
 	}
 
-	var title, domain string
-	err = s.db.QueryRowContext(c.Request.Context(), "SELECT title, domain FROM articles_full_view WHERE id = $1 AND owner_id = $2", id, user.ID).Scan(&title, &domain)
+	var title, domain, originalURL string
+	var createdAt time.Time
+	var userNote sql.NullString
+
+	err = s.db.QueryRowContext(c.Request.Context(), `
+		SELECT title, domain, original_url, created_at, user_note
+		FROM articles_full_view
+		WHERE id = $1 AND owner_id = $2
+	`, id, user.ID).Scan(&title, &domain, &originalURL, &createdAt, &userNote)
 	if err != nil {
 		s.renderError(c, http.StatusNotFound, "Article not found")
 		return
@@ -63,9 +72,13 @@ func (s *Server) handleReadDetail(c *gin.Context) {
 	}
 
 	s.render(c, "read_detail.html", gin.H{
-		"Title":   title,
-		"Domain":  domain,
-		"Content": template.HTML(htmlContent),
+		"ID":          id.String(),
+		"Title":       title,
+		"Domain":      domain,
+		"OriginalURL": originalURL,
+		"CreatedAt":   createdAt,
+		"UserNote":    userNote.String,
+		"Content":     template.HTML(htmlContent),
 	})
 }
 
@@ -106,4 +119,47 @@ func (s *Server) handleReadArchive(c *gin.Context) {
 
 	s.setFlash(c, "success", "Article archived.")
 	c.Redirect(http.StatusSeeOther, "/read?page="+strconv.Itoa(page))
+}
+
+func (s *Server) handleReadAdd(c *gin.Context) {
+	user := s.getDummyUser(c)
+	urlStr := c.PostForm("url")
+
+	if urlStr == "" {
+		s.renderError(c, http.StatusBadRequest, "URL is required")
+		return
+	}
+
+	_, err := articles.CreateArticle(c.Request.Context(), s.db, user.ID, urlStr)
+	if err != nil {
+		s.renderError(c, http.StatusInternalServerError, "Failed to save article: "+err.Error())
+		return
+	}
+
+	if c.GetHeader("HX-Request") == "true" {
+		c.Header("HX-Refresh", "true")
+		c.Status(http.StatusOK)
+		return
+	}
+
+	s.setFlash(c, "success", "Article saved to Inbox.")
+	c.Redirect(http.StatusSeeOther, "/read")
+}
+
+func (s *Server) handleReadRefetch(c *gin.Context) {
+	user := s.getDummyUser(c)
+	id, err := core.ParseUUID(c.Param("id"))
+	if err != nil {
+		s.renderError(c, http.StatusBadRequest, "Invalid ID")
+		return
+	}
+
+	err = articles.RefetchArticle(c.Request.Context(), s.db, user.ID, id)
+	if err != nil {
+		s.renderError(c, http.StatusInternalServerError, "Refetch failed: "+err.Error())
+		return
+	}
+
+	s.setFlash(c, "success", "Article content refreshed from source.")
+	c.Redirect(http.StatusSeeOther, "/read/"+id.String())
 }

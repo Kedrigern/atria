@@ -1,23 +1,41 @@
 {{define "content"}}
-<div class="centered-view">
-    <div class="doc-header" style="margin-bottom: 30px">
-        <a
-            href="/read"
-            hx-get="/read"
-            hx-target="#main-content"
-            hx-push-url="true"
-            class="toggle-btn"
-            style="font-weight: bold"
+<div class="centered-view" data-mobile-title="ATRIA: Reading">
+    <div class="action-row" style="margin-bottom: 30px">
+        <form method="get" action="/read" style="margin: 0">
+            <button
+                type="submit"
+                hx-get="/read"
+                hx-target="#main-content"
+                hx-push-url="true"
+                class="outline"
+                style="margin: 0"
+            >
+                ← Back to Inbox
+            </button>
+        </form>
+
+        <form
+            method="post"
+            action="/api/read/refetch/{{.ID}}"
+            style="margin: 0"
+            onsubmit="this.querySelector('button').innerText='Refreshing...'"
         >
-            ← Back to Inbox
-        </a>
+            <button
+                type="submit"
+                class="outline"
+                title="Download content again"
+                style="margin: 0"
+            >
+                ⟳ Refetch
+            </button>
+        </form>
     </div>
 
-    <h1 style="margin-top: 0; color: var(--text-heading)">{{.Title}}</h1>
+    <h1 style="margin-top: 0; color: var(--text-bright)">{{.Title}}</h1>
     <p
         style="
             color: var(--text-muted);
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border);
             padding-bottom: 20px;
             margin-bottom: 30px;
         "
@@ -28,6 +46,85 @@
 
     <div style="font-size: 1.1rem; line-height: 1.7; color: var(--text-main)">
         {{.Content}}
+    </div>
+
+    <div style="margin-top: 50px; padding-top: 20px">
+        {{if .UserNote}}
+        <div
+            style="
+                background: rgba(245, 158, 11, 0.1);
+                border-left: 4px solid #f59e0b;
+                padding: 15px;
+                margin-bottom: 30px;
+                border-radius: 4px;
+                color: var(--text-main);
+            "
+        >
+            <strong style="color: #f59e0b; display: block; margin-bottom: 5px"
+                >User Note</strong
+            >
+            {{.UserNote}}
+        </div>
+        {{end}}
+
+        <div
+            class="action-row"
+            style="
+                border-top: 1px solid var(--border);
+                border-bottom: 1px solid var(--border);
+                padding: 20px 0;
+                margin-bottom: 20px;
+            "
+        >
+            <form
+                method="post"
+                action="/api/read/archive/{{.ID}}"
+                style="margin: 0"
+            >
+                <button type="submit" style="margin: 0">✓ Archive</button>
+            </form>
+
+            <form method="get" action="/read" style="margin: 0">
+                <button
+                    type="submit"
+                    hx-get="/read"
+                    hx-target="#main-content"
+                    hx-push-url="true"
+                    class="outline"
+                    style="margin: 0"
+                >
+                    Back to Inbox
+                </button>
+            </form>
+
+            <button
+                type="button"
+                class="outline"
+                style="margin: 0; margin-left: auto"
+                onclick="document.querySelector('.centered-view').scrollTo({top:0, behavior:'smooth'})"
+            >
+                ↑ Top
+            </button>
+        </div>
+
+        <div style="color: var(--text-muted); font-size: 0.85rem">
+            <div style="margin-bottom: 8px">
+                <strong>Source:</strong>
+                <a
+                    href="{{.OriginalURL}}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style="
+                        word-break: break-all;
+                        color: inherit;
+                        text-decoration: underline;
+                    "
+                >
+                    {{.OriginalURL}}
+                </a>
+            </div>
+            <div><strong>Captured:</strong> {{formatDate .CreatedAt}}</div>
+        </div>
     </div>
 </div>
 {{end}}

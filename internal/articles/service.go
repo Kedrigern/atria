@@ -4,7 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"io"
+	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 	"time"
 
@@ -14,6 +17,15 @@ import (
 	"github.com/go-shiori/go-readability"
 	"github.com/gofrs/uuid/v5"
 )
+
+// ArticleSummary is a lightweight struct for listing articles.
+type ArticleSummary struct {
+	ID         uuid.UUID
+	Title      string
+	Domain     string
+	CreatedAt  time.Time
+	IsArchived bool
+}
 
 // CreateArticle fetches the URL, extracts content using readability, and saves it to the database.
 func CreateArticle(ctx context.Context, db *sql.DB, ownerID uuid.UUID, urlStr string) (*core.Entity, error) {
@@ -25,9 +37,30 @@ func CreateArticle(ctx context.Context, db *sql.DB, ownerID uuid.UUID, urlStr st
 	domain := parsedURL.Host
 	domain = strings.TrimPrefix(domain, "www.")
 
-	// 2. Fetch and parse the article (with a 15s timeout to prevent hanging)
+	// 2. Fetch and parse the article
 	fmt.Printf("Fetching and parsing: %s\n", urlStr)
-	parsedArticle, err := readability.FromURL(urlStr, 15*time.Second)
+
+	client := &http.Client{Timeout: 15 * time.Second}
+	resp, err := client.Get(urlStr)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch URL: %w", err)
+	}
+	defer resp.Body.Close()
+
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	htmlStr := string(bodyBytes)
+
+	reFakeSrc := regexp.MustCompile(`(?i)\s+src=["']data:image/[^"']+["']`)
+	htmlStr = reFakeSrc.ReplaceAllString(htmlStr, "")
+
+	reDataSrc := regexp.MustCompile(`(?i)\s+data-(?:lazy-)?src=(["'][^"']+["'])`)
+	htmlStr = reDataSrc.ReplaceAllString(htmlStr, ` src=$1`)
+
+	parsedArticle, err := readability.FromReader(strings.NewReader(htmlStr), parsedURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse article: %w", err)
 	}
@@ -143,15 +176,6 @@ func GetArticleMarkdown(ctx context.Context, db *sql.DB, articleID uuid.UUID) (s
 	return markdown, nil
 }
 
-// ArticleSummary is a lightweight struct for listing articles.
-type ArticleSummary struct {
-	ID         uuid.UUID
-	Title      string
-	Domain     string
-	CreatedAt  time.Time
-	IsArchived bool
-}
-
 // ListArticles retrieves paginated, unarchived articles for the inbox.
 func ListArticles(ctx context.Context, db *sql.DB, ownerID uuid.UUID, limit, offset int) ([]ArticleSummary, error) {
 	query := `
@@ -195,4 +219,53 @@ func ArchiveArticle(ctx context.Context, db *sql.DB, ownerID, articleID uuid.UUI
 		return fmt.Errorf("failed to archive article: %w", err)
 	}
 	return nil
+}
+
+// RefetchArticle znovu stáhne obsah článku z jeho původní URL a aktualizuje data v DB.
+func RefetchArticle(ctx context.Context, db *sql.DB, ownerID, articleID uuid.UUID) error {
+	var originalURL string
+	err := db.QueryRowContext(ctx, "SELECT original_url FROM articles WHERE id = $1", articleID).Scan(&originalURL)
+	if err != nil {
+		return fmt.Errorf("failed to find original URL: %w", err)
+	}
+
+	parsedURL, _ := url.Parse(originalURL)
+	client := &http.Client{Timeout: 15 * time.Second}
+	resp, err := client.Get(originalURL)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	bodyBytes, _ := io.ReadAll(resp.Body)
+	htmlStr := string(bodyBytes)
+
+	reFakeSrc := regexp.MustCompile(`(?i)\s+src=["']data:image/[^"']+["']`)
+	htmlStr = reFakeSrc.ReplaceAllString(htmlStr, "")
+	reDataSrc := regexp.MustCompile(`(?i)\s+data-(?:lazy-)?src=(["'][^"']+["'])`)
+	htmlStr = reDataSrc.ReplaceAllString(htmlStr, ` src=$1`)
+
+	parsedArticle, err := readability.FromReader(strings.NewReader(htmlStr), parsedURL)
+	if err != nil {
+		return err
+	}
+
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	_, err = tx.ExecContext(ctx, "UPDATE entities SET title = $1, updated_at = NOW() WHERE id = $2", parsedArticle.Title, articleID)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.ExecContext(ctx, "UPDATE articles SET html_content = $1, text_content = $2 WHERE id = $3",
+		parsedArticle.Content, parsedArticle.TextContent, articleID)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }

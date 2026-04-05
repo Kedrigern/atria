@@ -16,16 +16,38 @@
     </div>
     {{end}}
 
-    <div class="page-header-row">
+    <div class="page-header-row" style="margin-bottom: 15px">
         <h2 class="hide-mobile">Read-it-Later Inbox</h2>
-        <button class="outline" title="Add link manually">+</button>
     </div>
+
+    <form
+        method="post"
+        action="/api/read/add"
+        style="
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: flex-start;
+        "
+        onsubmit="this.querySelector('button').innerText='Saving...'"
+    >
+        <input
+            type="url"
+            name="url"
+            placeholder="https://... (Zadejte URL článku)"
+            style="flex: 1 1 300px; margin: 0"
+            required
+        />
+        <button type="submit" style="margin: 0; white-space: nowrap">
+            Save Article
+        </button>
+    </form>
 
     <input
         type="search"
         placeholder="Search archive..."
-        class="form-input"
-        style="margin-bottom: 20px"
+        style="margin-bottom: 30px"
     />
 
     {{range .Articles}}
