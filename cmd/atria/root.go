@@ -25,6 +25,8 @@ var app *AppContext
 var globalUserFlag string
 var showLong bool
 var listFormat string
+var listLimit int
+var listOffset int
 
 var rootCmd = &cobra.Command{
 	Use:           "atria",

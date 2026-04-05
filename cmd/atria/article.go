@@ -99,7 +99,7 @@ var articleListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "Lists saved articles in the Inbox",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		articleList, err := articles.ListArticles(app.Ctx, app.DB, app.Owner.ID, 1000, 0)
+		articleList, err := articles.ListArticles(app.Ctx, app.DB, app.Owner.ID, listLimit, listOffset)
 		if err != nil {
 			return fmt.Errorf("failed to list articles: %w", err)
 		}
@@ -126,4 +126,6 @@ func init() {
 	articleShowCmd.Flags().StringVar(&articleShowFormat, "format", "md", "Output format (md, html, plain)")
 	articleListCmd.Flags().BoolVarP(&showLong, "long", "l", false, "Show full UUIDs")
 	articleListCmd.Flags().StringVarP(&listFormat, "format", "f", "table", "Output format (table, json, csv, html)")
+	articleListCmd.Flags().IntVar(&listLimit, "limit", 100, "Maximum number of items to return")
+	articleListCmd.Flags().IntVar(&listOffset, "offset", 0, "Number of items to skip")
 }

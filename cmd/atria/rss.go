@@ -105,7 +105,7 @@ var rssShowCmd = &cobra.Command{
 	Use:   "show",
 	Short: "Displays unread items from all subscribed feeds (Triage)",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		items, err := rss.ListItemsToRead(app.Ctx, app.DB, app.Owner.ID, 100, 0)
+		items, err := rss.ListItemsToRead(app.Ctx, app.DB, app.Owner.ID, listLimit, listOffset)
 		if err != nil {
 			return fmt.Errorf("failed to list items: %w", err)
 		}
@@ -178,4 +178,6 @@ func init() {
 
 	rssShowCmd.Flags().BoolVarP(&showLong, "long", "l", false, "Show full IDs and URLs")
 	rssShowCmd.Flags().StringVarP(&listFormat, "format", "f", "table", "Output format (table, json, csv, html)")
+	rssShowCmd.Flags().IntVar(&listLimit, "limit", 100, "Maximum number of items to return")
+	rssShowCmd.Flags().IntVar(&listOffset, "offset", 0, "Number of items to skip")
 }
