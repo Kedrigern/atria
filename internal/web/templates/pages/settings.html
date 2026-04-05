@@ -1,38 +1,40 @@
 {{define "content"}}
-
 <div class="centered-view" data-mobile-title="ATRIA: Settings">
     <h2 class="hide-mobile">Settings</h2>
 
-    <div class="top-nav">
-        <a href="/settings" class="active">General</a>
-        <a href="#">Users</a>
-        <a href="#">RSS</a>
-        <a href="#">Sync (Zensical)</a>
+    <div
+        style="
+            display: flex;
+            gap: 20px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 30px;
+            padding-bottom: 10px;
+        "
+    >
+        <a
+            href="/settings"
+            style="
+                font-weight: bold;
+                color: var(--links);
+                border-bottom: 2px solid var(--links);
+                padding-bottom: 10px;
+                margin-bottom: -11px;
+            "
+            >General</a
+        >
+        <a href="#" style="color: var(--text-muted); font-weight: bold"
+            >Users</a
+        >
+        <a href="#" style="color: var(--text-muted); font-weight: bold">RSS</a>
+        <a href="#" style="color: var(--text-muted); font-weight: bold"
+            >Sync (Zensical)</a
+        >
     </div>
 
-    <div style="max-width: 500px; margin-top: 20px">
+    <div style="max-width: 500px">
         <div style="margin-bottom: 25px">
-            <label
-                style="
-                    display: block;
-                    margin-bottom: 8px;
-                    font-weight: bold;
-                    color: var(--text-heading);
-                "
-                >Instance Name</label
-            >
-            <input
-                type="text"
-                value="My Mind Palace"
-                style="
-                    width: 100%;
-                    background: var(--pane-bg);
-                    color: var(--text-main);
-                    border: 1px solid var(--border-color);
-                    padding: 10px;
-                    border-radius: 4px;
-                "
-            />
+            <label><strong>Instance Name</strong></label>
+            <input type="text" value="My Mind Palace" />
             <small style="color: var(--text-muted)"
                 >This name will be displayed in the browser tab and mobile
                 header.</small
@@ -40,25 +42,8 @@
         </div>
 
         <div style="margin-bottom: 25px">
-            <label
-                style="
-                    display: block;
-                    margin-bottom: 8px;
-                    font-weight: bold;
-                    color: var(--text-heading);
-                "
-                >Default Visibility</label
-            >
-            <select
-                style="
-                    width: 100%;
-                    background: var(--pane-bg);
-                    color: var(--text-main);
-                    border: 1px solid var(--border-color);
-                    padding: 10px;
-                    border-radius: 4px;
-                "
-            >
+            <label><strong>Default Visibility</strong></label>
+            <select>
                 <option selected>Private (Only me)</option>
                 <option>Users (Any instance user)</option>
                 <option>Public (Visible to the web)</option>
@@ -72,9 +57,9 @@
             style="
                 margin-bottom: 25px;
                 padding: 15px;
-                border: 1px solid var(--border-color);
+                border: 1px solid var(--border);
                 border-radius: 6px;
-                background: var(--pane-bg);
+                background: var(--background);
             "
         >
             <label
@@ -83,10 +68,9 @@
                     align-items: center;
                     gap: 10px;
                     cursor: pointer;
-                    color: var(--text-heading);
                 "
             >
-                <input type="checkbox" checked style="margin: 0" />
+                <input type="checkbox" checked style="width: auto; margin: 0" />
                 <strong>Auto-generate WARC</strong>
             </label>
             <p
@@ -101,9 +85,7 @@
             </p>
         </div>
 
-        <button style="width: 100%; padding: 12px; font-weight: bold">
-            Save All Changes
-        </button>
+        <button style="width: 100%; font-weight: bold">Save All Changes</button>
     </div>
 </div>
 {{end}}

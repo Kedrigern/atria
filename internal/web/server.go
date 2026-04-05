@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	"embed"
 	"html/template"
+	"io/fs"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -50,7 +51,11 @@ func (s *Server) getDummyUser(c *gin.Context) *core.User {
 func (s *Server) SetupRouter() *gin.Engine {
 	r := gin.Default()
 
-	r.StaticFS("/static", http.FS(StaticFS))
+	subFS, err := fs.Sub(StaticFS, "static")
+	if err != nil {
+		panic(err)
+	}
+	r.StaticFS("/static", http.FS(subFS))
 
 	r.GET("/", s.handleHome)
 	r.GET("/rss", s.handleRSS)

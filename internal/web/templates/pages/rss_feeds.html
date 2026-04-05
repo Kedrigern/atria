@@ -41,25 +41,24 @@
     <form
         method="post"
         action="/api/rss/add"
-        class="action-row"
-        style="margin-bottom: 30px"
+        style="
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            align-items: flex-start;
+        "
     >
-        <input
-            type="text"
-            name="title"
-            placeholder="Feed Title (optional)"
-            class="form-input compact"
-            style="width: 30%; background: var(--bg-color)"
-        />
         <input
             type="url"
             name="url"
-            placeholder="https://..."
-            class="form-input"
-            style="flex-grow: 1; background: var(--bg-color)"
+            placeholder="https://... (URL feedu)"
             required
         />
-        <button type="submit" style="margin: 0">Add Feed</button>
+        <input type="text" name="title" placeholder="Název (volitelné)" />
+        <button type="submit" style="margin: 0; white-space: nowrap">
+            Add Feed
+        </button>
     </form>
 
     <table style="width: 100%; border-collapse: collapse; margin-top: 20px">
