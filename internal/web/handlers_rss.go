@@ -17,7 +17,10 @@ func (s *Server) handleRSS(c *gin.Context) {
 	if p, err := strconv.Atoi(c.Query("page")); err == nil && p > 0 {
 		page = p
 	}
-	limit := 30
+	limit := user.Preferences.PaginationSize
+	if limit <= 0 {
+		limit = 30
+	}
 	offset := (page - 1) * limit
 
 	items, err := rss.ListItemsToRead(c.Request.Context(), s.db, user.ID, limit+1, offset)
@@ -176,7 +179,10 @@ func (s *Server) handleRSSArchiveBatch(c *gin.Context) {
 		page = p
 	}
 
-	limit := 30
+	limit := user.Preferences.PaginationSize
+	if limit <= 0 {
+		limit = 30
+	}
 	offset := (page - 1) * limit
 
 	items, err := rss.ListItemsToRead(c.Request.Context(), s.db, user.ID, limit+1, offset)

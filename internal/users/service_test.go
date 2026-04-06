@@ -49,7 +49,6 @@ func TestUserLifecycle(t *testing.T) {
 	}
 
 	// --- 2. Get the User (by email) ---
-	// CHANGED: calling core.FindUser instead of users.GetUser
 	fetchedUser, err := core.FindUser(ctx, db, email)
 	if err != nil {
 		t.Fatalf("Expected to find the created user by email, got error: %v", err)
@@ -59,7 +58,6 @@ func TestUserLifecycle(t *testing.T) {
 	}
 
 	// --- 3. Get the User (by UUID) ---
-	// CHANGED: calling core.FindUser instead of users.GetUser
 	fetchedByID, err := core.FindUser(ctx, db, user.ID.String())
 	if err != nil {
 		t.Fatalf("Expected to find the created user by UUID, got error: %v", err)
@@ -74,7 +72,6 @@ func TestUserLifecycle(t *testing.T) {
 		t.Fatalf("Expected no error on role update, got: %v", err)
 	}
 
-	// CHANGED: calling core.FindUser instead of users.GetUser
 	adminUser, _ := core.FindUser(ctx, db, email)
 	if adminUser.Role != core.RoleAdmin {
 		t.Errorf("Expected user role to be 'admin', got '%s'", adminUser.Role)

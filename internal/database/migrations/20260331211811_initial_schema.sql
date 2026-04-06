@@ -8,7 +8,8 @@ CREATE TABLE users (
     display_name VARCHAR(100) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
-    role VARCHAR(10) DEFAULT 'user' CHECK (role IN ('user', 'admin')), -- PŘIDÁNO
+    role VARCHAR(10) DEFAULT 'user' CHECK (role IN ('user', 'admin')),
+    preferences JSONB NOT NULL DEFAULT '{}'::jsonb,
     last_login_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -20,7 +21,7 @@ CREATE TABLE entities (
     id UUID PRIMARY KEY,
     parent_id UUID REFERENCES entities(id) ON DELETE CASCADE,
     owner_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    type VARCHAR(20) NOT NULL CHECK (type IN ('note', 'article', 'rss', 'spreadsheet', 'folder')),
+    type VARCHAR(20) NOT NULL CHECK (type IN ('note', 'article', 'rss', 'spreadsheet', 'folder', 'dashboard')),
     visibility VARCHAR(10) DEFAULT 'private' CHECK (visibility IN ('private', 'users', 'public')),
     title VARCHAR(255) NOT NULL,
     slug VARCHAR(150) NOT NULL,
@@ -68,7 +69,13 @@ CREATE TABLE rss_feeds (
     -- Diagnostic fields
     last_fetch_at TIMESTAMP,
     last_fetch_status INTEGER,
-    last_fetch_error TEXT
+    last_fetch_error TEXT,
+    -- Autentization
+    http_auth_type VARCHAR(20) CHECK (http_auth_type IN ('basic', 'bearer')),
+    http_auth_username VARCHAR(255),
+    http_auth_token TEXT,
+    -- Per feed filtering
+    filter_rules JSONB DEFAULT '{}'::jsonb
 );
 
 CREATE TABLE rss_items (
@@ -103,6 +110,15 @@ CREATE TABLE rel_entity_tags (
     entity_id UUID REFERENCES entities(id) ON DELETE CASCADE,
     tag_id UUID REFERENCES tags(id) ON DELETE CASCADE,
     PRIMARY KEY (entity_id, tag_id)
+);
+
+
+-- ==========================================
+-- 5. Dashboard
+-- ==========================================
+CREATE TABLE dashboards (
+    id UUID PRIMARY KEY REFERENCES entities(id) ON DELETE CASCADE,
+    layout_data JSONB NOT NULL DEFAULT '{}'::jsonb
 );
 
 -- ==========================================
@@ -185,7 +201,8 @@ CREATE VIEW rss_feeds_full_view AS
 SELECT
     e.id, e.owner_id, e.title, e.slug, e.visibility, e.created_at, e.updated_at, e.deleted_at,
     f.feed_url, f.site_url, f.etag_header, f.last_modified_header,
-    f.next_fetch_at, f.last_fetch_at, f.last_fetch_status, f.last_fetch_error
+    f.next_fetch_at, f.last_fetch_at, f.last_fetch_status, f.last_fetch_error,
+    f.http_auth_type, f.http_auth_username, f.http_auth_token, f.filter_rules
 FROM entities e
 JOIN rss_feeds f ON e.id = f.id
 WHERE e.deleted_at IS NULL;

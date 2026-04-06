@@ -15,7 +15,12 @@ import (
 // FetchAllActiveFeeds iterates through all feeds that are due for an update
 // and fetches them concurrently using a worker pool.
 func FetchAllActiveFeeds(ctx context.Context, db *sql.DB) error {
-	query := `SELECT id, feed_url, etag_header, last_modified_header FROM rss_feeds WHERE next_fetch_at <= NOW()`
+	query := `
+		SELECT id, feed_url, etag_header, last_modified_header,
+		       http_auth_type, http_auth_username, http_auth_token
+		FROM rss_feeds
+		WHERE next_fetch_at <= NOW()
+	`
 	rows, err := db.QueryContext(ctx, query)
 	if err != nil {
 		return err
@@ -24,7 +29,7 @@ func FetchAllActiveFeeds(ctx context.Context, db *sql.DB) error {
 	var feedsToFetch []FeedToFetch
 	for rows.Next() {
 		var f FeedToFetch
-		if err := rows.Scan(&f.ID, &f.FeedURL, &f.ETag, &f.LastMod); err != nil {
+		if err := rows.Scan(&f.ID, &f.FeedURL, &f.ETag, &f.LastMod, &f.AuthType, &f.AuthUsername, &f.AuthToken); err != nil {
 			log.Printf("RSS Worker: failed to scan row: %v", err)
 			continue
 		}

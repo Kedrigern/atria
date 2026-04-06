@@ -39,13 +39,19 @@ func NewServer(db *sql.DB) *Server {
 // getDummyUser first user form DB
 // Temporaly solution before we implement auth in web
 func (s *Server) getDummyUser(c *gin.Context) *core.User {
-	var u core.User
-	err := s.db.QueryRowContext(c.Request.Context(), "SELECT id, email, role FROM users LIMIT 1").Scan(&u.ID, &u.Email, &u.Role)
+	var email string
+	err := s.db.QueryRowContext(c.Request.Context(), "SELECT email FROM users LIMIT 1").Scan(&email)
 	if err != nil {
-		// Fallback for empty DB
-		u.ID = core.NewUUID()
+		panic("No user found in database. Please run 'atria user add' via CLI first.")
 	}
-	return &u
+
+	user, err := core.FindUser(c.Request.Context(), s.db, email)
+	if err != nil {
+		panic("Failed to load user: " + err.Error())
+	}
+
+	c.Set("currentUser", user)
+	return user
 }
 
 func (s *Server) SetupRouter() *gin.Engine {
@@ -91,7 +97,11 @@ func (s *Server) render(c *gin.Context, tmplName string, data gin.H) {
 	if data == nil {
 		data = gin.H{}
 	}
+
+	user := s.getDummyUser(c)
+
 	data["Flash"] = s.getFlash(c)
+	data["Theme"] = user.Preferences.Theme
 
 	funcMap := template.FuncMap{
 		"formatDate": func(t time.Time) string {

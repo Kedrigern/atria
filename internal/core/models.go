@@ -39,15 +39,41 @@ const (
 // DOMAIN MODELS
 // ==========================================
 
+// USER
+
 type User struct {
-	ID           uuid.UUID  `json:"id" db:"id"`
-	DisplayName  string     `json:"display_name" db:"display_name"`
-	Email        string     `json:"email" db:"email"`
-	PasswordHash string     `json:"-" db:"password_hash"` // JSON tag "-" guard that password is never showed
-	Role         Role       `json:"role" db:"role"`
+	ID           uuid.UUID `json:"id" db:"id"`
+	DisplayName  string    `json:"display_name" db:"display_name"`
+	Email        string    `json:"email" db:"email"`
+	PasswordHash string    `json:"-" db:"password_hash"` // JSON tag "-" guard that password is never showed
+	Role         Role      `json:"role" db:"role"`
+	Preferences  UserPreferences
 	LastLoginAt  *time.Time `json:"last_login_at,omitempty" db:"last_login_at"`
 	CreatedAt    time.Time  `json:"created_at" db:"created_at"`
 }
+
+// UserPreferences
+type UserPreferences struct {
+	Theme            string                 `json:"theme"`
+	PaginationSize   int                    `json:"pagination_size"`
+	RSSInlineDetails bool                   `json:"rss_inline_details"`
+	ArticleImages    string                 `json:"article_images"`
+	DomainOverrides  map[string]DomainPrefs `json:"domain_overrides"`
+	DefaultDashboard *uuid.UUID             `json:"default_dashboard_id,omitempty"`
+}
+
+// DefaultPreferences funguje jako váš "default.json"
+func DefaultPreferences() UserPreferences {
+	return UserPreferences{
+		Theme:            "system",  // Výchozí téma podle OS
+		PaginationSize:   30,        // Výchozí stránkování
+		RSSInlineDetails: true,      // Zobrazovat detaily u RSS
+		ArticleImages:    "replace", // Naše vylepšené stahování obrázků
+		DomainOverrides:  make(map[string]DomainPrefs),
+	}
+}
+
+// ENTITY
 
 // Entity represents the core polymorphic record in Atria.
 type Entity struct {
@@ -70,6 +96,8 @@ type Entity struct {
 	DeletedAt *time.Time `json:"deleted_at,omitempty" db:"deleted_at"` // Soft delete
 }
 
+// ARTICLE
+
 type Article struct {
 	ID          uuid.UUID `json:"id" db:"id"` // Always Entity.ID
 	OriginalURL string    `json:"original_url" db:"original_url"`
@@ -80,10 +108,16 @@ type Article struct {
 	TextContent *string   `json:"text_content,omitempty" db:"text_content"`
 }
 
-type Note struct {
-	ID              uuid.UUID `json:"id" db:"id"`
-	Icon            *string   `json:"icon,omitempty" db:"icon"`
-	MarkdownContent string    `json:"markdown_content" db:"markdown_content"`
+// Article DomainPrefs solves specific settings for domain
+type DomainPrefs struct {
+	ArticleImages string `json:"article_images"` // "replace", "strip", "link"
+}
+
+// RSS
+
+type RSSFilterRules struct {
+	IncludeKeywords []string `json:"include_keywords,omitempty"`
+	ExcludeKeywords []string `json:"exclude_keywords,omitempty"`
 }
 
 type RSSFeed struct {
@@ -98,6 +132,42 @@ type RSSFeed struct {
 	LastFetchedAt   *time.Time `json:"last_fetched_at,omitempty" db:"last_fetched_at"`
 	LastFetchStatus *int       `json:"last_fetch_status,omitempty" db:"last_fetch_status"`
 	LastFetchError  *string    `json:"last_fetch_error,omitempty" db:"last_fetch_error"`
+
+	HTTPAuthType     *string        `json:"http_auth_type,omitempty" db:"http_auth_type"`
+	HTTPAuthUsername *string        `json:"http_auth_username,omitempty" db:"http_auth_username"`
+	HTTPAuthToken    *string        `json:"http_auth_token,omitempty" db:"http_auth_token"`
+	FilterRules      RSSFilterRules `json:"filter_rules"`
+}
+
+type FeedSummary struct {
+	ID              uuid.UUID
+	Title           string
+	FeedURL         string
+	SiteURL         *string
+	LastFetchedAt   *time.Time
+	LastFetchStatus *int
+	LastFetchError  *string
+}
+
+// RSSItem represents a single entry from a feed for triage.
+type RSSItem struct {
+	ID          uuid.UUID `json:"id"`
+	FeedID      uuid.UUID `json:"feed_id"`
+	SourceName  string    `json:"source_name"`
+	Title       string    `json:"title"`
+	Link        string    `json:"link"`
+	Description string    `json:"description"`
+	Content     string    `json:"content"`
+	PublishedAt time.Time `json:"published_at"`
+	CreatedAt   time.Time `json:"created_at"`
+}
+
+// NOTE
+
+type Note struct {
+	ID              uuid.UUID `json:"id" db:"id"`
+	Icon            *string   `json:"icon,omitempty" db:"icon"`
+	MarkdownContent string    `json:"markdown_content" db:"markdown_content"`
 }
 
 type Tag struct {

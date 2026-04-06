@@ -1,5 +1,7 @@
 /* Light theme */
-:root {
+:root,
+html[data-theme="light"],
+html[data-theme="system"] {
     --background-body: #ffffff;
     --background: #f1f3f5;
     --background-alt: #f8f9fa;
@@ -12,8 +14,21 @@
 }
 
 /* Dark theme */
+html[data-theme="dark"] {
+    --background-body: #0d1117;
+    --background: #15181c;
+    --background-alt: #111518;
+    --border: #2a2e33;
+    --text-main: #cbd5e1;
+    --text-bright: #f8fafc;
+    --text-muted: #64748b;
+    --links: #3b82f6;
+    --focus: #3b82f6;
+}
+
 @media (prefers-color-scheme: dark) {
-    :root {
+    :root:not([data-theme="light"]),
+    html[data-theme="system"] {
         --background-body: #0d1117;
         --background: #15181c;
         --background-alt: #111518;

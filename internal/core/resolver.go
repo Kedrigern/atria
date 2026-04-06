@@ -3,7 +3,9 @@ package core
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"log"
 
 	"github.com/gofrs/uuid/v5"
 )
@@ -62,18 +64,20 @@ func FindUser(ctx context.Context, db *sql.DB, identifier string) (*User, error)
 
 	// Determine if the identifier is a valid UUID or an email string
 	if id, err := ParseUUID(identifier); err == nil {
-		query = `SELECT id, email, display_name, role, created_at, last_login_at FROM users WHERE id = $1`
+		query = `SELECT id, email, display_name, role, preferences, created_at, last_login_at FROM users WHERE id = $1`
 		arg = id
 	} else {
-		query = `SELECT id, email, display_name, role, created_at, last_login_at FROM users WHERE email = $1`
+		query = `SELECT id, email, display_name, role, preferences, created_at, last_login_at FROM users WHERE email = $1`
 		arg = identifier
 	}
 
 	var user User
 	var lastLogin sql.NullTime
+	var prefsBytes []byte
 
 	err := db.QueryRowContext(ctx, query, arg).Scan(
-		&user.ID, &user.Email, &user.DisplayName, &user.Role, &user.CreatedAt, &lastLogin,
+		&user.ID, &user.Email, &user.DisplayName, &user.Role,
+		&prefsBytes, &user.CreatedAt, &lastLogin,
 	)
 
 	if err != nil {
@@ -85,6 +89,13 @@ func FindUser(ctx context.Context, db *sql.DB, identifier string) (*User, error)
 
 	if lastLogin.Valid {
 		user.LastLoginAt = &lastLogin.Time
+	}
+
+	user.Preferences = DefaultPreferences()
+	if len(prefsBytes) > 0 && string(prefsBytes) != "{}" {
+		if err := json.Unmarshal(prefsBytes, &user.Preferences); err != nil {
+			log.Printf("Warning: failed to unmarshal preferences for user %s: %v", user.ID, err)
+		}
 	}
 
 	return &user, nil

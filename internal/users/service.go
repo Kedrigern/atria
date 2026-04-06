@@ -3,6 +3,7 @@ package users
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -41,7 +42,7 @@ func CreateUser(ctx context.Context, db *sql.DB, email, displayName, password st
 
 // ListUsers retrieves all users from the database.
 func ListUsers(ctx context.Context, db *sql.DB) ([]*core.User, error) {
-	query := `SELECT id, email, display_name, role, created_at, last_login_at FROM users ORDER BY created_at ASC`
+	query := `SELECT id, email, display_name, role, preferences, created_at, last_login_at FROM users ORDER BY created_at ASC`
 
 	rows, err := db.QueryContext(ctx, query)
 	if err != nil {
@@ -53,14 +54,21 @@ func ListUsers(ctx context.Context, db *sql.DB) ([]*core.User, error) {
 	for rows.Next() {
 		var user core.User
 		var lastLogin sql.NullTime
+		var prefsBytes []byte
 
-		if err := rows.Scan(&user.ID, &user.Email, &user.DisplayName, &user.Role, &user.CreatedAt, &lastLogin); err != nil {
+		if err := rows.Scan(&user.ID, &user.Email, &user.DisplayName, &user.Role, &prefsBytes, &user.CreatedAt, &lastLogin); err != nil {
 			return nil, fmt.Errorf("failed to scan user row: %w", err)
 		}
 
 		if lastLogin.Valid {
 			user.LastLoginAt = &lastLogin.Time
 		}
+
+		user.Preferences = core.DefaultPreferences()
+		if len(prefsBytes) > 0 && string(prefsBytes) != "{}" {
+			_ = json.Unmarshal(prefsBytes, &user.Preferences) // Ignorujeme err pro stručnost u listu
+		}
+
 		usersList = append(usersList, &user)
 	}
 

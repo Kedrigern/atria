@@ -14,34 +14,13 @@ import (
 
 // FeedToFetch obsahuje data potřebná pro zahájení stahování
 type FeedToFetch struct {
-	ID      uuid.UUID
-	FeedURL string
-	ETag    sql.NullString
-	LastMod sql.NullString
-}
-
-// RSSItem represents a single entry from a feed for triage.
-type RSSItem struct {
-	ID          uuid.UUID `json:"id"`
-	FeedID      uuid.UUID `json:"feed_id"`
-	SourceName  string    `json:"source_name"`
-	Title       string    `json:"title"`
-	Link        string    `json:"link"`
-	Description string    `json:"description"`
-	Content     string    `json:"content"`
-	PublishedAt time.Time `json:"published_at"`
-	CreatedAt   time.Time `json:"created_at"`
-}
-
-// FeedSummary is a lightweight struct for listing subscribed feeds.
-type FeedSummary struct {
-	ID              uuid.UUID
-	Title           string
-	FeedURL         string
-	SiteURL         *string
-	LastFetchedAt   *time.Time
-	LastFetchStatus *int
-	LastFetchError  *string
+	ID           uuid.UUID
+	FeedURL      string
+	ETag         sql.NullString
+	LastMod      sql.NullString
+	AuthType     *string
+	AuthUsername *string
+	AuthToken    *string
 }
 
 // UpdateFetchStatus uloží výsledek pokusu o stažení (úspěch i chybu)
@@ -104,12 +83,12 @@ func CreateFeed(ctx context.Context, db *sql.DB, ownerID uuid.UUID, title, feedU
 }
 
 // ListFeeds retrieves all RSS subscriptions for a user, including their titles.
-func ListFeeds(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]FeedSummary, error) {
+func ListFeeds(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]core.FeedSummary, error) {
 	query := `
-			SELECT id, title, feed_url, site_url, last_fetch_at, last_fetch_status, last_fetch_error
-			FROM rss_feeds_full_view
-			WHERE owner_id = $1
-			ORDER BY created_at DESC
+		SELECT id, title, feed_url, site_url, last_fetch_at, last_fetch_status, last_fetch_error
+		FROM rss_feeds_full_view
+		WHERE owner_id = $1
+		ORDER BY created_at DESC
 		`
 	rows, err := db.QueryContext(ctx, query, ownerID)
 	if err != nil {
@@ -117,9 +96,9 @@ func ListFeeds(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]FeedSummar
 	}
 	defer rows.Close()
 
-	var feeds []FeedSummary
+	var feeds []core.FeedSummary
 	for rows.Next() {
-		var f FeedSummary
+		var f core.FeedSummary
 		err := rows.Scan(&f.ID, &f.Title, &f.FeedURL, &f.SiteURL, &f.LastFetchedAt, &f.LastFetchStatus, &f.LastFetchError)
 		if err != nil {
 			return nil, err
@@ -130,7 +109,7 @@ func ListFeeds(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]FeedSummar
 }
 
 // ListItemsToRead retrieves unread items using the database view.
-func ListItemsToRead(ctx context.Context, db *sql.DB, ownerID uuid.UUID, limit, offset int) ([]RSSItem, error) {
+func ListItemsToRead(ctx context.Context, db *sql.DB, ownerID uuid.UUID, limit, offset int) ([]core.RSSItem, error) {
 	query := `
 		SELECT id, feed_id, source_name, title, link, description, content, published_at, created_at
 		FROM rss_to_read_view
@@ -144,9 +123,9 @@ func ListItemsToRead(ctx context.Context, db *sql.DB, ownerID uuid.UUID, limit, 
 	}
 	defer rows.Close()
 
-	var items []RSSItem
+	var items []core.RSSItem
 	for rows.Next() {
-		var i RSSItem
+		var i core.RSSItem
 		err := rows.Scan(
 			&i.ID, &i.FeedID, &i.SourceName, &i.Title,
 			&i.Link, &i.Description, &i.Content, &i.PublishedAt, &i.CreatedAt,

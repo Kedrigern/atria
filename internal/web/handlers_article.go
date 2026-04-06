@@ -19,7 +19,10 @@ func (s *Server) handleRead(c *gin.Context) {
 	if p, err := strconv.Atoi(c.Query("page")); err == nil && p > 0 {
 		page = p
 	}
-	limit := 30
+	limit := user.Preferences.PaginationSize
+	if limit <= 0 {
+		limit = 30
+	}
 	offset := (page - 1) * limit
 
 	list, err := articles.ListArticles(c.Request.Context(), s.db, user.ID, limit+1, offset)
@@ -101,7 +104,10 @@ func (s *Server) handleReadArchive(c *gin.Context) {
 		page = p
 	}
 
-	limit := 30
+	limit := user.Preferences.PaginationSize
+	if limit <= 0 {
+		limit = 30
+	}
 	offset := (page - 1) * limit
 	list, err := articles.ListArticles(c.Request.Context(), s.db, user.ID, limit+1, offset)
 	if err != nil {
