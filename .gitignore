@@ -3,6 +3,7 @@
 /bin/
 /dist/
 /build/
+/data/
 *.exe
 *.exe~
 *.dll
