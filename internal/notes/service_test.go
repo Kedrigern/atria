@@ -2,46 +2,14 @@ package notes_test
 
 import (
 	"context"
-	"database/sql"
-	"os"
 	"testing"
 
-	"github.com/joho/godotenv"
-
-	"atria/internal/core"
-	"atria/internal/database"
 	"atria/internal/notes"
-	"atria/internal/users"
+	"atria/internal/testutil"
 )
 
-// setupTestDB prepares a clean database and creates a dummy user for testing notes.
-func setupTestDB(t *testing.T) (*sql.DB, *core.User) {
-	_ = godotenv.Load("../../.env")
-
-	dsn := os.Getenv("TEST_DATABASE_URL")
-	if dsn == "" {
-		t.Skip("TEST_DATABASE_URL not set in .env. Skipping notes integration tests.")
-	}
-
-	db, err := database.InitDB(dsn)
-	if err != nil {
-		t.Fatalf("Failed to connect to test db: %v", err)
-	}
-
-	_ = database.ResetDB(db)
-	_ = database.MigrateUp(db)
-
-	// We need a valid user to own the notes
-	user, err := users.CreateUser(context.Background(), db, "notes@atria.local", "Note Tester", "pass", core.RoleUser)
-	if err != nil {
-		t.Fatalf("Failed to create test user: %v", err)
-	}
-
-	return db, user
-}
-
 func TestNoteLifecycle(t *testing.T) {
-	db, user := setupTestDB(t)
+	db, user := testutil.SetupTestDB(t)
 	defer db.Close()
 
 	ctx := context.Background()

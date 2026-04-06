@@ -2,38 +2,15 @@ package users_test
 
 import (
 	"context"
-	"database/sql"
-	"os"
 	"testing"
 
-	"github.com/joho/godotenv"
-
 	"atria/internal/core"
-	"atria/internal/database"
+	"atria/internal/testutil"
 	"atria/internal/users"
 )
 
-func setupTestDB(t *testing.T) *sql.DB {
-	_ = godotenv.Load("../../.env")
-
-	dsn := os.Getenv("TEST_DATABASE_URL")
-	if dsn == "" {
-		t.Skip("TEST_DATABASE_URL not set in .env. Skipping user integration tests.")
-	}
-
-	db, err := database.InitDB(dsn)
-	if err != nil {
-		t.Fatalf("Failed to connect to test db: %v", err)
-	}
-
-	_ = database.ResetDB(db)
-	_ = database.MigrateUp(db)
-
-	return db
-}
-
 func TestUserLifecycle(t *testing.T) {
-	db := setupTestDB(t)
+	db, _ := testutil.SetupTestDB(t)
 	defer db.Close()
 
 	ctx := context.Background()
@@ -84,7 +61,7 @@ func TestUserLifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Expected no error when listing users, got: %v", err)
 	}
-	if len(allUsers) != 2 {
+	if len(allUsers) != 3 {
 		t.Errorf("Expected exactly 2 users in the database, found %d", len(allUsers))
 	}
 }
