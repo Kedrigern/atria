@@ -292,3 +292,19 @@ func RefetchArticle(ctx context.Context, db *sql.DB, ownerID, articleID uuid.UUI
 
 	return tx.Commit()
 }
+
+// UpdateUserNote update user note for the given article
+func UpdateUserNote(ctx context.Context, db *sql.DB, ownerID, articleID uuid.UUID, userNote string) error {
+	query := `
+		UPDATE articles
+		SET user_note = $1
+		WHERE id IN (
+			SELECT id FROM entities WHERE id = $2 AND owner_id = $3 AND type = $4
+		)
+	`
+	_, err := db.ExecContext(ctx, query, userNote, articleID, ownerID, core.TypeArticle)
+	if err != nil {
+		return fmt.Errorf("failed to update user note: %w", err)
+	}
+	return nil
+}

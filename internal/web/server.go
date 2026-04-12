@@ -82,7 +82,7 @@ func (s *Server) SetupRouter() *gin.Engine {
 	r.POST("/api/tags/add", s.handleTagAdd)
 	r.POST("/api/entity/:id/tags", s.handleTagAttach)
 	r.GET("/attachments", s.handleAttachments)
-
+	r.POST("/api/read/note/:id", s.handleReadUpdateNote)
 	// API
 	r.POST("/api/rss/save/:id", s.handleRSSSave)
 

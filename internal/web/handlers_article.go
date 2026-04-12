@@ -183,3 +183,28 @@ func (s *Server) handleReadRefetch(c *gin.Context) {
 	s.setFlash(c, "success", "Article content refreshed from source.")
 	c.Redirect(http.StatusSeeOther, "/read/"+id.String())
 }
+
+// handleReadUpdateNote processes the update of the user note for the given article
+func (s *Server) handleReadUpdateNote(c *gin.Context) {
+	user := s.getDummyUser(c)
+	articleID, err := core.ParseUUID(c.Param("id"))
+	if err != nil {
+		s.renderError(c, http.StatusBadRequest, "Invalid ID")
+		return
+	}
+
+	newNote := c.PostForm("user_note")
+
+	if err := articles.UpdateUserNote(c.Request.Context(), s.db, user.ID, articleID, newNote); err != nil {
+		s.renderError(c, http.StatusInternalServerError, "Failed to update note: "+err.Error())
+		return
+	}
+
+	if c.GetHeader("HX-Request") == "true" {
+		c.Header("HX-Refresh", "true")
+		c.Status(http.StatusOK)
+		return
+	}
+
+	c.Redirect(http.StatusSeeOther, "/read/"+articleID.String())
+}
