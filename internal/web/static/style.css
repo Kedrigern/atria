@@ -274,3 +274,17 @@ a.button-link.outline:hover {
         display: none !important;
     }
 }
+
+/* --- Markdown Table Alignment Fix --- */
+th[align="left"],
+td[align="left"] {
+    text-align: left;
+}
+th[align="center"],
+td[align="center"] {
+    text-align: center;
+}
+th[align="right"],
+td[align="right"] {
+    text-align: right;
+}

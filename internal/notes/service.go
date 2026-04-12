@@ -247,3 +247,19 @@ func GetNoteContent(ctx context.Context, db *sql.DB, noteID uuid.UUID) (string, 
 	}
 	return content, nil
 }
+
+// UpdateNoteContent overwrites the markdown content of an existing note
+func UpdateNoteContent(ctx context.Context, db *sql.DB, ownerID, noteID uuid.UUID, content string) error {
+	query := `
+		UPDATE notes
+		SET markdown_content = $1
+		WHERE id IN (SELECT id FROM entities WHERE id = $2 AND owner_id = $3 AND type = $4)
+	`
+	_, err := db.ExecContext(ctx, query, content, noteID, ownerID, core.TypeNote)
+	if err != nil {
+		return fmt.Errorf("failed to update note content: %w", err)
+	}
+
+	_, err = db.ExecContext(ctx, `UPDATE entities SET updated_at = NOW() WHERE id = $1`, noteID)
+	return err
+}

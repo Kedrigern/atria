@@ -1,0 +1,89 @@
+{{define "tags_section"}}
+<div id="tag-container-{{.ID}}" style="margin-bottom: 25px;">
+    <strong style="color: var(--text-main); font-size: 0.85rem; text-transform: uppercase; display: block; margin-bottom: 12px;">Tagy</strong>
+
+    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <div id="tag-list-{{.ID}}" style="display: flex; gap: 8px; flex-wrap: wrap;">
+            {{range .Tags}}
+            <a href="/tags/{{.Name}}" class="tag">#{{.Name}}</a>
+            {{end}}
+        </div>
+        <form hx-post="/api/entity/{{.ID}}/tags"
+              hx-target="#tag-list-{{.ID}}"
+              hx-swap="beforeend"
+              style="display: flex; margin: 0; gap: 5px;"
+              hx-on::after-request="if(event.detail.successful) this.reset()">
+            <input type="text" name="tag_name" placeholder="+ přidat tag"
+                   style="width: 110px; padding: 4px 8px; margin: 0; font-size: 0.85rem;" required>
+            <button type="submit" class="outline" style="padding: 4px 10px; margin: 0; min-height: auto;">+</button>
+        </form>
+    </div>
+</div>
+{{end}}
+
+{{define "attachments_section"}}
+<div style="margin-bottom: 25px;">
+    <strong style="color: var(--text-main); font-size: 0.85rem; text-transform: uppercase; display: block; margin-bottom: 12px;">Přílohy</strong>
+
+    <ul id="attachment-list-{{.ID}}" style="list-style: none; padding: 0; margin: 0 0 15px 0;">
+        {{range .Attachments}}
+        <li style="margin-bottom: 8px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--background-alt); padding: 8px 12px; border-radius: 6px;">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
+            <a href="/data/attachments/{{.DiskPath}}" target="_blank" style="font-weight: 500;">{{.Filename}}</a>
+            <small style="color: var(--text-muted);">({{divide .SizeBytes 1024}} KB)</small>
+
+            <input type="text" readonly value="![{{.Filename}}](/data/attachments/{{.DiskPath}})"
+                   onclick="this.select(); navigator.clipboard.writeText(this.value); this.style.borderColor='var(--links)';"
+                   style="padding: 2px 8px; font-size: 0.75rem; margin: 0 0 0 auto; width: 220px; background: transparent; border: 1px solid var(--border); border-radius: 4px; cursor: copy;"
+                   title="Klikni pro zkopírování Markdown odkazu">
+        </li>
+        {{end}}
+    </ul>
+
+    <form hx-post="/api/entity/{{.ID}}/attachments"
+          hx-encoding="multipart/form-data"
+          hx-target="#main-content"
+          style="margin: 0; display: inline-flex; gap: 10px; align-items: center; background: var(--background-alt); padding: 8px 12px; border-radius: 6px; border: 1px dashed var(--border);">
+        <input type="file" name="file" style="font-size: 0.85rem; padding: 0; margin: 0; border: none; background: none; width: auto;" required>
+        <button type="submit" class="outline" style="padding: 4px 12px; margin: 0; font-size: 0.85rem; min-height: auto; white-space: nowrap;">Nahrát soubor</button>
+    </form>
+</div>
+{{end}}
+{{define "links_section"}}
+<div style="margin-bottom: 25px;">
+    <strong style="color: var(--text-main); font-size: 0.85rem; text-transform: uppercase; display: block; margin-bottom: 12px;">Propojení a Zmínky</strong>
+
+    {{if or .OutgoingLinks .IncomingLinks}}
+    <div style="display: flex; gap: 40px; flex-wrap: wrap; margin-bottom: 15px;">
+        {{if .OutgoingLinks}}
+        <div>
+            <span style="color: var(--text-muted); font-size: 0.85rem; display: block; margin-bottom: 4px;">Odkazuje na:</span>
+            <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.95rem;">
+                {{range .OutgoingLinks}}
+                <li style="margin-bottom: 4px;">🔗 <a href="/{{if eq .Type "note"}}notes{{else}}read{{end}}/{{.ID}}">{{.Title}}</a></li>
+                {{end}}
+            </ul>
+        </div>
+        {{end}}
+
+        {{if .IncomingLinks}}
+        <div>
+            <span style="color: var(--text-muted); font-size: 0.85rem; display: block; margin-bottom: 4px;">Backlinky (Zmiňováno v):</span>
+            <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.95rem;">
+                {{range .IncomingLinks}}
+                <li style="margin-bottom: 4px;">⬅️ <a href="/{{if eq .Type "note"}}notes{{else}}read{{end}}/{{.ID}}">{{.Title}}</a></li>
+                {{end}}
+            </ul>
+        </div>
+        {{end}}
+    </div>
+    {{end}}
+
+    <form hx-post="/api/entity/{{.ID}}/links"
+          hx-target="#main-content"
+          style="margin: 0; display: inline-flex; gap: 10px; align-items: center; background: var(--background-alt); padding: 8px 12px; border-radius: 6px; border: 1px dashed var(--border);">
+        <input type="text" name="target_identifier" placeholder="Název nebo Short ID entity..." style="font-size: 0.85rem; padding: 4px 8px; margin: 0; width: 220px;" required>
+        <button type="submit" class="outline" style="padding: 4px 12px; margin: 0; font-size: 0.85rem; min-height: auto; white-space: nowrap;">Přidat link</button>
+    </form>
+</div>
+{{end}}

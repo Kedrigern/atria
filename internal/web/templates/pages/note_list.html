@@ -1,46 +1,100 @@
 {{define "content"}}
-
 <div class="centered-view" data-mobile-title="ATRIA: Notes">
-    {{if .Flash}}
-    <div class="flash-message {{.Flash.Type}}">
-        <div class="action-row" style="justify-content: space-between">
-            <span>{{.Flash.Message}}</span>
-            <button
-                type="button"
-                class="outline"
-                data-flash-close
-                style="min-height: auto; padding: 4px 8px"
+    <div
+        class="page-header-row"
+        style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        "
+    >
+        <h2 style="margin: 0">Knowledge Base</h2>
+        <button
+            hx-get="/notes/new"
+            hx-target="#main-content"
+            hx-push-url="true"
+            class="outline"
+            style="margin: 0; padding: 6px 15px"
+        >
+            + New Note
+        </button>
+    </div>
+
+    {{range $path, $notes := .GroupedNotes}}
+    <div class="folder-group" style="margin-bottom: 25px">
+        <h4
+            style="
+                display: flex;
+                align-items: center;
+                color: var(--text-muted);
+                border-bottom: 1px solid var(--border);
+                padding-bottom: 5px;
+                margin-bottom: 15px;
+            "
+        >
+            <svg
+                class="icon-sm"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                style="width: 18px; height: 18px; margin-right: 8px"
             >
-                ×
-            </button>
-        </div>
-    </div>
-    {{end}}
-
-    <div class="page-header-row">
-        <h2 class="hide-mobile">Knowledge Base</h2>
-        <button>+ New Note</button>
-    </div>
-
-    {{range .Notes}}
-    <div class="list-item">
-        <div>
-            <h4>
+                <path
+                    d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
+                ></path>
+            </svg>
+            {{$path}}
+        </h4>
+        <ul style="list-style: none; padding-left: 10px; margin: 0">
+            {{range $notes}}
+            <li
+                style="
+                    margin-bottom: 10px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                "
+            >
                 <a
                     href="/notes/{{.ID}}"
-                    hx-get="/notes/{{.ID}}"
-                    hx-target="#main-content"
-                    hx-push-url="true"
-                    >{{.Title}}</a
+                    style="
+                        font-weight: 500;
+                        display: flex;
+                        align-items: center;
+                        text-decoration: none;
+                    "
                 >
-            </h4>
-            <small style="color: var(--text-muted)"
-                >Folder: {{.Path}} • Created {{formatDate .CreatedAt}}</small
-            >
-        </div>
+                    <svg
+                        class="icon-sm"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        style="
+                            width: 16px;
+                            height: 16px;
+                            margin-right: 8px;
+                            color: var(--text-muted);
+                        "
+                    >
+                        <path
+                            d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"
+                        ></path>
+                        <polyline points="13 2 13 9 20 9"></polyline>
+                    </svg>
+                    <span style="text-decoration: underline">{{.Title}}</span>
+                </a>
+                <span style="color: var(--text-muted); font-size: 0.85rem"
+                    >{{formatDate .CreatedAt}}</span
+                >
+            </li>
+            {{end}}
+        </ul>
     </div>
     {{else}}
-    <p>No notes found in your knowledge base.</p>
+    <p>Zatím zde nejsou žádné poznámky.</p>
     {{end}}
 </div>
 {{end}}

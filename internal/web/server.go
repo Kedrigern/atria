@@ -63,33 +63,87 @@ func (s *Server) SetupRouter() *gin.Engine {
 	}
 	r.StaticFS("/static", http.FS(subFS))
 
+	// ==========================================
+	// 1. BASIC PAGES
+	// ==========================================
 	r.GET("/", s.handleHome)
-	r.GET("/rss", s.handleRSS)
-	r.GET("/rss/feeds", s.handleRSSFeeds)
-	r.POST("/api/rss/archive-batch", s.handleRSSArchiveBatch)
-	r.POST("/api/rss/archive/:id", s.handleRSSArchive)
-	r.GET("/read", s.handleRead)
-	r.GET("/read/:id", s.handleReadDetail)
-	r.POST("/api/read/add", s.handleReadAdd)
-	r.POST("/api/read/archive/:id", s.handleReadArchive)
-	r.POST("/api/read/refetch/:id", s.handleReadRefetch)
-	r.POST("/api/rss/add", s.handleRSSAdd)
-	r.POST("/api/rss/fetch", s.handleRSSFetch)
-	r.GET("/notes", s.handleNotes)
-	r.GET("/notes/:id", s.handleNoteDetail)
-	r.GET("/tags", s.handleTags)
-	r.GET("/tags/:name", s.handleTagDetail)
-	r.POST("/api/tags/add", s.handleTagAdd)
-	r.POST("/api/entity/:id/tags", s.handleTagAttach)
-	r.GET("/attachments", s.handleAttachments)
-	r.POST("/api/read/note/:id", s.handleReadUpdateNote)
-	// API
-	r.POST("/api/rss/save/:id", s.handleRSSSave)
-
-	// Static mocks for WIP pages
 	r.GET("/tables", s.makeHandler("table_list.html", nil))
 	r.GET("/settings", s.makeHandler("settings.html", nil))
 	r.GET("/profile", s.makeHandler("profile.html", nil))
+	r.GET("/attachments", s.handleAttachments)
+
+	// RSS
+	rss := r.Group("/rss")
+	{
+		rss.GET("", s.handleRSS)
+		rss.GET("/feeds", s.handleRSSFeeds)
+	}
+
+	// Read (Articles)
+	read := r.Group("/read")
+	{
+		read.GET("", s.handleRead)
+		read.GET("/:id", s.handleReadDetail)
+	}
+
+	// Notes
+	notes := r.Group("/notes")
+	{
+		notes.GET("", s.handleNotes)
+		notes.GET("/new", s.handleNoteAdd)
+		notes.GET("/:id", s.handleNoteDetail)
+	}
+
+	// Tags
+	tags := r.Group("/tags")
+	{
+		tags.GET("", s.handleTags)
+		tags.GET("/:name", s.handleTagDetail)
+	}
+
+	// ==========================================
+	// 2. API ENDPOINTS (HTMX & Form submits)
+	// ==========================================
+	api := r.Group("/api")
+	{
+		// Cross-Entity
+		entity := api.Group("/entity/:id")
+		{
+			entity.POST("/tags", s.handleTagAttach)
+			entity.POST("/attachments", s.handleEntityAttachmentUpload)
+			entity.POST("/links", s.handleEntityLinkAdd)
+		}
+
+		// API: RSS
+		apiRSS := api.Group("/rss")
+		{
+			apiRSS.POST("/add", s.handleRSSAdd)
+			apiRSS.POST("/fetch", s.handleRSSFetch)
+			apiRSS.POST("/archive-batch", s.handleRSSArchiveBatch)
+			apiRSS.POST("/archive/:id", s.handleRSSArchive)
+			apiRSS.POST("/save/:id", s.handleRSSSave)
+		}
+
+		// API: Read (Articles)
+		apiRead := api.Group("/read")
+		{
+			apiRead.POST("/add", s.handleReadAdd)
+			apiRead.POST("/archive/:id", s.handleReadArchive)
+			apiRead.POST("/refetch/:id", s.handleReadRefetch)
+			apiRead.POST("/note/:id", s.handleReadUpdateNote)
+		}
+
+		// API: Notes
+		apiNotes := api.Group("/notes")
+		{
+			apiNotes.POST("/create", s.handleNoteCreate)
+			apiNotes.POST("/update/:id", s.handleNoteUpdate)
+			apiNotes.POST("/delete/:id", s.handleNoteDelete)
+		}
+
+		// API: Other
+		api.POST("/tags/add", s.handleTagAdd)
+	}
 
 	return r
 }
@@ -137,13 +191,13 @@ func (s *Server) render(c *gin.Context, tmplName string, data gin.H) {
 
 	if c.GetHeader("HX-Request") == "true" {
 		t = template.New(tmplName).Funcs(funcMap)
-		t, err = t.ParseFS(TemplatesFS, "templates/pages/"+tmplName)
+		t, err = t.ParseFS(TemplatesFS, "templates/partials.html", "templates/pages/"+tmplName)
 		if err == nil {
 			err = t.ExecuteTemplate(c.Writer, "content", data)
 		}
 	} else {
 		t = template.New("base.html").Funcs(funcMap)
-		t, err = t.ParseFS(TemplatesFS, "templates/base.html", "templates/pages/"+tmplName)
+		t, err = t.ParseFS(TemplatesFS, "templates/base.html", "templates/partials.html", "templates/pages/"+tmplName)
 		if err == nil {
 			err = t.ExecuteTemplate(c.Writer, "base.html", data)
 		}

@@ -1,47 +1,62 @@
 {{define "content"}}
 <div class="centered-view" data-mobile-title="ATRIA: Reading">
-    <div class="action-row" style="margin-bottom: 30px">
-        <form method="get" action="/read" style="margin: 0">
+    <div
+        class="action-row"
+        style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+        "
+    >
+        <div style="display: flex; align-items: center; gap: 15px">
             <button
-                type="submit"
                 hx-get="/read"
                 hx-target="#main-content"
                 hx-push-url="true"
                 class="outline"
-                style="margin: 0"
+                style="margin: 0; padding: 4px 12px; font-size: 0.9rem"
             >
                 ← Back to Inbox
             </button>
-        </form>
+
+            <span
+                class="tag"
+                style="
+                    cursor: pointer;
+                    font-family: monospace;
+                    background: var(--background-alt);
+                    border: 1px dashed var(--border);
+                "
+                onclick="navigator.clipboard.writeText('{{.ShortID}}'); const old = this.innerText; this.innerText='Zkopírováno!'; setTimeout(() => this.innerText=old, 2000);"
+                title="Kliknutím zkopíruješ Short ID"
+                >ID: {{.ShortID}}</span
+            >
+        </div>
 
         <form
             method="post"
             action="/api/read/refetch/{{.ID}}"
             style="margin: 0"
-            onsubmit="this.querySelector('button').innerText = 'Refreshing...'"
         >
             <button
                 type="submit"
                 class="outline"
-                title="Download content again"
-                style="margin: 0"
+                style="margin: 0; padding: 4px 12px; font-size: 0.9rem"
             >
                 ⟳ Refetch
             </button>
         </form>
     </div>
 
-    <h1 style="margin-top: 0; color: var(--text-bright)">{{.Title}}</h1>
-    <p
-        style="
-            color: var(--text-muted);
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 20px;
-            margin-bottom: 30px;
-        "
-    >
-        Saved from <strong>{{.Domain}}</strong> • Extracted via Atria
-        Readability
+    <h1 style="margin-top: 0; color: var(--text-heading); font-size: 2.2rem">
+        {{.Title}}
+    </h1>
+    <p style="color: var(--text-muted); margin-bottom: 30px">
+        Saved from <strong>{{.Domain}}</strong> • Captured {{formatDate
+        .CreatedAt}}
     </p>
 
     <div style="font-size: 1.1rem; line-height: 1.7; color: var(--text-main)">
@@ -63,7 +78,7 @@
                 padding-left: 15px;
             "
         >
-            <div id="note-view" style="display: block">
+            <div id="note-view">
                 <div
                     style="
                         display: flex;
@@ -89,11 +104,7 @@
                                 'block';
                             return false;
                         "
-                        style="
-                            font-size: 0.85rem;
-                            color: var(--text-muted);
-                            text-decoration: underline;
-                        "
+                        style="font-size: 0.85rem; color: var(--text-muted)"
                         >Upravit</a
                     >
                 </div>
@@ -104,179 +115,61 @@
                     >{{end}}
                 </div>
             </div>
-
             <form
                 id="note-edit"
                 hx-post="/api/read/note/{{.ID}}"
                 style="display: none; margin: 0"
             >
-                <strong
-                    style="
-                        display: block;
-                        color: var(--text-main);
-                        font-size: 0.85rem;
-                        text-transform: uppercase;
-                        margin-bottom: 8px;
-                    "
-                    >Úprava poznámky</strong
-                >
                 <input
                     type="text"
                     name="user_note"
                     value="{{.UserNote}}"
-                    style="width: 100%; margin-bottom: 10px; font-size: 0.95rem"
-                    placeholder="Např. Důležité pro projekt X..."
-                />
-                <div style="display: flex; gap: 10px">
-                    <button
-                        type="submit"
-                        style="margin: 0; padding: 4px 12px; font-size: 0.9rem"
-                    >
-                        Uložit
-                    </button>
-                    <button
-                        type="button"
-                        class="outline"
-                        onclick="
-                            document.getElementById('note-edit').style.display =
-                                'none';
-                            document.getElementById('note-view').style.display =
-                                'block';
-                        "
-                        style="margin: 0; padding: 4px 12px; font-size: 0.9rem"
-                    >
-                        Zrušit
-                    </button>
-                </div>
-            </form>
-        </div>
-
-        <div
-            id="tag-container"
-            style="
-                margin-bottom: 25px;
-                display: flex;
-                align-items: center;
-                flex-wrap: wrap;
-                gap: 10px;
-            "
-        >
-            <div id="tag-list" style="display: flex; gap: 8px; flex-wrap: wrap">
-                {{range .Tags}}
-                <a href="/tags/{{.Name}}" class="tag">#{{.Name}}</a>
-                {{end}}
-            </div>
-
-            <form
-                hx-post="/api/entity/{{.ID}}/tags"
-                hx-target="#tag-list"
-                hx-swap="beforeend"
-                style="display: flex; margin: 0"
-                hx-on::after-request="if(event.detail.successful) this.reset()"
-            >
-                <input
-                    type="text"
-                    name="tag_name"
-                    placeholder="+ tag"
-                    style="
-                        width: 80px;
-                        padding: 2px 5px;
-                        margin: 0;
-                        height: 24px;
-                        font-size: 0.8rem;
-                    "
-                    required
+                    style="width: 100%; margin-bottom: 10px"
                 />
                 <button
                     type="submit"
-                    class="outline"
-                    style="
-                        padding: 0 8px;
-                        margin: 0;
-                        height: 24px;
-                        min-height: auto;
-                        line-height: 1;
-                    "
+                    style="padding: 4px 12px; font-size: 0.9rem"
                 >
-                    +
+                    Uložit
+                </button>
+                <button
+                    type="button"
+                    class="outline"
+                    onclick="
+                        this.parentElement.style.display = 'none';
+                        document.getElementById('note-view').style.display =
+                            'block';
+                    "
+                    style="padding: 4px 12px; font-size: 0.9rem"
+                >
+                    Zrušit
                 </button>
             </form>
         </div>
 
-        {{if .Attachments}}
-        <div style="margin-bottom: 25px">
-            <strong
-                style="
-                    color: var(--text-main);
-                    font-size: 0.85rem;
-                    text-transform: uppercase;
-                    display: block;
-                    margin-bottom: 8px;
-                "
-                >Přílohy</strong
-            >
-            <ul style="list-style: none; padding: 0; margin: 0">
-                {{range .Attachments}}
-                <li
-                    style="
-                        margin-bottom: 8px;
-                        display: flex;
-                        align-items: center;
-                        gap: 10px;
-                    "
-                >
-                    <svg
-                        class="icon-sm"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                    >
-                        <path
-                            d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"
-                        ></path>
-                        <polyline points="13 2 13 9 20 9"></polyline>
-                    </svg>
-                    <a href="/data/attachments/{{.DiskPath}}" target="_blank"
-                        >{{.Filename}}</a
-                    >
-                    <small style="color: var(--text-muted)"
-                        >({{divide .SizeBytes 1024}} KB)</small
-                    >
-                </li>
-                {{end}}
-            </ul>
-        </div>
-        {{end}}
+        {{template "tags_section" .}} {{template "links_section" .}} {{template
+        "attachments_section" .}}
 
         <div
             style="
                 font-size: 0.85rem;
                 color: var(--text-muted);
-                margin-bottom: 25px;
                 background: var(--background-alt);
                 padding: 12px;
                 border-radius: 6px;
+                margin-bottom: 25px;
             "
         >
-            <div style="margin-bottom: 5px">
-                <strong>Source:</strong>
-                <a
-                    href="{{.OriginalURL}}"
-                    target="_blank"
-                    style="
-                        color: inherit;
-                        text-decoration: underline;
-                        word-break: break-all;
-                    "
-                    >{{.OriginalURL}}</a
-                >
-            </div>
-            <div><strong>Captured:</strong> {{formatDate .CreatedAt}}</div>
+            <strong>Source:</strong>
+            <a
+                href="{{.OriginalURL}}"
+                target="_blank"
+                style="color: inherit; text-decoration: underline"
+                >{{.OriginalURL}}</a
+            >
         </div>
 
         <div
-            class="action-row"
             style="
                 display: flex;
                 justify-content: space-between;
@@ -285,31 +178,16 @@
                 padding-top: 20px;
             "
         >
-            <div style="display: flex; gap: 10px">
-                <form
-                    method="post"
-                    action="/api/read/archive/{{.ID}}"
-                    style="margin: 0"
-                >
-                    <button type="submit" style="margin: 0">✓ Archive</button>
-                </form>
-                <form method="get" action="/read" style="margin: 0">
-                    <button
-                        type="submit"
-                        hx-get="/read"
-                        hx-target="#main-content"
-                        hx-push-url="true"
-                        class="outline"
-                        style="margin: 0"
-                    >
-                        Back to Inbox
-                    </button>
-                </form>
-            </div>
+            <form
+                method="post"
+                action="/api/read/archive/{{.ID}}"
+                style="margin: 0"
+            >
+                <button type="submit" style="margin: 0">✓ Archive</button>
+            </form>
             <button
                 type="button"
                 class="outline"
-                style="margin: 0"
                 onclick="
                     document
                         .querySelector('.centered-view')

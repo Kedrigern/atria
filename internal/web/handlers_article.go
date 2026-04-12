@@ -4,6 +4,7 @@ import (
 	"atria/internal/articles"
 	"atria/internal/attachments"
 	"atria/internal/core"
+	"atria/internal/links"
 	"database/sql"
 	"html/template"
 	"net/http"
@@ -55,15 +56,14 @@ func (s *Server) handleReadDetail(c *gin.Context) {
 		return
 	}
 
-	var title, domain, originalURL string
+	var title, shortID, domain, originalURL string
 	var createdAt time.Time
 	var userNote sql.NullString
 
-	err = s.db.QueryRowContext(c.Request.Context(), `
-		SELECT title, domain, original_url, created_at, user_note
-		FROM articles_full_view
-		WHERE id = $1 AND owner_id = $2
-	`, id, user.ID).Scan(&title, &domain, &originalURL, &createdAt, &userNote)
+	query := `SELECT title, domain, original_url, created_at, COALESCE(user_note, ''), short_id
+              FROM articles_full_view WHERE id = $1 AND owner_id = $2`
+	err = s.db.QueryRowContext(c.Request.Context(), query, id, user.ID).
+		Scan(&title, &domain, &originalURL, &createdAt, &userNote, &shortID)
 	if err != nil {
 		s.renderError(c, http.StatusNotFound, "Article not found")
 		return
@@ -75,26 +75,29 @@ func (s *Server) handleReadDetail(c *gin.Context) {
 		return
 	}
 
-	tags, err := core.GetEntityTags(c.Request.Context(), s.db, id)
+	tags, _ := core.GetEntityTags(c.Request.Context(), s.db, id)
 	if err != nil {
 		tags = []core.Tag{}
 	}
-
-	atts, err := attachments.GetEntityAttachments(c.Request.Context(), s.db, id)
+	atts, _ := attachments.GetEntityAttachments(c.Request.Context(), s.db, id)
 	if err != nil {
 		atts = []core.Attachment{}
 	}
+	outgoingLinks, incomingLinks, _ := links.GetEntityLinks(c.Request.Context(), s.db, id)
 
 	s.render(c, "read_detail.html", gin.H{
-		"ID":          id.String(),
-		"Title":       title,
-		"Domain":      domain,
-		"OriginalURL": originalURL,
-		"CreatedAt":   createdAt,
-		"UserNote":    userNote.String,
-		"Content":     template.HTML(htmlContent),
-		"Tags":        tags,
-		"Attachments": atts,
+		"ID":            id.String(),
+		"ShortID":       shortID,
+		"Title":         title,
+		"Domain":        domain,
+		"OriginalURL":   originalURL,
+		"CreatedAt":     createdAt,
+		"UserNote":      userNote.String,
+		"Content":       template.HTML(htmlContent),
+		"Tags":          tags,
+		"Attachments":   atts,
+		"OutgoingLinks": outgoingLinks,
+		"IncomingLinks": incomingLinks,
 	})
 }
 

@@ -1,84 +1,59 @@
 {{define "content"}}
+<script>
+    MathJax = {
+        tex: {
+            inlineMath: [
+                ["$", "$"],
+                ["\\(", "\\)"],
+            ],
+        },
+    };
+</script>
+<script
+    id="MathJax-script"
+    async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+></script>
+<script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+    mermaid.initialize({ startOnLoad: false, theme: "neutral" });
+    document.querySelectorAll("code.language-mermaid").forEach((block) => {
+        const pre = block.parentElement;
+        pre.classList.add("mermaid");
+        pre.textContent = block.textContent;
+    });
+    mermaid.run();
+</script>
+
 <div class="centered-view">
-    <div class="doc-header" style="margin-bottom: 30px">
-        <a
-            href="/note"
-            hx-get="/note"
-            hx-target="#main-content"
-            hx-push-url="true"
-            class="toggle-btn"
-            style="font-weight: bold"
-        >
-            ← Back to Inbox
-        </a>
-        <div class="doc-actions">
-            <span class="tag">Folder: {{.Path}}</span>
-        </div>
-    </div>
-
-    <h1 style="margin-top: 0; color: var(--text-heading)">{{.Title}}</h1>
-
-    <div style="font-size: 1.1rem; line-height: 1.7; color: var(--text-main)">
-        {{.Content}}
-    </div>
-
-    <div id="tag-container" style="margin-bottom: 20px">
-        <div
-            id="tag-list"
-            style="display: inline-flex; flex-wrap: wrap; gap: 8px"
-        >
-            {{range .Tags}}
-            <a href="/tags/{{.Name}}" class="tag">#{{.Name}}</a>
-            {{end}}
-        </div>
-
-        <form
-            hx-post="/api/entity/{{.ID}}/tags"
-            hx-target="#tag-list"
-            hx-swap="beforeend"
-            style="display: inline-flex; margin-left: 10px"
-            hx-on::after-request="if(event.detail.successful) this.reset()"
-        >
-            <input
-                type="text"
-                name="tag_name"
-                placeholder="Přidat tag..."
-                style="
-                    width: 120px;
-                    padding: 2px 8px;
-                    margin: 0;
-                    height: auto;
-                    font-size: 0.85rem;
-                "
-                required
-            />
-            <button
-                type="submit"
-                class="outline"
-                style="padding: 2px 8px; margin: 0; min-height: auto"
-            >
-                +
-            </button>
-        </form>
-    </div>
-
-    {{if .Attachments}}
     <div
+        class="doc-header"
         style="
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
         "
     >
-        <h4 style="margin-bottom: 15px">Přílohy</h4>
-        <ul style="list-style: none; padding: 0">
-            {{range .Attachments}}
-            <li
+        <div style="display: flex; align-items: center; gap: 15px">
+            <button
+                hx-get="/notes"
+                hx-target="#main-content"
+                hx-push-url="true"
+                class="outline"
+                style="margin: 0; padding: 4px 12px; font-size: 0.9rem"
+            >
+                ← Back to list
+            </button>
+            <span
                 style="
-                    margin-bottom: 8px;
+                    color: var(--text-muted);
+                    font-size: 0.9rem;
                     display: flex;
                     align-items: center;
-                    gap: 10px;
+                    gap: 6px;
                 "
             >
                 <svg
@@ -87,22 +62,155 @@
                     fill="none"
                     stroke="currentColor"
                     stroke-width="2"
+                    style="width: 16px; height: 16px"
                 >
                     <path
-                        d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"
+                        d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
                     ></path>
-                    <polyline points="13 2 13 9 20 9"></polyline>
                 </svg>
-                <a href="/data/attachments/{{.DiskPath}}" target="_blank"
-                    >{{.Filename}}</a
-                >
-                <small style="color: var(--text-muted)"
-                    >({{divide .SizeBytes 1024}} KB)</small
-                >
-            </li>
-            {{end}}
-        </ul>
+                {{.Path}}
+            </span>
+            <span
+                class="tag"
+                style="
+                    cursor: pointer;
+                    font-family: monospace;
+                    background: var(--background-alt);
+                    border: 1px dashed var(--border);
+                "
+                onclick="navigator.clipboard.writeText('{{.ShortID}}'); const old = this.innerText; this.innerText='Zkopírováno!'; setTimeout(() => this.innerText=old, 2000);"
+                title="Kliknutím zkopíruješ Short ID"
+                >ID: {{.ShortID}}</span
+            >
+        </div>
+        <button
+            class="outline"
+            onclick="
+                document.getElementById('note-view').style.display = 'none';
+                document.getElementById('note-edit').style.display = 'block';
+            "
+            style="margin: 0; padding: 4px 12px; font-size: 0.9rem"
+        >
+            Upravit
+        </button>
     </div>
-    {{end}}
+
+    <h1
+        style="
+            margin: 0 0 20px 0;
+            color: var(--text-heading);
+            font-size: 2.2rem;
+        "
+    >
+        {{.Title}}
+    </h1>
+
+    <div
+        id="note-view"
+        style="
+            font-size: 1.1rem;
+            line-height: 1.7;
+            color: var(--text-main);
+            display: block;
+        "
+    >
+        <style>
+            #note-view > h1:first-child {
+                margin-top: 0;
+                font-size: 1.4rem;
+                color: var(--text-muted);
+                border-bottom: none;
+                padding-bottom: 0;
+            }
+        </style>
+        {{.Content}}
+    </div>
+
+    <div id="note-edit" style="display: none; margin-bottom: 30px">
+        <form hx-post="/api/notes/update/{{.ID}}" style="margin: 0">
+            <textarea
+                name="markdown_content"
+                style="
+                    width: 100%;
+                    height: 400px;
+                    font-family: monospace;
+                    font-size: 1rem;
+                    line-height: 1.5;
+                    margin-bottom: 15px;
+                "
+            >
+{{.RawContent}}</textarea
+            >
+            <div style="display: flex; gap: 10px">
+                <button type="submit" style="margin: 0">Uložit změny</button>
+                <button
+                    type="button"
+                    class="outline"
+                    onclick="
+                        document.getElementById('note-edit').style.display =
+                            'none';
+                        document.getElementById('note-view').style.display =
+                            'block';
+                    "
+                    style="margin: 0"
+                >
+                    Zrušit
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div
+        style="
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 1px solid var(--border);
+        "
+    >
+        {{template "tags_section" .}} {{template "links_section" .}} {{template
+        "attachments_section" .}}
+    </div>
+
+    <div
+        style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--border);
+            padding-top: 20px;
+            margin-top: 25px;
+        "
+    >
+        <form
+            method="post"
+            action="/api/notes/delete/{{.ID}}"
+            style="margin: 0"
+            onsubmit="
+                return confirm(
+                    'Opravdu chcete tuto poznámku přesunout do koše?',
+                );
+            "
+        >
+            <button
+                type="submit"
+                class="outline"
+                style="margin: 0; color: #dc2626; border-color: #f87171"
+            >
+                🗑️ Smazat
+            </button>
+        </form>
+        <button
+            type="button"
+            class="outline"
+            onclick="
+                document
+                    .querySelector('.centered-view')
+                    .scrollTo({ top: 0, behavior: 'smooth' })
+            "
+            style="margin: 0"
+        >
+            ↑ Top
+        </button>
+    </div>
 </div>
 {{end}}
