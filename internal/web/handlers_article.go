@@ -2,6 +2,7 @@ package web
 
 import (
 	"atria/internal/articles"
+	"atria/internal/attachments"
 	"atria/internal/core"
 	"database/sql"
 	"html/template"
@@ -79,6 +80,11 @@ func (s *Server) handleReadDetail(c *gin.Context) {
 		tags = []core.Tag{}
 	}
 
+	atts, err := attachments.GetEntityAttachments(c.Request.Context(), s.db, id)
+	if err != nil {
+		atts = []core.Attachment{}
+	}
+
 	s.render(c, "read_detail.html", gin.H{
 		"ID":          id.String(),
 		"Title":       title,
@@ -88,6 +94,7 @@ func (s *Server) handleReadDetail(c *gin.Context) {
 		"UserNote":    userNote.String,
 		"Content":     template.HTML(htmlContent),
 		"Tags":        tags,
+		"Attachments": atts,
 	})
 }
 

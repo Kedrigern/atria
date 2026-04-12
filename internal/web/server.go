@@ -81,6 +81,7 @@ func (s *Server) SetupRouter() *gin.Engine {
 	r.GET("/tags/:name", s.handleTagDetail)
 	r.POST("/api/tags/add", s.handleTagAdd)
 	r.POST("/api/entity/:id/tags", s.handleTagAttach)
+	r.GET("/attachments", s.handleAttachments)
 
 	// API
 	r.POST("/api/rss/save/:id", s.handleRSSSave)
@@ -125,6 +126,12 @@ func (s *Server) render(c *gin.Context, tmplName string, data gin.H) {
 		},
 		"safeHTML": func(s string) template.HTML {
 			return template.HTML(s)
+		},
+		"divide": func(a, b int) int {
+			if b == 0 {
+				return 0
+			}
+			return a / b
 		},
 	}
 

@@ -149,3 +149,29 @@ func ListAttachments(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]core
 	}
 	return list, nil
 }
+
+// GetEntityAttachments returns a list of attachments associated with a specific entity.
+func GetEntityAttachments(ctx context.Context, db *sql.DB, entityID uuid.UUID) ([]core.Attachment, error) {
+	query := `
+		SELECT a.id, a.filename, a.mime_type, a.size_bytes, a.disk_path, a.created_at
+		FROM attachments a
+		JOIN rel_entity_attachments rel ON a.id = rel.attachment_id
+		WHERE rel.entity_id = $1
+		ORDER BY a.created_at DESC
+	`
+	rows, err := db.QueryContext(ctx, query, entityID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var list []core.Attachment
+	for rows.Next() {
+		var a core.Attachment
+		if err := rows.Scan(&a.ID, &a.Filename, &a.MimeType, &a.SizeBytes, &a.DiskPath, &a.CreatedAt); err != nil {
+			return nil, err
+		}
+		list = append(list, a)
+	}
+	return list, nil
+}

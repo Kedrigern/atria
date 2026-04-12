@@ -75,5 +75,14 @@ echo "[TAGS] Attaching tags to entities..."
 ./bin/atria tag attach "Solar Setup" "home"
 ./bin/atria tag attach "Standup Notes" "work"
 
+echo "[ATTACH] Creating dummy files and attaching them..."
+echo "Manual for solar inverter model X-100" > inverter_manual.txt
+echo "Meeting notes from architectural review" > arch_review.pdf
+
+./bin/atria attachment add inverter_manual.txt --link "Solar Setup"
+./bin/atria attachment add arch_review.pdf --link "Standup Notes"
+
+rm inverter_manual.txt arch_review.pdf
+
 echo "================================================="
 echo "[SUCCESS] Fixtures have been generated!"

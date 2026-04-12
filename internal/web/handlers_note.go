@@ -1,6 +1,7 @@
 package web
 
 import (
+	"atria/internal/attachments"
 	"atria/internal/core"
 	"atria/internal/notes"
 	"html/template"
@@ -49,11 +50,17 @@ func (s *Server) handleNoteDetail(c *gin.Context) {
 		tags = []core.Tag{}
 	}
 
+	atts, err := attachments.GetEntityAttachments(c.Request.Context(), s.db, id)
+	if err != nil {
+		atts = []core.Attachment{}
+	}
+
 	s.render(c, "note_detail.html", gin.H{
-		"ID":      id.String(),
-		"Title":   title,
-		"Path":    path,
-		"Content": template.HTML(htmlContent),
-		"Tags":    tags,
+		"ID":          id.String(),
+		"Title":       title,
+		"Path":        path,
+		"Content":     template.HTML(htmlContent),
+		"Tags":        tags,
+		"Attachments": atts,
 	})
 }
