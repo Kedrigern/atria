@@ -72,14 +72,25 @@ func AddAttachment(ctx context.Context, db *sql.DB, ownerID uuid.UUID, localPath
 	if _, err := srcFile.Seek(0, 0); err != nil {
 		return nil, fmt.Errorf("failed to seek file: %w", err)
 	}
-	destFile, err := os.Create(absDiskPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create destination file: %w", err)
-	}
-	defer destFile.Close()
 
-	if _, err := io.Copy(destFile, srcFile); err != nil {
-		return nil, fmt.Errorf("failed to write to storage: %w", err)
+	destDir := filepath.Dir(absDiskPath)
+	tempFile, err := os.CreateTemp(destDir, "upload-*")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create temp file: %w", err)
+	}
+	tempPath := tempFile.Name()
+
+	defer os.Remove(tempPath)
+
+	if _, err := io.Copy(tempFile, srcFile); err != nil {
+		tempFile.Close()
+		return nil, fmt.Errorf("failed to write to temp storage: %w", err)
+	}
+
+	tempFile.Close()
+
+	if err := os.Rename(tempPath, absDiskPath); err != nil {
+		return nil, fmt.Errorf("failed to finalize file move: %w", err)
 	}
 
 	attachment := &core.Attachment{
