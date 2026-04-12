@@ -33,31 +33,28 @@ func EnsurePath(ctx context.Context, tx *sql.Tx, ownerID uuid.UUID, path string)
 
 	for _, part := range parts {
 		var folderID uuid.UUID
+		slug := strings.ToLower(strings.ReplaceAll(part, " ", "-"))
+		folderUUID := core.NewUUID()
 
-		// 1. Try to find the folder at the current level
-		queryFind := `SELECT id FROM entities WHERE owner_id = $1 AND type = $2 AND title = $3 AND parent_id IS NOT DISTINCT FROM $4 AND deleted_at IS NULL`
-		err := tx.QueryRowContext(ctx, queryFind, ownerID, core.TypeFolder, part, currentParentID).Scan(&folderID)
-
-		if err == sql.ErrNoRows {
-			// 2. Folder does not exist, create it
-			folderID = core.NewUUID()
-			slug := strings.ToLower(strings.ReplaceAll(part, " ", "-"))
-
-			queryInsert := `
-				INSERT INTO entities (id, parent_id, owner_id, type, visibility, title, slug, created_at, updated_at)
-				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $8)
-			`
-			_, err = tx.ExecContext(ctx, queryInsert,
-				folderID, currentParentID, ownerID, core.TypeFolder, core.VisibilityPrivate, part, slug, time.Now().UTC(),
-			)
-			if err != nil {
-				return nil, fmt.Errorf("failed to create folder '%s': %w", part, err)
-			}
-		} else if err != nil {
-			return nil, fmt.Errorf("failed to query folder '%s': %w", part, err)
+		queryInsert := `
+        INSERT INTO entities (id, parent_id, owner_id, type, visibility, title, slug, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $8)
+        ON CONFLICT (owner_id, type, title, COALESCE(parent_id, '00000000-0000-0000-0000-000000000000')) WHERE deleted_at IS NULL
+        DO NOTHING
+    `
+		_, err := tx.ExecContext(ctx, queryInsert,
+			folderUUID, currentParentID, ownerID, core.TypeFolder, core.VisibilityPrivate, part, slug, time.Now().UTC(),
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to upsert folder '%s': %w", part, err)
 		}
 
-		// Move down the tree
+		queryFind := `SELECT id FROM entities WHERE owner_id = $1 AND type = $2 AND title = $3 AND parent_id IS NOT DISTINCT FROM $4 AND deleted_at IS NULL`
+		err = tx.QueryRowContext(ctx, queryFind, ownerID, core.TypeFolder, part, currentParentID).Scan(&folderID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to retrieve folder id for '%s': %w", part, err)
+		}
+
 		currentParentID = &folderID
 	}
 

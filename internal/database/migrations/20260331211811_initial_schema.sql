@@ -36,6 +36,9 @@ CREATE TABLE entities (
 CREATE INDEX idx_entities_type ON entities(type);
 CREATE INDEX idx_entities_parent ON entities(parent_id);
 CREATE INDEX idx_entities_owner ON entities(owner_id);
+CREATE UNIQUE INDEX idx_unique_active_entity
+ON entities(owner_id, type, title, COALESCE(parent_id, '00000000-0000-0000-0000-000000000000'))
+WHERE deleted_at IS NULL;
 
 -- ==========================================
 -- 3. ENTITY SUBTYPES
