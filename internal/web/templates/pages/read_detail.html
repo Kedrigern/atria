@@ -18,7 +18,7 @@
             method="post"
             action="/api/read/refetch/{{.ID}}"
             style="margin: 0"
-            onsubmit="this.querySelector('button').innerText='Refreshing...'"
+            onsubmit="this.querySelector('button').innerText = 'Refreshing...'"
         >
             <button
                 type="submit"
@@ -66,6 +66,45 @@
             {{.UserNote}}
         </div>
         {{end}}
+        <div id="tag-container" style="margin-bottom: 20px">
+            <div
+                id="tag-list"
+                style="display: inline-flex; flex-wrap: wrap; gap: 8px"
+            >
+                {{range .Tags}}
+                <a href="/tags/{{.Name}}" class="tag">#{{.Name}}</a>
+                {{end}}
+            </div>
+
+            <form
+                hx-post="/api/entity/{{.ID}}/tags"
+                hx-target="#tag-list"
+                hx-swap="beforeend"
+                style="display: inline-flex; margin-left: 10px"
+                hx-on::after-request="if(event.detail.successful) this.reset()"
+            >
+                <input
+                    type="text"
+                    name="tag_name"
+                    placeholder="Přidat tag..."
+                    style="
+                        width: 120px;
+                        padding: 2px 8px;
+                        margin: 0;
+                        height: auto;
+                        font-size: 0.85rem;
+                    "
+                    required
+                />
+                <button
+                    type="submit"
+                    class="outline"
+                    style="padding: 2px 8px; margin: 0; min-height: auto"
+                >
+                    +
+                </button>
+            </form>
+        </div>
 
         <div
             class="action-row"
@@ -101,7 +140,11 @@
                 type="button"
                 class="outline"
                 style="margin: 0; margin-left: auto"
-                onclick="document.querySelector('.centered-view').scrollTo({top:0, behavior:'smooth'})"
+                onclick="
+                    document
+                        .querySelector('.centered-view')
+                        .scrollTo({ top: 0, behavior: 'smooth' })
+                "
             >
                 ↑ Top
             </button>

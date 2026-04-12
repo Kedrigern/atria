@@ -88,9 +88,35 @@ var tagListCmd = &cobra.Command{
 	},
 }
 
+var tagShowCmd = &cobra.Command{
+	Use:   "show <tag-name>",
+	Short: "Lists all entities associated with a specific tag",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		tagName := args[0]
+		entities, err := core.GetTagEntities(app.Ctx, app.DB, app.Owner.ID, tagName)
+		if err != nil {
+			return fmt.Errorf("failed to fetch entities for tag '%s': %w", tagName, err)
+		}
+
+		if len(entities) == 0 {
+			fmt.Printf("No entities found with tag '#%s'\n", tagName)
+			return nil
+		}
+
+		headers := []string{"ID", "TYPE", "TITLE"}
+		var rows [][]string
+		for _, e := range entities {
+			rows = append(rows, []string{FormatID(e.ID, showLong), string(e.Type), e.Title})
+		}
+		return cli.Render(os.Stdout, listFormat, headers, rows, entities)
+	},
+}
+
 func init() {
 	rootCmd.AddCommand(tagCmd)
 	tagCmd.AddCommand(tagAddCmd, tagAttachCmd, tagListCmd)
+	tagCmd.AddCommand(tagShowCmd)
 	tagListCmd.Flags().BoolVarP(&showLong, "long", "l", false, "Show full UUIDs")
 	tagListCmd.Flags().StringVarP(&listFormat, "format", "f", "table", "Output format (table, json, csv, html)")
 

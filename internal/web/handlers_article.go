@@ -74,6 +74,11 @@ func (s *Server) handleReadDetail(c *gin.Context) {
 		return
 	}
 
+	tags, err := core.GetEntityTags(c.Request.Context(), s.db, id)
+	if err != nil {
+		tags = []core.Tag{}
+	}
+
 	s.render(c, "read_detail.html", gin.H{
 		"ID":          id.String(),
 		"Title":       title,
@@ -82,6 +87,7 @@ func (s *Server) handleReadDetail(c *gin.Context) {
 		"CreatedAt":   createdAt,
 		"UserNote":    userNote.String,
 		"Content":     template.HTML(htmlContent),
+		"Tags":        tags,
 	})
 }
 

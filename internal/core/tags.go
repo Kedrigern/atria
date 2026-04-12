@@ -4,12 +4,25 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"regexp"
+	"strings"
 
 	"github.com/gofrs/uuid/v5"
 )
 
+var validTagRegex = regexp.MustCompile(`^[a-z0-9\-]+$`)
+
 // CreateTag creates a new tag for a user.
 func CreateTag(ctx context.Context, db *sql.DB, ownerID uuid.UUID, name string, isSystem bool) (*Tag, error) {
+	name = strings.ToLower(strings.ReplaceAll(name, " ", "-"))
+
+	if len(name) > 20 {
+		return nil, fmt.Errorf("tag name '%s' exceeds the 20 characters limit", name)
+	}
+	if !validTagRegex.MatchString(name) {
+		return nil, fmt.Errorf("tag name '%s' can only contain lowercase letters, numbers, and hyphens", name)
+	}
+
 	tag := &Tag{
 		ID:       NewUUID(),
 		OwnerID:  ownerID,
@@ -76,6 +89,8 @@ func AttachTag(ctx context.Context, db *sql.DB, entityID, tagID uuid.UUID) error
 
 // AttachTagByTitle is a helper that finds a tag by name and attaches it to an entity.
 func AttachTagByTitle(ctx context.Context, db *sql.DB, ownerID uuid.UUID, entityID uuid.UUID, tagName string) error {
+	tagName = strings.ToLower(strings.ReplaceAll(tagName, " ", "-"))
+
 	tag, err := FindTagByName(ctx, db, ownerID, tagName)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -118,4 +133,29 @@ func ListTags(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]Tag, error)
 		tags = append(tags, t)
 	}
 	return tags, nil
+}
+
+// GetTagEntities returns a list of all entities (articles, notes...) that have the given tag.
+func GetTagEntities(ctx context.Context, db *sql.DB, ownerID uuid.UUID, tagName string) ([]EntitySummary, error) {
+	query := `
+		SELECT entity_id, entity_title, entity_type
+		FROM entities_by_tag_view
+		WHERE owner_id = $1 AND tag_name = $2
+		ORDER BY created_at DESC
+	`
+	rows, err := db.QueryContext(ctx, query, ownerID, tagName)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []EntitySummary
+	for rows.Next() {
+		var e EntitySummary
+		if err := rows.Scan(&e.ID, &e.Title, &e.Type); err != nil {
+			return nil, err
+		}
+		results = append(results, e)
+	}
+	return results, nil
 }

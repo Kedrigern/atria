@@ -1,0 +1,47 @@
+{{define "content"}}
+<div class="centered-view" data-mobile-title="ATRIA: Tags">
+    <h2>Tag Manager</h2>
+
+    <form
+        method="post"
+        action="/api/tags/add"
+        style="display: flex; gap: 10px; margin-bottom: 30px"
+        hx-post="/api/tags/add"
+    >
+        <input
+            type="text"
+            name="name"
+            placeholder="Název nového tagu..."
+            required
+            maxlength="20"
+        />
+        <button type="submit">Vytvořit Tag</button>
+    </form>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 15px">
+        {{range .Tags}}
+        <div
+            style="
+                border: 1px solid var(--border);
+                padding: 15px;
+                border-radius: 6px;
+                background: var(--background-alt);
+                min-width: 120px;
+                text-align: center;
+            "
+        >
+            <a
+                href="/tags/{{.Name}}"
+                style="font-weight: bold; font-size: 1.1rem"
+                >#{{.Name}}</a
+            >
+            {{if .IsSystem}}<br /><small style="color: var(--text-muted)"
+                >System</small
+            >{{end}}
+        </div>
+        {{else}}
+        <p>Zatím nemáte žádné tagy.</p>
+        {{end}}
+    </div>
+</div>
+{{end}}

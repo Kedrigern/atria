@@ -1,0 +1,29 @@
+{{define "content"}}
+<div class="centered-view">
+    <div class="page-header-row">
+        <h2>Entity s tagem #{{.TagName}}</h2>
+        <a href="/tags" class="outline button-link">← Zpět na seznam</a>
+    </div>
+
+    {{range .Entities}}
+    <div class="list-item">
+        <div>
+            <span
+                class="tag"
+                style="text-transform: uppercase; font-size: 0.7rem"
+                >{{.Type}}</span
+            >
+            <h4>
+                {{if eq .Type "note"}}
+                <a href="/notes/{{.ID}}">{{.Title}}</a>
+                {{else if eq .Type "article"}}
+                <a href="/read/{{.ID}}">{{.Title}}</a>
+                {{else}} {{.Title}} {{end}}
+            </h4>
+        </div>
+    </div>
+    {{else}}
+    <p>Žádné entity nemají tento tag.</p>
+    {{end}}
+</div>
+{{end}}

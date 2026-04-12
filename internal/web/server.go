@@ -77,6 +77,10 @@ func (s *Server) SetupRouter() *gin.Engine {
 	r.POST("/api/rss/fetch", s.handleRSSFetch)
 	r.GET("/notes", s.handleNotes)
 	r.GET("/notes/:id", s.handleNoteDetail)
+	r.GET("/tags", s.handleTags)
+	r.GET("/tags/:name", s.handleTagDetail)
+	r.POST("/api/tags/add", s.handleTagAdd)
+	r.POST("/api/entity/:id/tags", s.handleTagAttach)
 
 	// API
 	r.POST("/api/rss/save/:id", s.handleRSSSave)

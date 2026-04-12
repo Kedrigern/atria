@@ -236,6 +236,18 @@ SELECT e.*, a.original_url, a.domain, a.user_note, a.html_content, a.text_conten
 FROM entities e JOIN articles a ON e.id = a.id
 WHERE e.deleted_at IS NULL;
 
+CREATE VIEW entities_by_tag_view AS
+SELECT
+    t.name AS tag_name,
+    t.owner_id,
+    e.id AS entity_id,
+    e.type AS entity_type,
+    e.title AS entity_title,
+    e.created_at
+FROM tags t
+JOIN rel_entity_tags rel ON t.id = rel.tag_id
+JOIN entities e ON rel.entity_id = e.id
+WHERE e.deleted_at IS NULL;
 
 -- +goose Down
 DROP VIEW IF EXISTS articles_full_view;
@@ -243,6 +255,7 @@ DROP VIEW IF EXISTS notes_full_view;
 DROP VIEW IF EXISTS rss_cleanup_candidates_view;
 DROP VIEW IF EXISTS rss_to_read_view;
 DROP VIEW IF EXISTS entity_paths_view;
+DROP VIEW IF EXISTS entities_by_tag_view;
 DROP TABLE IF EXISTS rel_entity_attachments;
 DROP TABLE IF EXISTS attachments;
 DROP TABLE IF EXISTS notes;

@@ -21,5 +21,45 @@
     <div style="font-size: 1.1rem; line-height: 1.7; color: var(--text-main)">
         {{.Content}}
     </div>
+
+    <div id="tag-container" style="margin-bottom: 20px">
+        <div
+            id="tag-list"
+            style="display: inline-flex; flex-wrap: wrap; gap: 8px"
+        >
+            {{range .Tags}}
+            <a href="/tags/{{.Name}}" class="tag">#{{.Name}}</a>
+            {{end}}
+        </div>
+
+        <form
+            hx-post="/api/entity/{{.ID}}/tags"
+            hx-target="#tag-list"
+            hx-swap="beforeend"
+            style="display: inline-flex; margin-left: 10px"
+            hx-on::after-request="if(event.detail.successful) this.reset()"
+        >
+            <input
+                type="text"
+                name="tag_name"
+                placeholder="Přidat tag..."
+                style="
+                    width: 120px;
+                    padding: 2px 8px;
+                    margin: 0;
+                    height: auto;
+                    font-size: 0.85rem;
+                "
+                required
+            />
+            <button
+                type="submit"
+                class="outline"
+                style="padding: 2px 8px; margin: 0; min-height: auto"
+            >
+                +
+            </button>
+        </form>
+    </div>
 </div>
 {{end}}
