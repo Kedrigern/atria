@@ -30,7 +30,7 @@ type ArticleSummary struct {
 }
 
 // CreateArticle fetches the URL, extracts content using readability, and saves it to the database.
-func CreateArticle(ctx context.Context, db *sql.DB, ownerID uuid.UUID, urlStr string) (*core.Entity, error) {
+func CreateArticle(ctx context.Context, db *sql.DB, ownerID uuid.UUID, urlStr string, userNote string) (*core.Entity, error) {
 	// 1. Extract domain from URL (for clean display and filtering)
 	parsedURL, err := url.Parse(urlStr)
 	if err != nil {
@@ -124,12 +124,11 @@ func CreateArticle(ctx context.Context, db *sql.DB, ownerID uuid.UUID, urlStr st
 
 	// Save article-specific data
 	queryArticle := `
-		INSERT INTO articles (id, original_url, domain, html_content, text_content)
-		VALUES ($1, $2, $3, $4, $5)
-	`
+        INSERT INTO articles (id, original_url, domain, html_content, text_content, user_note)
+        VALUES ($1, $2, $3, $4, $5, $6)
+    `
 	_, err = tx.ExecContext(ctx, queryArticle,
-		entityID, urlStr, domain, parsedArticle.Content, parsedArticle.TextContent,
-	)
+		entityID, urlStr, domain, parsedArticle.Content, parsedArticle.TextContent, userNote)
 	if err != nil {
 		return nil, fmt.Errorf("failed to insert article data: %w", err)
 	}

@@ -141,14 +141,14 @@ func ListItemsToRead(ctx context.Context, db *sql.DB, ownerID uuid.UUID, limit, 
 // SaveItemAsArticle converts an RSS item into a full article and marks it as read.
 func SaveItemAsArticle(ctx context.Context, db *sql.DB, ownerID, itemID uuid.UUID) (*core.Entity, error) {
 	// 1. Get the link from the RSS item triage
-	var link string
+	var link, feedTitle string
 	queryGet := `
-		SELECT i.link
+		SELECT i.link, e.title
 		FROM rss_items i
 		JOIN entities e ON i.feed_id = e.id
 		WHERE i.id = $1 AND e.owner_id = $2
 	`
-	err := db.QueryRowContext(ctx, queryGet, itemID, ownerID).Scan(&link)
+	err := db.QueryRowContext(ctx, queryGet, itemID, ownerID).Scan(&link, &feedTitle)
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("rss item not found")
 	}
@@ -156,9 +156,11 @@ func SaveItemAsArticle(ctx context.Context, db *sql.DB, ownerID, itemID uuid.UUI
 		return nil, err
 	}
 
+	autoNote := fmt.Sprintf("Uloženo z RSS: %s", feedTitle)
+
 	// 2. Create the article using the articles package
 	// This performs the readability extraction and saves it to the DB
-	articleEntity, err := articles.CreateArticle(ctx, db, ownerID, link)
+	articleEntity, err := articles.CreateArticle(ctx, db, ownerID, link, autoNote)
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract article: %w", err)
 	}

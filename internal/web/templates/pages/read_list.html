@@ -30,7 +30,7 @@
             flex-wrap: wrap;
             align-items: flex-start;
         "
-        onsubmit="this.querySelector('button').innerText='Saving...'"
+        onsubmit="this.querySelector('button').innerText = 'Saving...'"
     >
         <input
             type="url"
@@ -38,6 +38,12 @@
             placeholder="https://... (Zadejte URL článku)"
             style="flex: 1 1 300px; margin: 0"
             required
+        />
+        <input
+            type="text"
+            name="user_note"
+            placeholder="Poznámka k článku (volitelné)..."
+            style="flex: 1 1 200px; margin: 0"
         />
         <button type="submit" style="margin: 0; white-space: nowrap">
             Save Article

@@ -143,13 +143,14 @@ func (s *Server) handleReadArchive(c *gin.Context) {
 func (s *Server) handleReadAdd(c *gin.Context) {
 	user := s.getDummyUser(c)
 	urlStr := c.PostForm("url")
+	userNote := c.PostForm("user_note")
 
 	if urlStr == "" {
 		s.renderError(c, http.StatusBadRequest, "URL is required")
 		return
 	}
 
-	_, err := articles.CreateArticle(c.Request.Context(), s.db, user.ID, urlStr)
+	_, err := articles.CreateArticle(c.Request.Context(), s.db, user.ID, urlStr, userNote)
 	if err != nil {
 		s.renderError(c, http.StatusInternalServerError, "Failed to save article: "+err.Error())
 		return

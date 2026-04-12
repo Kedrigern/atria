@@ -12,6 +12,7 @@ import (
 	"atria/internal/core"
 )
 
+var articleNote string
 var articleShowFormat string
 
 var articleCmd = &cobra.Command{
@@ -42,7 +43,7 @@ var articleAddCmd = &cobra.Command{
 				sem <- struct{}{}
 				defer func() { <-sem }()
 
-				entity, err := articles.CreateArticle(app.Ctx, app.DB, app.Owner.ID, urlStr)
+				entity, err := articles.CreateArticle(app.Ctx, app.DB, app.Owner.ID, urlStr, articleNote)
 				if err != nil {
 					fmt.Printf("❌ Failed: %s\n   Error: %v\n", urlStr, err)
 					return
@@ -123,6 +124,7 @@ func init() {
 	rootCmd.AddCommand(articleCmd)
 	articleCmd.AddCommand(articleAddCmd, articleShowCmd, articleListCmd)
 
+	articleAddCmd.Flags().StringVar(&articleNote, "note", "", "Optional user note for the article")
 	articleShowCmd.Flags().StringVar(&articleShowFormat, "format", "md", "Output format (md, html, plain)")
 	articleListCmd.Flags().BoolVarP(&showLong, "long", "l", false, "Show full UUIDs")
 	articleListCmd.Flags().StringVarP(&listFormat, "format", "f", "table", "Output format (table, json, csv, html)")
