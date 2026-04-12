@@ -8,6 +8,7 @@ import (
 
 	"atria/internal/core"
 	"atria/internal/database"
+	"atria/internal/netutil"
 
 	"github.com/gofrs/uuid/v5"
 	"github.com/spf13/cobra"
@@ -44,7 +45,8 @@ func RequireUserContext(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("database connection failed: %w", err)
 	}
 
-	ctx := context.Background()
+	ctx := context.WithValue(context.Background(), netutil.AllowLocalKey, true)
+
 	owner, err := getActiveUser(ctx, db)
 	if err != nil {
 		db.Close()

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"atria/internal/core"
+	"atria/internal/netutil"
 
 	"github.com/mmcdole/gofeed"
 )
@@ -46,6 +47,7 @@ func FetchAllActiveFeeds(ctx context.Context, db *sql.DB) error {
 	var wg sync.WaitGroup
 
 	fp := gofeed.NewParser()
+	fp.Client = netutil.SafeHTTPClient()
 
 	for _, f := range feedsToFetch {
 		wg.Add(1)

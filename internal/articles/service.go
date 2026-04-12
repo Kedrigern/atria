@@ -12,8 +12,10 @@ import (
 	"time"
 
 	"atria/internal/core"
+	"atria/internal/netutil"
 
 	htmltomarkdown "github.com/JohannesKaufmann/html-to-markdown"
+	"github.com/PuerkitoBio/goquery"
 	"github.com/go-shiori/go-readability"
 	"github.com/gofrs/uuid/v5"
 )
@@ -40,8 +42,14 @@ func CreateArticle(ctx context.Context, db *sql.DB, ownerID uuid.UUID, urlStr st
 	// 2. Fetch and parse the article
 	fmt.Printf("Fetching and parsing: %s\n", urlStr)
 
-	client := &http.Client{Timeout: 15 * time.Second}
-	resp, err := client.Get(urlStr)
+	client := netutil.SafeHTTPClient()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, urlStr, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch URL: %w", err)
 	}
@@ -54,11 +62,24 @@ func CreateArticle(ctx context.Context, db *sql.DB, ownerID uuid.UUID, urlStr st
 
 	htmlStr := string(bodyBytes)
 
-	reFakeSrc := regexp.MustCompile(`(?i)\s+src=["']data:image/[^"']+["']`)
-	htmlStr = reFakeSrc.ReplaceAllString(htmlStr, "")
+	doc, err := goquery.NewDocumentFromReader(strings.NewReader(htmlStr))
+	if err == nil {
+		doc.Find("img[src^='data:image/']").Each(func(i int, s *goquery.Selection) {
+			s.RemoveAttr("src")
+		})
 
-	reDataSrc := regexp.MustCompile(`(?i)\s+data-(?:lazy-)?src=(["'][^"']+["'])`)
-	htmlStr = reDataSrc.ReplaceAllString(htmlStr, ` src=$1`)
+		doc.Find("img").Each(func(i int, s *goquery.Selection) {
+			if dataSrc, exists := s.Attr("data-src"); exists {
+				s.SetAttr("src", dataSrc)
+			} else if dataLazySrc, exists := s.Attr("data-lazy-src"); exists {
+				s.SetAttr("src", dataLazySrc)
+			}
+		})
+
+		if fixedHTML, err := doc.Html(); err == nil {
+			htmlStr = fixedHTML
+		}
+	}
 
 	parsedArticle, err := readability.FromReader(strings.NewReader(htmlStr), parsedURL)
 	if err != nil {
@@ -230,14 +251,17 @@ func RefetchArticle(ctx context.Context, db *sql.DB, ownerID, articleID uuid.UUI
 	}
 
 	parsedURL, _ := url.Parse(originalURL)
-	client := &http.Client{Timeout: 15 * time.Second}
+	client := netutil.SafeHTTPClient()
 	resp, err := client.Get(originalURL)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 
-	bodyBytes, _ := io.ReadAll(resp.Body)
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %w", err)
+	}
 	htmlStr := string(bodyBytes)
 
 	reFakeSrc := regexp.MustCompile(`(?i)\s+src=["']data:image/[^"']+["']`)

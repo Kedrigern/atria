@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"atria/internal/core"
+	"atria/internal/netutil"
 	"atria/internal/notes"
 	"atria/internal/rss"
 	"atria/internal/testutil"
@@ -18,7 +19,7 @@ import (
 func TestRSSLifecycle(t *testing.T) {
 	db, user := testutil.SetupTestDB(t)
 	defer db.Close()
-	ctx := context.Background()
+	ctx := context.WithValue(context.Background(), netutil.AllowLocalKey, true)
 
 	// 1. Setup Mock RSS Server that serves both the Feed and the Article content
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -92,7 +93,7 @@ func TestRSSLifecycle(t *testing.T) {
 func TestE2EWorkflow(t *testing.T) {
 	db, user := testutil.SetupTestDB(t)
 	defer db.Close()
-	ctx := context.Background()
+	ctx := context.WithValue(context.Background(), netutil.AllowLocalKey, true)
 
 	// 2. Setup Mock Server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
