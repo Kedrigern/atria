@@ -109,7 +109,7 @@ var attachmentLinkCmd = &cobra.Command{
 	},
 }
 
-// resolveAttachment prohledá přílohy podle plného UUID, krátkého UUID, nebo přesného názvu souboru.
+// resolveAttachment search attachments by UUID, short UUID, or filename
 func resolveAttachment(ctx context.Context, db *sql.DB, ownerID uuid.UUID, identifier string) (*core.Attachment, error) {
 	var query string
 	var args []interface{}
@@ -118,8 +118,7 @@ func resolveAttachment(ctx context.Context, db *sql.DB, ownerID uuid.UUID, ident
 		query = `SELECT id, filename FROM attachments WHERE id = $1 AND owner_id = $2`
 		args = []interface{}{parsedID, ownerID}
 	} else {
-		// Hledáme podle konce stringu (short-uuid) nebo názvu souboru
-		query = `SELECT id, filename FROM attachments WHERE owner_id = $1 AND (id::text LIKE $2 OR filename = $3)`
+		query = `SELECT id, filename FROM attachments WHERE owner_id = $1 AND (short_id = $2 OR filename = $3)`
 		args = []interface{}{ownerID, "%" + identifier, identifier}
 	}
 

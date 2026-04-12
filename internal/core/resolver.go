@@ -36,8 +36,8 @@ func FindEntities(ctx context.Context, db *sql.DB, ownerID uuid.UUID, entityType
 		query = fmt.Sprintf(`SELECT id, title, type FROM entities WHERE id = $1 AND owner_id = $2 %s %s`, typeCond, delCond)
 		args = []interface{}{parsedID, ownerID}
 	} else {
-		query = fmt.Sprintf(`SELECT id, title, type FROM entities WHERE owner_id = $1 %s %s AND (id::text LIKE $2 OR title = $3)`, typeCond, delCond)
-		args = []interface{}{ownerID, "%" + identifier, identifier}
+		query = fmt.Sprintf(`SELECT id, title, type FROM entities WHERE owner_id = $1 %s %s AND (short_id = $2 OR title = $3)`, typeCond, delCond)
+		args = []interface{}{ownerID, identifier, identifier}
 	}
 
 	rows, err := db.QueryContext(ctx, query, args...)

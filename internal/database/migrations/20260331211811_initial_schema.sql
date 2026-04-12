@@ -19,6 +19,7 @@ CREATE TABLE users (
 -- ==========================================
 CREATE TABLE entities (
     id UUID PRIMARY KEY,
+    short_id VARCHAR(8) GENERATED ALWAYS AS (RIGHT(id::text, 8)) STORED,
     parent_id UUID REFERENCES entities(id) ON DELETE CASCADE,
     owner_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     type VARCHAR(20) NOT NULL CHECK (type IN ('note', 'article', 'rss', 'spreadsheet', 'folder', 'dashboard')),
@@ -33,9 +34,12 @@ CREATE TABLE entities (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP
 );
+
+CREATE INDEX idx_entities_short_id ON entities(short_id);
 CREATE INDEX idx_entities_type ON entities(type);
 CREATE INDEX idx_entities_parent ON entities(parent_id);
 CREATE INDEX idx_entities_owner ON entities(owner_id);
+-- Prevent duplicit folder creation
 CREATE UNIQUE INDEX idx_unique_active_entity
 ON entities(owner_id, type, title, COALESCE(parent_id, '00000000-0000-0000-0000-000000000000'))
 WHERE deleted_at IS NULL;
@@ -183,6 +187,7 @@ SELECT * FROM tree;
 CREATE VIEW rss_to_read_view AS
 SELECT
     i.id,
+    e.short_id,
     i.feed_id,
     e.owner_id,
     COALESCE(NULLIF(f.site_url, ''), e.title) AS source_name,
@@ -202,7 +207,7 @@ ORDER BY i.published_at DESC;
 -- RSS feeds (sources) view
 CREATE VIEW rss_feeds_full_view AS
 SELECT
-    e.id, e.owner_id, e.title, e.slug, e.visibility, e.created_at, e.updated_at, e.deleted_at,
+    e.id, e.short_id, e.owner_id, e.title, e.slug, e.visibility, e.created_at, e.updated_at, e.deleted_at,
     f.feed_url, f.site_url, f.etag_header, f.last_modified_header,
     f.next_fetch_at, f.last_fetch_at, f.last_fetch_status, f.last_fetch_error,
     f.http_auth_type, f.http_auth_username, f.http_auth_token, f.filter_rules
@@ -220,7 +225,7 @@ SELECT id FROM (
 -- Full Note with metadata
 CREATE VIEW notes_full_view AS
 SELECT
-    e.id, e.parent_id, e.owner_id, e.type, e.visibility, e.title, e.slug,
+    e.id, e.short_id, e.parent_id, e.owner_id, e.type, e.visibility, e.title, e.slug,
     e.created_at, e.updated_at, e.deleted_at,
     COALESCE(p.full_path, '/') AS path,  -- Dynamicaly calculate path
     n.icon,
