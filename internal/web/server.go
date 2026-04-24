@@ -84,6 +84,8 @@ func (s *Server) SetupRouter() *gin.Engine {
 	{
 		read.GET("", s.handleRead)
 		read.GET("/:id", s.handleReadDetail)
+		read.GET("/:id/export/md", s.handleReadExportMD)
+		read.GET("/:id/export/epub", s.handleReadExportEPUB)
 	}
 
 	// Notes
@@ -92,6 +94,8 @@ func (s *Server) SetupRouter() *gin.Engine {
 		notes.GET("", s.handleNotes)
 		notes.GET("/new", s.handleNoteAdd)
 		notes.GET("/:id", s.handleNoteDetail)
+		notes.GET("/:id/export/md", s.handleNoteExportMD)
+		notes.GET("/:id/export/epub", s.handleNoteExportEPUB)
 	}
 
 	// Tags

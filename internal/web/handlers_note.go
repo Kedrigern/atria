@@ -3,15 +3,18 @@ package web
 import (
 	"atria/internal/attachments"
 	"atria/internal/core"
+	"atria/internal/export"
 	"atria/internal/links"
 	"atria/internal/notes"
 	"database/sql"
+	"fmt"
 	"html/template"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gofrs/uuid/v5"
-	"github.com/russross/blackfriday/v2"
+	"gopkg.in/yaml.v3"
 )
 
 func (s *Server) handleNotes(c *gin.Context) {
@@ -53,15 +56,12 @@ func (s *Server) handleNoteDetail(c *gin.Context) {
 		return
 	}
 
-	extensions := blackfriday.CommonExtensions |
-		blackfriday.Footnotes |
-		blackfriday.AutoHeadingIDs |
-		blackfriday.DefinitionLists |
-		blackfriday.Strikethrough |
-		blackfriday.Autolink
-
-	// Blackfriday by default wraps code blocks into <pre><code>, which is perfect for Mermaid
-	htmlContent := blackfriday.Run([]byte(mdContent), blackfriday.WithExtensions(extensions))
+	htmlStr, _, err := core.RenderMarkdown([]byte(mdContent))
+	if err != nil {
+		s.renderError(c, http.StatusInternalServerError, "Failed to render markdown")
+		return
+	}
+	htmlContent := template.HTML(htmlStr)
 
 	tags, _ := core.GetEntityTags(c.Request.Context(), s.db, id)
 	atts, _ := attachments.GetEntityAttachments(c.Request.Context(), s.db, id)
@@ -204,4 +204,83 @@ func (s *Server) handleNoteDelete(c *gin.Context) {
 		return
 	}
 	c.Redirect(http.StatusSeeOther, "/notes")
+}
+
+func (s *Server) handleNoteExportMD(c *gin.Context) {
+	user := s.getDummyUser(c)
+	id, err := core.ParseUUID(c.Param("id"))
+	if err != nil {
+		s.renderError(c, http.StatusBadRequest, "Invalid ID")
+		return
+	}
+
+	var title, slug, path string
+	err = s.db.QueryRowContext(c.Request.Context(), "SELECT title, slug, path FROM notes_full_view WHERE id = $1 AND owner_id = $2", id, user.ID).Scan(&title, &slug, &path)
+	if err != nil {
+		s.renderError(c, http.StatusNotFound, "Note not found")
+		return
+	}
+
+	content, err := notes.GetNoteContent(c.Request.Context(), s.db, id)
+	if err != nil {
+		s.renderError(c, http.StatusInternalServerError, "Failed to load note content")
+		return
+	}
+
+	tags, _ := core.GetEntityTags(c.Request.Context(), s.db, id)
+	tagValues := make([]string, 0, len(tags))
+	for _, t := range tags {
+		tagValues = append(tagValues, t.Name)
+	}
+
+	frontMatterData := map[string]interface{}{
+		"id":    id.String(),
+		"title": title,
+		"path":  path,
+		"tags":  tagValues,
+	}
+	frontMatterBytes, err := yaml.Marshal(frontMatterData)
+	if err != nil {
+		s.renderError(c, http.StatusInternalServerError, "Failed to generate export metadata")
+		return
+	}
+
+	finalOutput := "---\n" + string(frontMatterBytes) + "---\n\n" + content
+
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s.md\"", slug))
+	c.Data(http.StatusOK, "text/markdown", []byte(finalOutput))
+}
+
+func (s *Server) handleNoteExportEPUB(c *gin.Context) {
+	user := s.getDummyUser(c)
+	id, err := core.ParseUUID(c.Param("id"))
+	if err != nil {
+		s.renderError(c, http.StatusBadRequest, "Invalid ID")
+		return
+	}
+
+	var title, slug string
+	err = s.db.QueryRowContext(c.Request.Context(), "SELECT title, slug FROM entities WHERE id = $1 AND owner_id = $2", id, user.ID).Scan(&title, &slug)
+	if err != nil {
+		s.renderError(c, http.StatusNotFound, "Note not found")
+		return
+	}
+
+	// Vytvoříme dočasný soubor pro EPUB
+	tempFile, err := os.CreateTemp("", "atria-note-*.epub")
+	if err != nil {
+		s.renderError(c, http.StatusInternalServerError, "Failed to create temp file")
+		return
+	}
+	tempPath := tempFile.Name()
+	tempFile.Close()
+	defer os.Remove(tempPath) // Soubor se smaže, jakmile skončí request
+
+	items := []core.EntitySummary{{ID: id, Title: title, Type: core.TypeNote}}
+	if err := export.ExportEPUB(c.Request.Context(), s.db, items, tempPath); err != nil {
+		s.renderError(c, http.StatusInternalServerError, "EPUB generation failed")
+		return
+	}
+
+	c.FileAttachment(tempPath, slug+".epub")
 }

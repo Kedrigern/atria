@@ -4,14 +4,18 @@ import (
 	"atria/internal/articles"
 	"atria/internal/attachments"
 	"atria/internal/core"
+	"atria/internal/export"
 	"atria/internal/links"
 	"database/sql"
+	"fmt"
 	"html/template"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"gopkg.in/yaml.v3"
 )
 
 func (s *Server) handleRead(c *gin.Context) {
@@ -210,4 +214,75 @@ func (s *Server) handleReadUpdateNote(c *gin.Context) {
 	}
 
 	c.Redirect(http.StatusSeeOther, "/read/"+articleID.String())
+}
+
+func (s *Server) handleReadExportMD(c *gin.Context) {
+	user := s.getDummyUser(c)
+	id, err := core.ParseUUID(c.Param("id"))
+	if err != nil {
+		s.renderError(c, http.StatusBadRequest, "Invalid ID")
+		return
+	}
+
+	var title, slug, originalURL string
+	err = s.db.QueryRowContext(c.Request.Context(), "SELECT title, slug, original_url FROM articles_full_view WHERE id = $1 AND owner_id = $2", id, user.ID).Scan(&title, &slug, &originalURL)
+	if err != nil {
+		s.renderError(c, http.StatusNotFound, "Article not found")
+		return
+	}
+
+	// Vezmeme hezký Markdown z článku
+	content, err := articles.GetArticleMarkdown(c.Request.Context(), s.db, id)
+	if err != nil {
+		s.renderError(c, http.StatusInternalServerError, "Failed to process article Markdown")
+		return
+	}
+
+	fm := map[string]interface{}{
+		"id":     id.String(),
+		"title":  title,
+		"source": originalURL,
+	}
+	fmBytes, err := yaml.Marshal(fm)
+	if err != nil {
+		s.renderError(c, http.StatusInternalServerError, "Failed to build front matter")
+		return
+	}
+	finalOutput := fmt.Sprintf("---\n%s---\n\n%s", string(fmBytes), content)
+
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s.md\"", slug))
+	c.Data(http.StatusOK, "text/markdown", []byte(finalOutput))
+}
+
+func (s *Server) handleReadExportEPUB(c *gin.Context) {
+	user := s.getDummyUser(c)
+	id, err := core.ParseUUID(c.Param("id"))
+	if err != nil {
+		s.renderError(c, http.StatusBadRequest, "Invalid ID")
+		return
+	}
+
+	var title, slug string
+	err = s.db.QueryRowContext(c.Request.Context(), "SELECT title, slug FROM entities WHERE id = $1 AND owner_id = $2", id, user.ID).Scan(&title, &slug)
+	if err != nil {
+		s.renderError(c, http.StatusNotFound, "Article not found")
+		return
+	}
+
+	tempFile, err := os.CreateTemp("", "atria-article-*.epub")
+	if err != nil {
+		s.renderError(c, http.StatusInternalServerError, "Failed to create temp file")
+		return
+	}
+	tempPath := tempFile.Name()
+	tempFile.Close()
+	defer os.Remove(tempPath)
+
+	items := []core.EntitySummary{{ID: id, Title: title, Type: core.TypeArticle}}
+	if err := export.ExportEPUB(c.Request.Context(), s.db, items, tempPath); err != nil {
+		s.renderError(c, http.StatusInternalServerError, "EPUB generation failed")
+		return
+	}
+
+	c.FileAttachment(tempPath, slug+".epub")
 }

@@ -34,6 +34,20 @@
                 title="Kliknutím zkopíruješ Short ID"
                 >ID: {{.ShortID}}</span
             >
+            <a
+                href="/read/{{.ID}}/export/md"
+                class="button-link outline"
+                style="margin: 0; padding: 4px 12px; font-size: 0.9rem"
+                title="Download Markdown"
+                >⬇️ MD</a
+            >
+            <a
+                href="/read/{{.ID}}/export/epub"
+                class="button-link outline"
+                style="margin: 0; padding: 4px 12px; font-size: 0.9rem"
+                title="Download EPUB"
+                >⬇️ EPUB</a
+            >
         </div>
 
         <form

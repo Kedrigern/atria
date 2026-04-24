@@ -12,8 +12,6 @@ import (
 	"atria/internal/cli"
 	"atria/internal/core"
 	"atria/internal/notes"
-
-	"github.com/russross/blackfriday/v2"
 )
 
 var (
@@ -108,8 +106,11 @@ var noteShowCmd = &cobra.Command{
 
 		switch showFormat {
 		case "html":
-			htmlOutput := blackfriday.Run([]byte(content))
-			fmt.Println(string(htmlOutput))
+			htmlOutput, _, err := core.RenderMarkdown([]byte(content))
+			if err != nil {
+				return fmt.Errorf("failed to render markdown as HTML: %w", err)
+			}
+			fmt.Println(htmlOutput)
 		case "plain":
 			fallthrough
 		case "md":

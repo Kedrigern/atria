@@ -59,6 +59,8 @@ echo "[DATA] Adding notes..."
 cat << 'EOF' | ./bin/atria note add "Solar Panels" --path="/home/solar"
 # Solar Panel Efficiency Analysis
 
+> [!WARNING] Electricity can be dangarous
+
 This document serves to analyze the efficiency of our home solar power plant. We need to calculate it properly before purchasing an additional battery.
 
 Here is a small test of raw HTML in Markdown: <span style="color: #f59e0b; font-weight: bold;">This should be orange and bold!</span>

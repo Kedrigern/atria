@@ -7,6 +7,34 @@
         <link rel="stylesheet" href="/static/water.css" />
         <link rel="stylesheet" href="/static/style.css" />
         <script src="/static/htmx.min.js"></script>
+
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css"
+            media="(prefers-color-scheme: dark)"
+        />
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css"
+            media="(prefers-color-scheme: light)"
+        />
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+        <script>
+            MathJax = {
+                tex: {
+                    inlineMath: [
+                        ["$", "$"],
+                        ["\\(", "\\)"],
+                    ],
+                },
+            };
+        </script>
+        <script
+            id="MathJax-script"
+            async
+            src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+        ></script>
     </head>
     <body>
         <div id="mobile-header">
@@ -199,6 +227,59 @@
                     container.remove();
                 }
             });
+        </script>
+        <script type="module">
+            import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+            mermaid.initialize({ startOnLoad: false, theme: "neutral" });
+
+            function initPlugins() {
+                // 1. Zvýraznění syntaxe kódu
+                if (typeof hljs !== "undefined") {
+                    document
+                        .querySelectorAll("pre code:not(.language-mermaid)")
+                        .forEach((el) => {
+                            if (!el.dataset.highlighted) {
+                                hljs.highlightElement(el);
+                            }
+                        });
+                }
+
+                // 2. Vykreslení matematiky (MathJax)
+                if (typeof MathJax !== "undefined" && MathJax.typesetPromise) {
+                    MathJax.typesetPromise();
+                }
+
+                // 3. Vykreslení Mermaid grafů
+                const unrenderedMermaids = [];
+                document
+                    .querySelectorAll("code.language-mermaid")
+                    .forEach((block) => {
+                        const pre = block.parentElement;
+                        // Ochrana, abychom nezpracovávali jeden graf dvakrát
+                        if (!pre.hasAttribute("data-mermaid-processed")) {
+                            pre.classList.add("mermaid");
+                            pre.setAttribute("data-mermaid-processed", "true");
+                            pre.textContent = block.textContent; // Přepis na čistý text pro Mermaid
+                            unrenderedMermaids.push(pre);
+                        }
+                    });
+
+                // Spustíme Mermaid pouze nad těmi uzly, které ještě nebyly vykresleny
+                if (unrenderedMermaids.length > 0) {
+                    try {
+                        mermaid.run({ nodes: unrenderedMermaids });
+                    } catch (e) {
+                        console.warn("Mermaid error:", e);
+                    }
+                }
+            }
+
+            // Spustíme okamžitě pro první načtení stránky přes tvrdé URL
+            // (modul garantuje, že v tento moment je už DOM stránky hotový)
+            initPlugins();
+
+            // A navěsíme posluchače na HTMX pro všechna další "měkká" načtení (prokliky v menu)
+            document.body.addEventListener("htmx:afterSettle", initPlugins);
         </script>
     </body>
 </html>

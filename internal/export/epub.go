@@ -4,13 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"html"
 
 	"atria/internal/articles"
 	"atria/internal/core"
 	"atria/internal/notes"
 
 	"github.com/bmaupin/go-epub"
-	"github.com/russross/blackfriday/v2"
 )
 
 // ExportEPUB bundles multiple articles and notes into a single EPUB file.
@@ -22,7 +22,7 @@ func ExportEPUB(ctx context.Context, db *sql.DB, items []core.EntitySummary, out
 		var htmlBody string
 
 		if item.Type == core.TypeArticle {
-			// Získáme vyčištěné HTML článku
+			// Load cleaned article HTML.
 			content, err := articles.GetArticleHTML(ctx, db, item.ID)
 			if err != nil {
 				fmt.Printf("⚠️ Skipping '%s': %v\n", item.Title, err)
@@ -31,21 +31,26 @@ func ExportEPUB(ctx context.Context, db *sql.DB, items []core.EntitySummary, out
 			htmlBody = content
 
 		} else if item.Type == core.TypeNote {
-			// Získáme Markdown poznámky a převedeme ho na HTML
+			// Load note Markdown and render it to HTML.
 			content, err := notes.GetNoteContent(ctx, db, item.ID)
 			if err != nil {
 				fmt.Printf("⚠️ Skipping '%s': %v\n", item.Title, err)
 				continue
 			}
-			htmlBody = string(blackfriday.Run([]byte(content)))
+			htmlStr, _, err := core.RenderMarkdown([]byte(content))
+			if err != nil {
+				fmt.Printf("⚠️ Skipping '%s': markdown render failed: %v\n", item.Title, err)
+				continue
+			}
+			htmlBody = htmlStr
 		} else {
-			// Tento fallback by neměl nastat, protože to filtrujeme už v CLI
+			// This should not happen because unsupported types are filtered earlier.
 			continue
 		}
 
-		// EPUB vyžaduje, aby obsah každé kapitoly byl validní (X)HTML uvnitř body tagu.
-		// Obalíme obsah a přidáme nadpis <h1>, aby kapitola vypadala hezky i ve čtečce.
-		sectionHTML := fmt.Sprintf("<h1>%s</h1>\n<div>%s</div>", item.Title, htmlBody)
+		// EPUB sections must contain valid (X)HTML body content.
+		escapedTitle := html.EscapeString(item.Title)
+		sectionHTML := fmt.Sprintf("<h1>%s</h1>\n<div>%s</div>", escapedTitle, htmlBody)
 
 		// Přidáme sekci (kapitolu) do knihy
 		_, err := e.AddSection(sectionHTML, item.Title, "", "")
@@ -55,6 +60,6 @@ func ExportEPUB(ctx context.Context, db *sql.DB, items []core.EntitySummary, out
 		}
 	}
 
-	// Uložíme výsledný soubor
+	// Save the final EPUB file.
 	return e.Write(outPath)
 }
