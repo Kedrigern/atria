@@ -272,6 +272,71 @@
                         console.warn("Mermaid error:", e);
                     }
                 }
+
+                // 4. Dynamické vygenerování Obsahu (TOC) pro poznámky
+                const noteView = document.getElementById("note-view");
+                // Ujistíme se, že jsme na detailu poznámky a že TOC ještě neexistuje
+                if (noteView && !document.getElementById("toc-container")) {
+                    const headings = noteView.querySelectorAll("h2, h3");
+
+                    if (headings.length > 0) {
+                        const details = document.createElement("details");
+                        details.id = "toc-container";
+                        // Nastavíme podobný design jako mají detaily v RSS triage
+                        details.style.background = "var(--background-alt)";
+                        details.style.padding = "10px 15px";
+                        details.style.marginBottom = "25px";
+                        details.style.borderRadius = "6px";
+                        details.style.border = "1px solid var(--border)";
+
+                        const summary = document.createElement("summary");
+                        summary.textContent = "Obsah";
+                        summary.style.fontWeight = "bold";
+                        summary.style.color = "var(--text-heading)";
+                        summary.style.margin = "0";
+                        details.appendChild(summary);
+
+                        const ul = document.createElement("ul");
+                        ul.style.marginTop = "15px";
+                        ul.style.marginBottom = "5px";
+                        ul.style.paddingLeft = "20px";
+                        ul.style.listStyleType = "none"; // Čistší vzhled bez teček
+
+                        headings.forEach((h) => {
+                            const li = document.createElement("li");
+                            li.style.marginBottom = "8px";
+
+                            // H3 lehce odsadíme a zmenšíme, aby vznikla vizuální hierarchie
+                            if (h.tagName === "H3") {
+                                li.style.marginLeft = "20px";
+                                li.style.fontSize = "0.95em";
+                            }
+
+                            const a = document.createElement("a");
+                            a.href = "#" + h.id;
+                            a.textContent = h.innerText;
+                            a.style.color = "var(--text-main)";
+                            a.style.textDecoration = "none";
+
+                            // Hover efekt přes JS, ať neplevelíme CSS soubor
+                            a.onmouseover = () => {
+                                a.style.textDecoration = "underline";
+                                a.style.color = "var(--links)";
+                            };
+                            a.onmouseout = () => {
+                                a.style.textDecoration = "none";
+                                a.style.color = "var(--text-main)";
+                            };
+
+                            li.appendChild(a);
+                            ul.appendChild(li);
+                        });
+
+                        details.appendChild(ul);
+                        // Vložíme TOC těsně před div s poznámkou (pod H1 hlavní titulek)
+                        noteView.parentNode.insertBefore(details, noteView);
+                    }
+                }
             }
 
             // Spustíme okamžitě pro první načtení stránky přes tvrdé URL
