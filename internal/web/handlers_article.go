@@ -19,7 +19,10 @@ import (
 )
 
 func (s *Server) handleRead(c *gin.Context) {
-	user := s.getDummyUser(c)
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
 
 	page := 1
 	if p, err := strconv.Atoi(c.Query("page")); err == nil && p > 0 {
@@ -53,7 +56,11 @@ func (s *Server) handleRead(c *gin.Context) {
 }
 
 func (s *Server) handleReadDetail(c *gin.Context) {
-	user := s.getDummyUser(c)
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+
 	id, err := core.ParseUUID(c.Param("id"))
 	if err != nil {
 		s.renderError(c, http.StatusBadRequest, "Invalid ID")
@@ -106,7 +113,11 @@ func (s *Server) handleReadDetail(c *gin.Context) {
 }
 
 func (s *Server) handleReadArchive(c *gin.Context) {
-	user := s.getDummyUser(c)
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+
 	id, err := core.ParseUUID(c.Param("id"))
 	if err != nil {
 		s.renderError(c, http.StatusBadRequest, "Invalid ID")
@@ -148,7 +159,11 @@ func (s *Server) handleReadArchive(c *gin.Context) {
 }
 
 func (s *Server) handleReadAdd(c *gin.Context) {
-	user := s.getDummyUser(c)
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+
 	urlStr := c.PostForm("url")
 	userNote := c.PostForm("user_note")
 
@@ -174,7 +189,11 @@ func (s *Server) handleReadAdd(c *gin.Context) {
 }
 
 func (s *Server) handleReadRefetch(c *gin.Context) {
-	user := s.getDummyUser(c)
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+
 	id, err := core.ParseUUID(c.Param("id"))
 	if err != nil {
 		s.renderError(c, http.StatusBadRequest, "Invalid ID")
@@ -193,7 +212,11 @@ func (s *Server) handleReadRefetch(c *gin.Context) {
 
 // handleReadUpdateNote processes the update of the user note for the given article
 func (s *Server) handleReadUpdateNote(c *gin.Context) {
-	user := s.getDummyUser(c)
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+
 	articleID, err := core.ParseUUID(c.Param("id"))
 	if err != nil {
 		s.renderError(c, http.StatusBadRequest, "Invalid ID")
@@ -217,7 +240,11 @@ func (s *Server) handleReadUpdateNote(c *gin.Context) {
 }
 
 func (s *Server) handleReadExportMD(c *gin.Context) {
-	user := s.getDummyUser(c)
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+
 	id, err := core.ParseUUID(c.Param("id"))
 	if err != nil {
 		s.renderError(c, http.StatusBadRequest, "Invalid ID")
@@ -231,7 +258,6 @@ func (s *Server) handleReadExportMD(c *gin.Context) {
 		return
 	}
 
-	// Vezmeme hezký Markdown z článku
 	content, err := articles.GetArticleMarkdown(c.Request.Context(), s.db, id)
 	if err != nil {
 		s.renderError(c, http.StatusInternalServerError, "Failed to process article Markdown")
@@ -255,7 +281,11 @@ func (s *Server) handleReadExportMD(c *gin.Context) {
 }
 
 func (s *Server) handleReadExportEPUB(c *gin.Context) {
-	user := s.getDummyUser(c)
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+
 	id, err := core.ParseUUID(c.Param("id"))
 	if err != nil {
 		s.renderError(c, http.StatusBadRequest, "Invalid ID")

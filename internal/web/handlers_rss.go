@@ -11,7 +11,10 @@ import (
 )
 
 func (s *Server) handleRSS(c *gin.Context) {
-	user := s.getDummyUser(c)
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
 
 	page := 1
 	if p, err := strconv.Atoi(c.Query("page")); err == nil && p > 0 {
@@ -45,7 +48,11 @@ func (s *Server) handleRSS(c *gin.Context) {
 }
 
 func (s *Server) handleRSSAdd(c *gin.Context) {
-	user := s.getDummyUser(c)
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+
 	title := c.PostForm("title")
 	urlStr := c.PostForm("url")
 
@@ -75,7 +82,11 @@ func (s *Server) handleRSSAdd(c *gin.Context) {
 }
 
 func (s *Server) handleRSSSave(c *gin.Context) {
-	user := s.getDummyUser(c)
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+
 	id, err := core.ParseUUID(c.Param("id"))
 	if err != nil {
 		s.renderError(c, http.StatusBadRequest, "Invalid ID")
@@ -118,7 +129,11 @@ func (s *Server) handleRSSFetch(c *gin.Context) {
 }
 
 func (s *Server) handleRSSFeeds(c *gin.Context) {
-	user := s.getDummyUser(c)
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+
 	feeds, err := rss.ListFeeds(c.Request.Context(), s.db, user.ID)
 	if err != nil {
 		s.renderError(c, http.StatusInternalServerError, "Failed to list feeds: "+err.Error())
@@ -130,7 +145,11 @@ func (s *Server) handleRSSFeeds(c *gin.Context) {
 }
 
 func (s *Server) handleRSSArchive(c *gin.Context) {
-	user := s.getDummyUser(c)
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+
 	id, err := core.ParseUUID(c.Param("id"))
 	if err != nil {
 		s.renderError(c, http.StatusBadRequest, "Invalid ID")
@@ -154,7 +173,10 @@ func (s *Server) handleRSSArchive(c *gin.Context) {
 }
 
 func (s *Server) handleRSSArchiveBatch(c *gin.Context) {
-	user := s.getDummyUser(c)
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
 
 	// HTMX will send the IDs as an array from the hidden inputs
 	idStrs := c.PostFormArray("ids")

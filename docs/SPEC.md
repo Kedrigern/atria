@@ -59,6 +59,7 @@ Everything in Atria is connected. A dedicated linking engine parses internal lin
 ### 3.2. Users & Collaboration
 * **Multi-User Instance:** A single Atria server can host multiple isolated accounts.
 * **Mentions & Notifications:** Deferred beyond v1.
+* **Authentication (SSO-Only):** Web access is secured exclusively via Forward Authentication (Authelia/Authentik). Atria handles zero passwords or login screens.
 * **Access Control:** Users can set item visibility to strictly private, shareable across the instance (`users`), or fully public (`public`).
 
 ### 3.3. Data Ingestion

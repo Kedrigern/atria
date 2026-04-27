@@ -17,7 +17,7 @@ var serverCmd = &cobra.Command{
 	Use:   "server",
 	Short: "Starts the Atria web server",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		// 1. Připojení k databázi (bez uživatelského kontextu, server obsluhuje více uživatelů)
+		// 1. Connect to DB
 		dsn := os.Getenv("DATABASE_URL")
 		db, err := database.InitDB(dsn)
 		if err != nil {
@@ -25,16 +25,16 @@ var serverCmd = &cobra.Command{
 		}
 		defer db.Close()
 
-		// 2. Inicializace webového serveru
+		// 2. Init web server
 		srv := web.NewServer(db)
 		router := srv.SetupRouter()
 
-		// 3. Spuštění
+		// 3. Run
 		port := serverPort
 		if port == "" {
 			port = os.Getenv("PORT")
 			if port == "" {
-				port = "8080" // Výchozí port
+				port = "8080"
 			}
 		}
 

@@ -5,13 +5,16 @@ import (
 	"atria/internal/core"
 	"atria/internal/notes"
 	"atria/internal/rss"
+	"atria/internal/users"
 	"database/sql"
 	"embed"
 	"html/template"
 	"io/fs"
 	"net/http"
 	"net/url"
+	"os"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -36,26 +39,66 @@ func NewServer(db *sql.DB) *Server {
 	return &Server{db: db}
 }
 
-// getDummyUser first user form DB
-// Temporaly solution before we implement auth in web
-func (s *Server) getDummyUser(c *gin.Context) *core.User {
-	var email string
-	err := s.db.QueryRowContext(c.Request.Context(), "SELECT email FROM users LIMIT 1").Scan(&email)
-	if err != nil {
-		panic("No user found in database. Please run 'atria user add' via CLI first.")
-	}
+// AuthMiddleware solves identity pass by header from Authelia
+func (s *Server) AuthMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		headerName := os.Getenv("PROXY_AUTH_HEADER")
+		if headerName == "" {
+			headerName = "Remote-Email"
+		}
 
-	user, err := core.FindUser(c.Request.Context(), s.db, email)
-	if err != nil {
-		panic("Failed to load user: " + err.Error())
-	}
+		email := c.GetHeader(headerName)
+		groups := c.GetHeader("Remote-Groups")
 
-	c.Set("currentUser", user)
-	return user
+		if email == "" && os.Getenv("ATRIA_ENV") == "development" {
+			email = os.Getenv("ATRIA_USER")
+		}
+
+		if email == "" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized: Missing identity header"})
+			return
+		}
+
+		user, err := core.FindUser(c.Request.Context(), s.db, email)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Forbidden: User not registered in Atria"})
+			return
+		}
+
+		newRole := core.RoleUser
+		if strings.Contains(groups, "admins") {
+			newRole = core.RoleAdmin
+		}
+
+		if user.Role != newRole {
+			_ = users.UpdateUserRole(c.Request.Context(), s.db, user.Email, newRole)
+			user.Role = newRole
+		}
+
+		c.Set("currentUser", user)
+		c.Next()
+	}
+}
+
+// getUser
+func (s *Server) getUser(c *gin.Context) *core.User {
+	val, exists := c.Get("currentUser")
+	if !exists {
+		return nil
+	}
+	return val.(*core.User)
 }
 
 func (s *Server) SetupRouter() *gin.Engine {
 	r := gin.Default()
+
+	trustedProxiesRaw := os.Getenv("TRUSTED_PROXIES")
+	if trustedProxiesRaw != "" {
+		proxies := strings.Split(trustedProxiesRaw, ",")
+		r.SetTrustedProxies(proxies)
+	} else {
+		r.SetTrustedProxies(nil)
+	}
 
 	subFS, err := fs.Sub(StaticFS, "static")
 	if err != nil {
@@ -63,24 +106,27 @@ func (s *Server) SetupRouter() *gin.Engine {
 	}
 	r.StaticFS("/static", http.FS(subFS))
 
+	auth := r.Group("/")
+	auth.Use(s.AuthMiddleware())
+
 	// ==========================================
 	// 1. BASIC PAGES
 	// ==========================================
-	r.GET("/", s.handleHome)
-	r.GET("/tables", s.makeHandler("table_list.html", nil))
-	r.GET("/settings", s.makeHandler("settings.html", nil))
-	r.GET("/profile", s.makeHandler("profile.html", nil))
-	r.GET("/attachments", s.handleAttachments)
+	auth.GET("/", s.handleHome)
+	auth.GET("/tables", s.makeHandler("table_list.html", nil))
+	auth.GET("/settings", s.makeHandler("settings.html", nil))
+	auth.GET("/profile", s.makeHandler("profile.html", nil))
+	auth.GET("/attachments", s.handleAttachments)
 
 	// RSS
-	rss := r.Group("/rss")
+	rss := auth.Group("/rss")
 	{
 		rss.GET("", s.handleRSS)
 		rss.GET("/feeds", s.handleRSSFeeds)
 	}
 
 	// Read (Articles)
-	read := r.Group("/read")
+	read := auth.Group("/read")
 	{
 		read.GET("", s.handleRead)
 		read.GET("/:id", s.handleReadDetail)
@@ -89,7 +135,7 @@ func (s *Server) SetupRouter() *gin.Engine {
 	}
 
 	// Notes
-	notes := r.Group("/notes")
+	notes := auth.Group("/notes")
 	{
 		notes.GET("", s.handleNotes)
 		notes.GET("/new", s.handleNoteAdd)
@@ -99,7 +145,7 @@ func (s *Server) SetupRouter() *gin.Engine {
 	}
 
 	// Tags
-	tags := r.Group("/tags")
+	tags := auth.Group("/tags")
 	{
 		tags.GET("", s.handleTags)
 		tags.GET("/:name", s.handleTagDetail)
@@ -108,7 +154,7 @@ func (s *Server) SetupRouter() *gin.Engine {
 	// ==========================================
 	// 2. API ENDPOINTS (HTMX & Form submits)
 	// ==========================================
-	api := r.Group("/api")
+	api := auth.Group("/api")
 	{
 		// Cross-Entity
 		entity := api.Group("/entity/:id")
@@ -161,7 +207,10 @@ func (s *Server) render(c *gin.Context, tmplName string, data gin.H) {
 		data = gin.H{}
 	}
 
-	user := s.getDummyUser(c)
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
 
 	data["Flash"] = s.getFlash(c)
 	data["Theme"] = user.Preferences.Theme
@@ -171,7 +220,6 @@ func (s *Server) render(c *gin.Context, tmplName string, data gin.H) {
 			return t.Format("02.01.2006 15:04")
 		},
 		"stripHTML": func(s string) string {
-			// Delete all html tags for clean perex
 			re := regexp.MustCompile(`<[^>]*>`)
 			return re.ReplaceAllString(s, "")
 		},
@@ -262,7 +310,11 @@ func (s *Server) renderError(c *gin.Context, status int, message string) {
 }
 
 func (s *Server) handleHome(c *gin.Context) {
-	user := s.getDummyUser(c)
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+
 	ctx := c.Request.Context()
 
 	rssItems, err := rss.ListItemsToRead(ctx, s.db, user.ID, 100, 0)

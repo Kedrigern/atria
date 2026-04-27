@@ -10,7 +10,11 @@ import (
 )
 
 func (s *Server) handleAttachments(c *gin.Context) {
-	user := s.getDummyUser(c)
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+
 	list, err := attachments.ListAttachments(c.Request.Context(), s.db, user.ID)
 	if err != nil {
 		s.renderError(c, http.StatusInternalServerError, "Chyba při načítání příloh: "+err.Error())
@@ -23,7 +27,11 @@ func (s *Server) handleAttachments(c *gin.Context) {
 }
 
 func (s *Server) handleEntityAttachmentUpload(c *gin.Context) {
-	user := s.getDummyUser(c)
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+
 	entityID, _ := core.ParseUUID(c.Param("id"))
 
 	file, err := c.FormFile("file")

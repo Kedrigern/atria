@@ -18,7 +18,11 @@ import (
 )
 
 func (s *Server) handleNotes(c *gin.Context) {
-	user := s.getDummyUser(c)
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+
 	list, err := notes.ListNotes(c.Request.Context(), s.db, user.ID)
 	if err != nil {
 		s.renderError(c, http.StatusInternalServerError, "Failed to load notes: "+err.Error())
@@ -36,7 +40,11 @@ func (s *Server) handleNotes(c *gin.Context) {
 }
 
 func (s *Server) handleNoteDetail(c *gin.Context) {
-	user := s.getDummyUser(c)
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+
 	id, err := core.ParseUUID(c.Param("id"))
 	if err != nil {
 		s.renderError(c, http.StatusBadRequest, "Invalid ID")
@@ -82,7 +90,11 @@ func (s *Server) handleNoteDetail(c *gin.Context) {
 }
 
 func (s *Server) handleNoteUpdate(c *gin.Context) {
-	user := s.getDummyUser(c)
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+
 	id, err := core.ParseUUID(c.Param("id"))
 	if err != nil {
 		s.renderError(c, http.StatusBadRequest, "Invalid ID")
@@ -109,7 +121,11 @@ func (s *Server) handleNoteAdd(c *gin.Context) {
 }
 
 func (s *Server) handleNoteCreate(c *gin.Context) {
-	user := s.getDummyUser(c)
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+
 	title := c.PostForm("title")
 	path := c.PostForm("path")
 	content := c.PostForm("content")
@@ -136,7 +152,11 @@ func (s *Server) handleNoteCreate(c *gin.Context) {
 
 // handleEntityLinkAdd
 func (s *Server) handleEntityLinkAdd(c *gin.Context) {
-	user := s.getDummyUser(c)
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+
 	sourceID, err := core.ParseUUID(c.Param("id"))
 	if err != nil {
 		s.renderError(c, http.StatusBadRequest, "Invalid source ID")
@@ -186,7 +206,11 @@ func (s *Server) handleEntityLinkAdd(c *gin.Context) {
 }
 
 func (s *Server) handleNoteDelete(c *gin.Context) {
-	user := s.getDummyUser(c)
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+
 	id, err := core.ParseUUID(c.Param("id"))
 	if err != nil {
 		s.renderError(c, http.StatusBadRequest, "Invalid ID")
@@ -207,7 +231,11 @@ func (s *Server) handleNoteDelete(c *gin.Context) {
 }
 
 func (s *Server) handleNoteExportMD(c *gin.Context) {
-	user := s.getDummyUser(c)
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+
 	id, err := core.ParseUUID(c.Param("id"))
 	if err != nil {
 		s.renderError(c, http.StatusBadRequest, "Invalid ID")
@@ -252,7 +280,11 @@ func (s *Server) handleNoteExportMD(c *gin.Context) {
 }
 
 func (s *Server) handleNoteExportEPUB(c *gin.Context) {
-	user := s.getDummyUser(c)
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+
 	id, err := core.ParseUUID(c.Param("id"))
 	if err != nil {
 		s.renderError(c, http.StatusBadRequest, "Invalid ID")
@@ -266,7 +298,7 @@ func (s *Server) handleNoteExportEPUB(c *gin.Context) {
 		return
 	}
 
-	// Vytvoříme dočasný soubor pro EPUB
+	// Create temporaly file for EPUB
 	tempFile, err := os.CreateTemp("", "atria-note-*.epub")
 	if err != nil {
 		s.renderError(c, http.StatusInternalServerError, "Failed to create temp file")
@@ -274,7 +306,7 @@ func (s *Server) handleNoteExportEPUB(c *gin.Context) {
 	}
 	tempPath := tempFile.Name()
 	tempFile.Close()
-	defer os.Remove(tempPath) // Soubor se smaže, jakmile skončí request
+	defer os.Remove(tempPath) // Delete after request is closed
 
 	items := []core.EntitySummary{{ID: id, Title: title, Type: core.TypeNote}}
 	if err := export.ExportEPUB(c.Request.Context(), s.db, items, tempPath); err != nil {
