@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -115,7 +116,7 @@ func (s *Server) SetupRouter() *gin.Engine {
 	auth.GET("/", s.handleHome)
 	auth.GET("/tables", s.makeHandler("table_list.html", nil))
 	auth.GET("/settings", s.makeHandler("settings.html", nil))
-	auth.GET("/profile", s.makeHandler("profile.html", nil))
+	auth.GET("/profile", s.handleProfile)
 	auth.GET("/attachments", s.handleAttachments)
 
 	// RSS
@@ -193,6 +194,7 @@ func (s *Server) SetupRouter() *gin.Engine {
 
 		// API: Other
 		api.POST("/tags/add", s.handleTagAdd)
+		api.POST("/profile/preferences", s.handleProfilePreferences)
 	}
 
 	return r
@@ -212,6 +214,7 @@ func (s *Server) render(c *gin.Context, tmplName string, data gin.H) {
 		return
 	}
 
+	data["User"] = user
 	data["Flash"] = s.getFlash(c)
 	data["Theme"] = user.Preferences.Theme
 
@@ -344,6 +347,64 @@ func (s *Server) handleHome(c *gin.Context) {
 		"InboxCount":  len(articlesList),
 		"RecentNotes": notesList,
 	})
+}
+
+func (s *Server) handleProfile(c *gin.Context) {
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+
+	ctx := c.Request.Context()
+
+	var noteCount, articleCount, tagCount int
+	_ = s.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM notes WHERE owner_id = $1", user.ID).Scan(&noteCount)
+	_ = s.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM articles WHERE owner_id = $1", user.ID).Scan(&articleCount)
+	_ = s.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM tags WHERE owner_id = $1", user.ID).Scan(&tagCount)
+
+	s.render(c, "profile.html", gin.H{
+		"User":         user,
+		"NoteCount":    noteCount,
+		"ArticleCount": articleCount,
+		"TagCount":     tagCount,
+		"ProxyHeaders": gin.H{
+			"Email":  c.GetHeader("Remote-Email"),
+			"User":   c.GetHeader("Remote-User"),
+			"Groups": c.GetHeader("Remote-Groups"),
+		},
+	})
+}
+
+func (s *Server) handleProfilePreferences(c *gin.Context) {
+	user := s.getUser(c)
+	if user == nil {
+		c.String(http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	prefs := user.Preferences
+
+	newTheme := c.PostForm("theme")
+	if newTheme == "light" || newTheme == "dark" || newTheme == "system" {
+		prefs.Theme = newTheme
+	}
+
+	if sizeStr := c.PostForm("pagination_size"); sizeStr != "" {
+		if size, err := strconv.Atoi(sizeStr); err == nil && size >= 10 && size <= 100 {
+			prefs.PaginationSize = size
+		}
+	}
+
+	prefs.RSSInlineDetails = c.PostForm("rss_inline_details") == "on"
+
+	err := users.UpdatePreferences(c.Request.Context(), s.db, user.ID, prefs)
+	if err != nil {
+		s.setFlash(c, "error", "Nepodařilo se uložit preference.")
+	} else {
+		s.setFlash(c, "success", "Preference uloženy.")
+	}
+
+	c.Redirect(http.StatusFound, "/profile")
 }
 
 func (s *Server) makeHandler(tmplName string, data gin.H) gin.HandlerFunc {

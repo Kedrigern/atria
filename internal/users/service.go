@@ -9,6 +9,7 @@ import (
 
 	"atria/internal/core"
 
+	"github.com/gofrs/uuid/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -91,6 +92,23 @@ func UpdateUserRole(ctx context.Context, db *sql.DB, identifier string, newRole 
 	_, err = db.ExecContext(ctx, query, newRole, user.ID)
 	if err != nil {
 		return fmt.Errorf("failed to update role: %w", err)
+	}
+
+	return nil
+}
+
+func UpdatePreferences(ctx context.Context, db *sql.DB, userID uuid.UUID, prefs core.UserPreferences) error {
+	prefsJSON, err := json.Marshal(prefs)
+	if err != nil {
+		return fmt.Errorf("failed to marshal user preferences: %w", err)
+	}
+
+	// Předpokládáme sloupec `preferences` v tabulce users
+	query := `UPDATE users SET preferences = $1 WHERE id = $2`
+
+	_, err = db.ExecContext(ctx, query, string(prefsJSON), userID)
+	if err != nil {
+		return fmt.Errorf("failed to update user preferences in db: %w", err)
 	}
 
 	return nil

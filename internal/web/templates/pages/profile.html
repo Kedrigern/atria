@@ -1,59 +1,90 @@
 {{define "content"}}
-
-<div class="centered-view" data-mobile-title="ATRIA: Profile">
-    <h2 class="hide-mobile">My Profile</h2>
-
-    <div
-        style="
-            display: flex;
-            gap: 20px;
-            align-items: center;
-            margin-bottom: 30px;
-        "
-    >
-        <div
-            style="
-                width: 80px;
-                height: 80px;
-                background: var(--accent);
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 2rem;
-                color: #fff;
-            "
-        >
-            M
-        </div>
-        <div>
-            <h3 style="margin: 0">@martin</h3>
-            <p style="margin: 0; color: var(--text-muted)">Instance Admin</p>
-        </div>
+<div class="centered-view">
+    <div class="doc-header">
+        <h1>Uživatelský profil</h1>
+        <p class="text-muted">Informace o vašem účtu v systému Atria</p>
     </div>
 
-    <h4>API Keys (CLI Access)</h4>
-    <p style="font-size: 0.9rem; color: var(--text-muted)">
-        These keys allow external tools (like the Atria CLI) to access your Mind
-        Palace.
-    </p>
+    <div class="grid-2">
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+                <div style="width: 50px; height: 50px; background: var(--accent); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; text-transform: uppercase;">
+                    {{if .User.DisplayName}}
+                        {{slice .User.DisplayName 0 1 | printf "%s"}}
+                    {{else}}
+                        {{slice .User.Email 0 1 | printf "%s"}}
+                    {{end}}
+                </div>
+                <div>
+                    <h3 style="margin: 0;">{{if .User.DisplayName}}{{.User.DisplayName}}{{else}}{{.User.Email}}{{end}}</h3>
+                    <span class="tag {{if eq .User.Role "admin"}}tag-important{{end}}">{{.User.Role}}</span>
+                </div>
+            </div>
 
-    <div
-        style="
-            background: var(--pane-bg);
-            padding: 15px;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        "
-    >
-        <code style="color: var(--text-main)">atr_8f92jKls92...</code>
-        <button class="outline" style="padding: 5px 10px">Revoke</button>
+
+            <div class="card shadow" style="margin-top: 30px;">
+                <h3>⚙️ Nastavení a preference</h3>
+                <p class="text-muted" style="font-size: 0.9rem; margin-bottom: 15px;">Přizpůsobte si Atrii podle sebe. (Další nastavení lze provést přes CLI).</p>
+
+                <form action="/api/profile/preferences" method="POST">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+
+                        <div>
+                            <label style="display: block; font-weight: bold; margin-bottom: 5px;">Vzhled (Téma):</label>
+                            <select name="theme" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid var(--border); background: var(--background);">
+                                <option value="system" {{if eq .User.Preferences.Theme "system"}}selected{{end}}>💻 Systémové</option>
+                                <option value="light" {{if eq .User.Preferences.Theme "light"}}selected{{end}}>☀️ Světlé</option>
+                                <option value="dark" {{if eq .User.Preferences.Theme "dark"}}selected{{end}}>🌙 Tmavé</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label style="display: block; font-weight: bold; margin-bottom: 5px;">Počet položek na stránku:</label>
+                            <input type="number" name="pagination_size" min="10" max="100" step="10" value="{{.User.Preferences.PaginationSize}}" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid var(--border); background: var(--background);">
+                        </div>
+
+                    </div>
+
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                            <input type="checkbox" name="rss_inline_details" {{if .User.Preferences.RSSInlineDetails}}checked{{end}}>
+                            <strong>Zobrazovat detaily RSS článků inline (přímo v seznamu)</strong>
+                        </label>
+                    </div>
+
+                    <div style="text-align: right;">
+                        <button type="submit" class="button">Uložit preference</button>
+                    </div>
+                </form>
+            </div>    </div>
+
+    <div class="card shadow" style="margin-top: 30px; border-left: 4px solid var(--border);">
+        <h3>Relace a Identita (SSO)</h3>
+        <p style="font-size: 0.9rem;">Atria využívá externí autentizaci (Authelia). Níže jsou data předávaná skrze reverzní proxy:</p>
+
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 10px;">
+            <tr style="border-bottom: 1px solid var(--border);">
+                <th style="text-align: left; padding: 8px;">Hlavička</th>
+                <th style="text-align: left; padding: 8px;">Hodnota</th>
+            </tr>
+            <tr>
+                <td style="padding: 8px; color: var(--text-muted);">Remote-Email</td>
+                <td style="padding: 8px;"><code>{{index .ProxyHeaders "Email"}}</code></td>
+            </tr>
+            <tr>
+                <td style="padding: 8px; color: var(--text-muted);">Remote-User</td>
+                <td style="padding: 8px;"><code>{{index .ProxyHeaders "User"}}</code></td>
+            </tr>
+            <tr>
+                <td style="padding: 8px; color: var(--text-muted);">Remote-Groups</td>
+                <td style="padding: 8px; color: var(--accent);">{{index .ProxyHeaders "Groups"}}</td>
+            </tr>
+        </table>
     </div>
 
-    <button>+ Generate New Token</button>
+    <div style="margin-top: 30px; text-align: center;">
+        <button class="button outline" onclick="alert('Změnu hesla a 2FA provádějte ve svém profilu Authelia.')">
+            🔐 Správa zabezpečení (Authelia)
+        </button>
+    </div>
 </div>
 {{end}}
