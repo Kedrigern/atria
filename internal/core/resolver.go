@@ -64,10 +64,10 @@ func FindUser(ctx context.Context, db *sql.DB, identifier string) (*User, error)
 
 	// Determine if the identifier is a valid UUID or an email string
 	if id, err := ParseUUID(identifier); err == nil {
-		query = `SELECT id, email, display_name, role, preferences, created_at, last_login_at FROM users WHERE id = $1`
+		query = `SELECT id, email, display_name, role, preferences, password_hash, created_at, last_login_at FROM users WHERE id = $1`
 		arg = id
 	} else {
-		query = `SELECT id, email, display_name, role, preferences, created_at, last_login_at FROM users WHERE email = $1`
+		query = `SELECT id, email, display_name, role, preferences, password_hash, created_at, last_login_at FROM users WHERE email = $1`
 		arg = identifier
 	}
 
@@ -77,7 +77,7 @@ func FindUser(ctx context.Context, db *sql.DB, identifier string) (*User, error)
 
 	err := db.QueryRowContext(ctx, query, arg).Scan(
 		&user.ID, &user.Email, &user.DisplayName, &user.Role,
-		&prefsBytes, &user.CreatedAt, &lastLogin,
+		&prefsBytes, &user.PasswordHash, &user.CreatedAt, &lastLogin,
 	)
 
 	if err != nil {

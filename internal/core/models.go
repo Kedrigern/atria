@@ -35,6 +35,13 @@ const (
 	TypeFolder      EntityType = "folder"
 )
 
+type AuthSource string
+
+const (
+	AuthSourceProxy AuthSource = "proxy"
+	AuthSourceLocal AuthSource = "local"
+)
+
 // ==========================================
 // DOMAIN MODELS
 // ==========================================
@@ -42,11 +49,12 @@ const (
 // USER
 
 type User struct {
-	ID           uuid.UUID `json:"id" db:"id"`
-	DisplayName  string    `json:"display_name" db:"display_name"`
-	Email        string    `json:"email" db:"email"`
-	PasswordHash string    `json:"-" db:"password_hash"` // JSON tag "-" guard that password is never showed
-	Role         Role      `json:"role" db:"role"`
+	ID           uuid.UUID  `json:"id" db:"id"`
+	DisplayName  string     `json:"display_name" db:"display_name"`
+	Email        string     `json:"email" db:"email"`
+	PasswordHash string     `json:"-" db:"password_hash"` // JSON tag "-" guard that password is never showed
+	Role         Role       `json:"role" db:"role"`
+	AuthSource   AuthSource `json:"-" db:"-"`
 	Preferences  UserPreferences
 	LastLoginAt  *time.Time `json:"last_login_at,omitempty" db:"last_login_at"`
 	CreatedAt    time.Time  `json:"created_at" db:"created_at"`

@@ -59,6 +59,7 @@
 
     <div class="card shadow" style="margin-top: 30px; border-left: 4px solid var(--border);">
         <h3>Relace a Identita (SSO)</h3>
+
         <p style="font-size: 0.9rem;">Atria využívá externí autentizaci (Authelia). Níže jsou data předávaná skrze reverzní proxy:</p>
 
         <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 10px;">
@@ -81,10 +82,16 @@
         </table>
     </div>
 
+    {{if .SSOManagementURL}}
     <div style="margin-top: 30px; text-align: center;">
-        <button class="button outline" onclick="alert('Změnu hesla a 2FA provádějte ve svém profilu Authelia.')">
+        <a href="{{.SSOManagementURL}}" class="button outline" target="_blank">
             🔐 Správa zabezpečení (Authelia)
-        </button>
+        </a>
     </div>
+    {{end}}
+
+    <a href="/logout" class="button" style="background-color: #d32f2f; color: white; border-color: #d32f2f;">
+                🚪 Odhlásit se
+            </a>
 </div>
 {{end}}

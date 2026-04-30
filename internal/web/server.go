@@ -6,8 +6,11 @@ import (
 	"atria/internal/notes"
 	"atria/internal/rss"
 	"atria/internal/users"
+	"crypto/hmac"
+	"crypto/sha256"
 	"database/sql"
 	"embed"
+	"encoding/hex"
 	"html/template"
 	"io/fs"
 	"net/http"
@@ -19,6 +22,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 )
 
 //go:embed templates/*
@@ -40,23 +44,42 @@ func NewServer(db *sql.DB) *Server {
 	return &Server{db: db}
 }
 
-// AuthMiddleware solves identity pass by header from Authelia
 func (s *Server) AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if c.Request.URL.Path == "/login" {
+			c.Next()
+			return
+		}
+
+		var email string
+		var authSource core.AuthSource
+
 		headerName := os.Getenv("PROXY_AUTH_HEADER")
 		if headerName == "" {
 			headerName = "Remote-Email"
 		}
 
-		email := c.GetHeader(headerName)
-		groups := c.GetHeader("Remote-Groups")
+		if proxyEmail := c.GetHeader(headerName); proxyEmail != "" {
+			email = proxyEmail
+			authSource = core.AuthSourceProxy
+		} else {
+			email = s.verifySessionCookie(c)
+			authSource = core.AuthSourceLocal
+		}
 
+		// (Dev fallback)
 		if email == "" && os.Getenv("ATRIA_ENV") == "development" {
 			email = os.Getenv("ATRIA_USER")
+			authSource = core.AuthSourceLocal
 		}
 
 		if email == "" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized: Missing identity header"})
+			if c.GetHeader("HX-Request") == "true" || strings.HasPrefix(c.Request.URL.Path, "/api/") {
+				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			} else {
+				c.Redirect(http.StatusFound, "/login")
+				c.Abort()
+			}
 			return
 		}
 
@@ -66,14 +89,20 @@ func (s *Server) AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		newRole := core.RoleUser
-		if strings.Contains(groups, "admins") {
-			newRole = core.RoleAdmin
-		}
+		user.AuthSource = authSource
 
-		if user.Role != newRole {
-			_ = users.UpdateUserRole(c.Request.Context(), s.db, user.Email, newRole)
-			user.Role = newRole
+		if authSource == core.AuthSourceProxy {
+			groups := c.GetHeader("Remote-Groups")
+			newRole := core.RoleUser
+			if strings.Contains(groups, "admins") {
+				newRole = core.RoleAdmin
+			}
+
+			if user.Role != newRole {
+				// Předpokládá se existující metoda users.UpdateUserRole
+				// _ = users.UpdateUserRole(c.Request.Context(), s.db, user.Email, newRole)
+				user.Role = newRole
+			}
 		}
 
 		c.Set("currentUser", user)
@@ -118,6 +147,11 @@ func (s *Server) SetupRouter() *gin.Engine {
 	auth.GET("/settings", s.makeHandler("settings.html", nil))
 	auth.GET("/profile", s.handleProfile)
 	auth.GET("/attachments", s.handleAttachments)
+
+	// Login - has it own exception in midleware
+	auth.GET("/login", s.handleLoginGet)
+	auth.POST("/login", s.handleLoginPost)
+	auth.GET("/logout", s.handleLogout)
 
 	// RSS
 	rss := auth.Group("/rss")
@@ -210,13 +244,16 @@ func (s *Server) render(c *gin.Context, tmplName string, data gin.H) {
 	}
 
 	user := s.getUser(c)
-	if user == nil {
+	if user == nil && tmplName != "login.html" {
 		return
 	}
 
-	data["User"] = user
+	if user != nil {
+		data["User"] = user
+		data["Theme"] = user.Preferences.Theme
+	}
+
 	data["Flash"] = s.getFlash(c)
-	data["Theme"] = user.Preferences.Theme
 
 	funcMap := template.FuncMap{
 		"formatDate": func(t time.Time) string {
@@ -363,10 +400,11 @@ func (s *Server) handleProfile(c *gin.Context) {
 	_ = s.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM tags WHERE owner_id = $1", user.ID).Scan(&tagCount)
 
 	s.render(c, "profile.html", gin.H{
-		"User":         user,
-		"NoteCount":    noteCount,
-		"ArticleCount": articleCount,
-		"TagCount":     tagCount,
+		"User":             user,
+		"SSOManagementURL": os.Getenv("SSO_MANAGEMENT_URL"),
+		"NoteCount":        noteCount,
+		"ArticleCount":     articleCount,
+		"TagCount":         tagCount,
 		"ProxyHeaders": gin.H{
 			"Email":  c.GetHeader("Remote-Email"),
 			"User":   c.GetHeader("Remote-User"),
@@ -415,4 +453,94 @@ func (s *Server) makeHandler(tmplName string, data gin.H) gin.HandlerFunc {
 		}
 		s.render(c, tmplName, renderData)
 	}
+}
+
+func (s *Server) setSessionCookie(c *gin.Context, email string) {
+	secret := os.Getenv("SESSION_SECRET")
+	if secret == "" {
+		secret = "default_dev_secret_please_change" // Fallback
+	}
+
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write([]byte(email))
+	signature := hex.EncodeToString(mac.Sum(nil))
+
+	value := email + "|" + signature
+
+	c.SetCookie("atria_session", value, 3600*24*30, "/", "", true, true)
+}
+
+func (s *Server) verifySessionCookie(c *gin.Context) string {
+	cookie, err := c.Cookie("atria_session")
+	if err != nil {
+		return ""
+	}
+
+	parts := strings.Split(cookie, "|")
+	if len(parts) != 2 {
+		return ""
+	}
+	email, signature := parts[0], parts[1]
+
+	secret := os.Getenv("SESSION_SECRET")
+	if secret == "" {
+		secret = "default_dev_secret_please_change"
+	}
+
+	// Znovu spočítáme podpis pro zadaný e-mail a porovnáme
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write([]byte(email))
+	expectedSignature := hex.EncodeToString(mac.Sum(nil))
+
+	// Bezpečné porovnání (zabraňuje timing attacks)
+	if hmac.Equal([]byte(signature), []byte(expectedSignature)) {
+		return email
+	}
+	return ""
+}
+
+func (s *Server) handleLoginGet(c *gin.Context) {
+	if user := s.getUser(c); user != nil {
+		c.Redirect(http.StatusFound, "/")
+		return
+	}
+	s.render(c, "login.html", nil)
+}
+
+func (s *Server) handleLoginPost(c *gin.Context) {
+	email := c.PostForm("email")
+	password := c.PostForm("password")
+
+	user, err := core.FindUser(c.Request.Context(), s.db, email)
+	if err != nil {
+		s.setFlash(c, "error", "Neplatný e-mail nebo heslo.")
+		c.Redirect(http.StatusFound, "/login")
+		return
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password))
+	if err != nil {
+		s.setFlash(c, "error", "Neplatný e-mail nebo heslo.")
+		c.Redirect(http.StatusFound, "/login")
+		return
+	}
+
+	s.setSessionCookie(c, user.Email)
+	c.Redirect(http.StatusFound, "/")
+}
+
+func (s *Server) handleLogout(c *gin.Context) {
+	user := s.getUser(c)
+
+	c.SetCookie("atria_session", "", -1, "/", "", true, true)
+
+	if user != nil && user.AuthSource == core.AuthSourceProxy {
+		logoutURL := os.Getenv("SSO_LOGOUT_URL")
+		if logoutURL != "" {
+			c.Redirect(http.StatusFound, logoutURL)
+			return
+		}
+	}
+
+	c.Redirect(http.StatusFound, "/login")
 }
