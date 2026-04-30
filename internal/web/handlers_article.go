@@ -24,15 +24,7 @@ func (s *Server) handleRead(c *gin.Context) {
 		return
 	}
 
-	page := 1
-	if p, err := strconv.Atoi(c.Query("page")); err == nil && p > 0 {
-		page = p
-	}
-	limit := user.Preferences.PaginationSize
-	if limit <= 0 {
-		limit = 30
-	}
-	offset := (page - 1) * limit
+	page, limit, offset := s.getPagination(c, user)
 
 	list, err := articles.ListArticles(c.Request.Context(), s.db, user.ID, limit+1, offset)
 	if err != nil {
@@ -61,9 +53,8 @@ func (s *Server) handleReadDetail(c *gin.Context) {
 		return
 	}
 
-	id, err := core.ParseUUID(c.Param("id"))
-	if err != nil {
-		s.renderError(c, http.StatusBadRequest, "Invalid ID")
+	id, ok := s.getUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -73,7 +64,7 @@ func (s *Server) handleReadDetail(c *gin.Context) {
 
 	query := `SELECT title, domain, original_url, created_at, COALESCE(user_note, ''), short_id
               FROM articles_full_view WHERE id = $1 AND owner_id = $2`
-	err = s.db.QueryRowContext(c.Request.Context(), query, id, user.ID).
+	err := s.db.QueryRowContext(c.Request.Context(), query, id, user.ID).
 		Scan(&title, &domain, &originalURL, &createdAt, &userNote, &shortID)
 	if err != nil {
 		s.renderError(c, http.StatusNotFound, "Article not found")
@@ -87,13 +78,7 @@ func (s *Server) handleReadDetail(c *gin.Context) {
 	}
 
 	tags, _ := core.GetEntityTags(c.Request.Context(), s.db, id)
-	if err != nil {
-		tags = []core.Tag{}
-	}
 	atts, _ := attachments.GetEntityAttachments(c.Request.Context(), s.db, id)
-	if err != nil {
-		atts = []core.Attachment{}
-	}
 	outgoingLinks, incomingLinks, _ := links.GetEntityLinks(c.Request.Context(), s.db, id)
 
 	s.render(c, "read_detail.html", gin.H{
@@ -118,28 +103,18 @@ func (s *Server) handleReadArchive(c *gin.Context) {
 		return
 	}
 
-	id, err := core.ParseUUID(c.Param("id"))
-	if err != nil {
-		s.renderError(c, http.StatusBadRequest, "Invalid ID")
+	id, ok := s.getUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
-	err = articles.ArchiveArticle(c.Request.Context(), s.db, user.ID, id)
+	err := articles.ArchiveArticle(c.Request.Context(), s.db, user.ID, id)
 	if err != nil {
 		s.renderError(c, http.StatusInternalServerError, "Failed to archive article: "+err.Error())
 		return
 	}
 
-	page := 1
-	if p, err := strconv.Atoi(c.DefaultQuery("page", "1")); err == nil && p > 0 {
-		page = p
-	}
-
-	limit := user.Preferences.PaginationSize
-	if limit <= 0 {
-		limit = 30
-	}
-	offset := (page - 1) * limit
+	page, limit, offset := s.getPagination(c, user)
 	list, err := articles.ListArticles(c.Request.Context(), s.db, user.ID, limit+1, offset)
 	if err != nil {
 		s.renderError(c, http.StatusInternalServerError, "Failed to refresh article list: "+err.Error())
@@ -178,14 +153,7 @@ func (s *Server) handleReadAdd(c *gin.Context) {
 		return
 	}
 
-	if c.GetHeader("HX-Request") == "true" {
-		c.Header("HX-Refresh", "true")
-		c.Status(http.StatusOK)
-		return
-	}
-
-	s.setFlash(c, "success", "Article saved to Inbox.")
-	c.Redirect(http.StatusSeeOther, "/read")
+	s.handleSuccess(c, "/read", "Article saved to Inbox.")
 }
 
 func (s *Server) handleReadRefetch(c *gin.Context) {
@@ -194,32 +162,28 @@ func (s *Server) handleReadRefetch(c *gin.Context) {
 		return
 	}
 
-	id, err := core.ParseUUID(c.Param("id"))
-	if err != nil {
-		s.renderError(c, http.StatusBadRequest, "Invalid ID")
+	id, ok := s.getUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
-	err = articles.RefetchArticle(c.Request.Context(), s.db, user.ID, id)
+	err := articles.RefetchArticle(c.Request.Context(), s.db, user.ID, id)
 	if err != nil {
 		s.renderError(c, http.StatusInternalServerError, "Refetch failed: "+err.Error())
 		return
 	}
 
-	s.setFlash(c, "success", "Article content refreshed from source.")
-	c.Redirect(http.StatusSeeOther, "/read/"+id.String())
+	s.handleSuccess(c, "/read/"+id.String(), "Article content refreshed from source.")
 }
 
-// handleReadUpdateNote processes the update of the user note for the given article
 func (s *Server) handleReadUpdateNote(c *gin.Context) {
 	user := s.getUser(c)
 	if user == nil {
 		return
 	}
 
-	articleID, err := core.ParseUUID(c.Param("id"))
-	if err != nil {
-		s.renderError(c, http.StatusBadRequest, "Invalid ID")
+	articleID, ok := s.getUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -230,13 +194,7 @@ func (s *Server) handleReadUpdateNote(c *gin.Context) {
 		return
 	}
 
-	if c.GetHeader("HX-Request") == "true" {
-		c.Header("HX-Refresh", "true")
-		c.Status(http.StatusOK)
-		return
-	}
-
-	c.Redirect(http.StatusSeeOther, "/read/"+articleID.String())
+	s.handleSuccess(c, "/read/"+articleID.String(), "")
 }
 
 func (s *Server) handleReadExportMD(c *gin.Context) {
@@ -245,14 +203,13 @@ func (s *Server) handleReadExportMD(c *gin.Context) {
 		return
 	}
 
-	id, err := core.ParseUUID(c.Param("id"))
-	if err != nil {
-		s.renderError(c, http.StatusBadRequest, "Invalid ID")
+	id, ok := s.getUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
 	var title, slug, originalURL string
-	err = s.db.QueryRowContext(c.Request.Context(), "SELECT title, slug, original_url FROM articles_full_view WHERE id = $1 AND owner_id = $2", id, user.ID).Scan(&title, &slug, &originalURL)
+	err := s.db.QueryRowContext(c.Request.Context(), "SELECT title, slug, original_url FROM articles_full_view WHERE id = $1 AND owner_id = $2", id, user.ID).Scan(&title, &slug, &originalURL)
 	if err != nil {
 		s.renderError(c, http.StatusNotFound, "Article not found")
 		return
@@ -286,14 +243,13 @@ func (s *Server) handleReadExportEPUB(c *gin.Context) {
 		return
 	}
 
-	id, err := core.ParseUUID(c.Param("id"))
-	if err != nil {
-		s.renderError(c, http.StatusBadRequest, "Invalid ID")
+	id, ok := s.getUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
 	var title, slug string
-	err = s.db.QueryRowContext(c.Request.Context(), "SELECT title, slug FROM entities WHERE id = $1 AND owner_id = $2", id, user.ID).Scan(&title, &slug)
+	err := s.db.QueryRowContext(c.Request.Context(), "SELECT title, slug FROM entities WHERE id = $1 AND owner_id = $2", id, user.ID).Scan(&title, &slug)
 	if err != nil {
 		s.renderError(c, http.StatusNotFound, "Article not found")
 		return

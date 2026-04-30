@@ -6,14 +6,12 @@ import (
 	"atria/internal/export"
 	"atria/internal/links"
 	"atria/internal/notes"
-	"database/sql"
 	"fmt"
 	"html/template"
 	"net/http"
 	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gofrs/uuid/v5"
 	"gopkg.in/yaml.v3"
 )
 
@@ -45,14 +43,13 @@ func (s *Server) handleNoteDetail(c *gin.Context) {
 		return
 	}
 
-	id, err := core.ParseUUID(c.Param("id"))
-	if err != nil {
-		s.renderError(c, http.StatusBadRequest, "Invalid ID")
+	id, ok := s.getUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
 	var title, path, shortID string
-	err = s.db.QueryRowContext(c.Request.Context(), "SELECT title, path, short_id FROM notes_full_view WHERE id = $1 AND owner_id = $2", id, user.ID).Scan(&title, &path, &shortID)
+	err := s.db.QueryRowContext(c.Request.Context(), "SELECT title, path, short_id FROM notes_full_view WHERE id = $1 AND owner_id = $2", id, user.ID).Scan(&title, &path, &shortID)
 	if err != nil {
 		s.renderError(c, http.StatusNotFound, "Note not found")
 		return
@@ -157,35 +154,23 @@ func (s *Server) handleEntityLinkAdd(c *gin.Context) {
 		return
 	}
 
-	sourceID, err := core.ParseUUID(c.Param("id"))
-	if err != nil {
-		s.renderError(c, http.StatusBadRequest, "Invalid source ID")
+	sourceID, ok := s.getUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
 	targetStr := c.PostForm("target_identifier")
 	if targetStr == "" {
-		s.renderError(c, http.StatusBadRequest, "Target is required")
+		s.renderError(c, http.StatusBadRequest, "Cílová entita je vyžadována")
 		return
 	}
 
-	var targetID uuid.UUID
-
-	if parsedID, err := core.ParseUUID(targetStr); err == nil {
-		query := `SELECT id FROM entities WHERE id = $1 AND owner_id = $2 AND deleted_at IS NULL LIMIT 1`
-		err = s.db.QueryRowContext(c.Request.Context(), query, parsedID, user.ID).Scan(&targetID)
-	} else {
-		query := `SELECT id FROM entities WHERE owner_id = $1 AND deleted_at IS NULL AND (short_id = $2 OR title = $3) LIMIT 1`
-		err = s.db.QueryRowContext(c.Request.Context(), query, user.ID, targetStr, targetStr).Scan(&targetID)
-	}
-
-	if err == sql.ErrNoRows {
+	targets, err := core.FindEntities(c.Request.Context(), s.db, user.ID, "", targetStr, false)
+	if err != nil || len(targets) == 0 {
 		s.renderError(c, http.StatusNotFound, "Entita nenalezena. Zkontrolujte název, Short ID nebo UUID.")
 		return
-	} else if err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Database error: "+err.Error())
-		return
 	}
+	targetID := targets[0].ID
 
 	if sourceID == targetID {
 		s.renderError(c, http.StatusBadRequest, "Nemůžete prolinkovat entitu samu na sebe.")
@@ -197,12 +182,7 @@ func (s *Server) handleEntityLinkAdd(c *gin.Context) {
 		return
 	}
 
-	if c.GetHeader("HX-Request") == "true" {
-		c.Header("HX-Refresh", "true")
-		c.Status(http.StatusOK)
-		return
-	}
-	c.Redirect(http.StatusSeeOther, c.Request.Referer())
+	s.handleSuccess(c, c.Request.Referer(), "")
 }
 
 func (s *Server) handleNoteDelete(c *gin.Context) {
@@ -211,9 +191,8 @@ func (s *Server) handleNoteDelete(c *gin.Context) {
 		return
 	}
 
-	id, err := core.ParseUUID(c.Param("id"))
-	if err != nil {
-		s.renderError(c, http.StatusBadRequest, "Invalid ID")
+	id, ok := s.getUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -236,14 +215,13 @@ func (s *Server) handleNoteExportMD(c *gin.Context) {
 		return
 	}
 
-	id, err := core.ParseUUID(c.Param("id"))
-	if err != nil {
-		s.renderError(c, http.StatusBadRequest, "Invalid ID")
+	id, ok := s.getUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
 	var title, slug, path string
-	err = s.db.QueryRowContext(c.Request.Context(), "SELECT title, slug, path FROM notes_full_view WHERE id = $1 AND owner_id = $2", id, user.ID).Scan(&title, &slug, &path)
+	err := s.db.QueryRowContext(c.Request.Context(), "SELECT title, slug, path FROM notes_full_view WHERE id = $1 AND owner_id = $2", id, user.ID).Scan(&title, &slug, &path)
 	if err != nil {
 		s.renderError(c, http.StatusNotFound, "Note not found")
 		return
@@ -285,20 +263,18 @@ func (s *Server) handleNoteExportEPUB(c *gin.Context) {
 		return
 	}
 
-	id, err := core.ParseUUID(c.Param("id"))
-	if err != nil {
-		s.renderError(c, http.StatusBadRequest, "Invalid ID")
+	id, ok := s.getUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
 	var title, slug string
-	err = s.db.QueryRowContext(c.Request.Context(), "SELECT title, slug FROM entities WHERE id = $1 AND owner_id = $2", id, user.ID).Scan(&title, &slug)
+	err := s.db.QueryRowContext(c.Request.Context(), "SELECT title, slug FROM entities WHERE id = $1 AND owner_id = $2", id, user.ID).Scan(&title, &slug)
 	if err != nil {
 		s.renderError(c, http.StatusNotFound, "Note not found")
 		return
 	}
 
-	// Create temporaly file for EPUB
 	tempFile, err := os.CreateTemp("", "atria-note-*.epub")
 	if err != nil {
 		s.renderError(c, http.StatusInternalServerError, "Failed to create temp file")
@@ -306,7 +282,7 @@ func (s *Server) handleNoteExportEPUB(c *gin.Context) {
 	}
 	tempPath := tempFile.Name()
 	tempFile.Close()
-	defer os.Remove(tempPath) // Delete after request is closed
+	defer os.Remove(tempPath)
 
 	items := []core.EntitySummary{{ID: id, Title: title, Type: core.TypeNote}}
 	if err := export.ExportEPUB(c.Request.Context(), s.db, items, tempPath); err != nil {

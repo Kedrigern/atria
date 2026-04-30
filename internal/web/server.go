@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gofrs/uuid/v5"
 )
 
 //go:embed templates/*
@@ -88,6 +89,38 @@ func (s *Server) getUser(c *gin.Context) *core.User {
 		return nil
 	}
 	return val.(*core.User)
+}
+
+func (s *Server) handleSuccess(c *gin.Context, redirectURL string, flashMsg string) {
+	if c.GetHeader("HX-Request") == "true" {
+		c.Header("HX-Refresh", "true")
+		c.Status(http.StatusOK)
+		return
+	}
+	s.setFlash(c, "success", flashMsg)
+	c.Redirect(http.StatusSeeOther, redirectURL)
+}
+
+func (s *Server) getPagination(c *gin.Context, user *core.User) (page, limit, offset int) {
+	page = 1
+	if p, err := strconv.Atoi(c.DefaultQuery("page", c.DefaultPostForm("page", "1"))); err == nil && p > 0 {
+		page = p
+	}
+	limit = user.Preferences.PaginationSize
+	if limit <= 0 {
+		limit = 30
+	}
+	offset = (page - 1) * limit
+	return page, limit, offset
+}
+
+func (s *Server) getUUIDParam(c *gin.Context, paramName string) (uuid.UUID, bool) {
+	id, err := core.ParseUUID(c.Param(paramName))
+	if err != nil {
+		s.renderError(c, http.StatusBadRequest, "Invalid ID format")
+		return uuid.Nil, false
+	}
+	return id, true
 }
 
 func (s *Server) SetupRouter() *gin.Engine {

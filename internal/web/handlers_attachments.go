@@ -2,7 +2,6 @@ package web
 
 import (
 	"atria/internal/attachments"
-	"atria/internal/core"
 	"net/http"
 	"os"
 
@@ -32,20 +31,30 @@ func (s *Server) handleEntityAttachmentUpload(c *gin.Context) {
 		return
 	}
 
-	entityID, _ := core.ParseUUID(c.Param("id"))
+	entityID, ok := s.getUUIDParam(c, "id")
+	if !ok {
+		return
+	}
 
 	file, err := c.FormFile("file")
 	if err != nil {
-		s.renderError(c, http.StatusBadRequest, "No file uploaded")
+		s.renderError(c, http.StatusBadRequest, "Nebyl nahrán žádný soubor")
 		return
 	}
 
-	tempPath := "./data/temp_" + file.Filename
-	if err := c.SaveUploadedFile(file, tempPath); err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Failed to save temp file")
+	tempFile, err := os.CreateTemp("./data", "upload-*.tmp")
+	if err != nil {
+		s.renderError(c, http.StatusInternalServerError, "Failed to create temp file")
 		return
 	}
+	tempPath := tempFile.Name()
+	tempFile.Close()
 	defer os.Remove(tempPath)
+
+	if err := c.SaveUploadedFile(file, tempPath); err != nil {
+		s.renderError(c, http.StatusInternalServerError, "Failed to save uploaded file")
+		return
+	}
 
 	att, err := attachments.AddAttachment(c.Request.Context(), s.db, user.ID, tempPath)
 	if err != nil {

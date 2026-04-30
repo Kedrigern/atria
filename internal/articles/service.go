@@ -18,6 +18,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/go-shiori/go-readability"
 	"github.com/gofrs/uuid/v5"
+	"github.com/microcosm-cc/bluemonday"
 )
 
 // ArticleSummary is a lightweight struct for listing articles.
@@ -86,6 +87,9 @@ func CreateArticle(ctx context.Context, db *sql.DB, ownerID uuid.UUID, urlStr st
 		return nil, fmt.Errorf("failed to parse article: %w", err)
 	}
 
+	p := bluemonday.UGCPolicy()
+	cleanContent := p.Sanitize(parsedArticle.Content)
+
 	// 3. Prepare data for the Entity table
 	title := parsedArticle.Title
 	if title == "" {
@@ -128,7 +132,7 @@ func CreateArticle(ctx context.Context, db *sql.DB, ownerID uuid.UUID, urlStr st
         VALUES ($1, $2, $3, $4, $5, $6)
     `
 	_, err = tx.ExecContext(ctx, queryArticle,
-		entityID, urlStr, domain, parsedArticle.Content, parsedArticle.TextContent, userNote)
+		entityID, urlStr, domain, cleanContent, parsedArticle.TextContent, userNote)
 	if err != nil {
 		return nil, fmt.Errorf("failed to insert article data: %w", err)
 	}
@@ -241,7 +245,6 @@ func ArchiveArticle(ctx context.Context, db *sql.DB, ownerID, articleID uuid.UUI
 	return nil
 }
 
-// RefetchArticle znovu stáhne obsah článku z jeho původní URL a aktualizuje data v DB.
 func RefetchArticle(ctx context.Context, db *sql.DB, ownerID, articleID uuid.UUID) error {
 	var originalURL string
 	err := db.QueryRowContext(ctx, "SELECT original_url FROM articles WHERE id = $1", articleID).Scan(&originalURL)
@@ -251,7 +254,12 @@ func RefetchArticle(ctx context.Context, db *sql.DB, ownerID, articleID uuid.UUI
 
 	parsedURL, _ := url.Parse(originalURL)
 	client := netutil.SafeHTTPClient()
-	resp, err := client.Get(originalURL)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, originalURL, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+	resp, err := client.Do(req)
 	if err != nil {
 		return err
 	}
@@ -273,6 +281,9 @@ func RefetchArticle(ctx context.Context, db *sql.DB, ownerID, articleID uuid.UUI
 		return err
 	}
 
+	p := bluemonday.UGCPolicy()
+	cleanContent := p.Sanitize(parsedArticle.Content)
+
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -285,7 +296,7 @@ func RefetchArticle(ctx context.Context, db *sql.DB, ownerID, articleID uuid.UUI
 	}
 
 	_, err = tx.ExecContext(ctx, "UPDATE articles SET html_content = $1, text_content = $2 WHERE id = $3",
-		parsedArticle.Content, parsedArticle.TextContent, articleID)
+		cleanContent, parsedArticle.TextContent, articleID)
 	if err != nil {
 		return err
 	}

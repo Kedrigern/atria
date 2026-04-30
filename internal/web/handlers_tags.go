@@ -46,7 +46,6 @@ func (s *Server) handleTagDetail(c *gin.Context) {
 	})
 }
 
-// handleTagAdd process cration of new tag
 func (s *Server) handleTagAdd(c *gin.Context) {
 	user := s.getUser(c)
 	if user == nil {
@@ -61,31 +60,22 @@ func (s *Server) handleTagAdd(c *gin.Context) {
 		return
 	}
 
-	if c.GetHeader("HX-Request") == "true" {
-		c.Header("HX-Refresh", "true")
-		c.Status(http.StatusOK)
-		return
-	}
-
-	s.setFlash(c, "success", "Tag vytvořen.")
-	c.Redirect(http.StatusSeeOther, "/tags")
+	s.handleSuccess(c, "/tags", "Tag vytvořen.")
 }
 
-// handleTagAttach add tag to specific entity (article, note)
 func (s *Server) handleTagAttach(c *gin.Context) {
 	user := s.getUser(c)
 	if user == nil {
 		return
 	}
 
-	entityID, err := core.ParseUUID(c.Param("id"))
-	if err != nil {
-		s.renderError(c, http.StatusBadRequest, "Neplatné ID entity")
+	entityID, ok := s.getUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
 	tagName := c.PostForm("tag_name")
-	err = core.AttachTagByTitle(c.Request.Context(), s.db, user.ID, entityID, tagName)
+	err := core.AttachTagByTitle(c.Request.Context(), s.db, user.ID, entityID, tagName)
 	if err != nil {
 		s.renderError(c, http.StatusBadRequest, "Nepodařilo se připojit tag: "+err.Error())
 		return

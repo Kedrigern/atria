@@ -16,15 +16,7 @@ func (s *Server) handleRSS(c *gin.Context) {
 		return
 	}
 
-	page := 1
-	if p, err := strconv.Atoi(c.Query("page")); err == nil && p > 0 {
-		page = p
-	}
-	limit := user.Preferences.PaginationSize
-	if limit <= 0 {
-		limit = 30
-	}
-	offset := (page - 1) * limit
+	page, limit, offset := s.getPagination(c, user)
 
 	items, err := rss.ListItemsToRead(c.Request.Context(), s.db, user.ID, limit+1, offset)
 	if err != nil {
@@ -61,7 +53,7 @@ func (s *Server) handleRSSAdd(c *gin.Context) {
 		return
 	}
 	if title == "" {
-		title = urlStr // Fallback, pokud uživatel nevyplní název
+		title = urlStr
 	}
 
 	_, err := rss.CreateFeed(c.Request.Context(), s.db, user.ID, title, urlStr)
@@ -70,15 +62,7 @@ func (s *Server) handleRSSAdd(c *gin.Context) {
 		return
 	}
 
-	if c.GetHeader("HX-Request") == "true" {
-		// HX-Refresh triggers a full page reload in HTMX to show the updated list and clear the form
-		c.Header("HX-Refresh", "true")
-		c.Status(http.StatusOK)
-		return
-	}
-
-	s.setFlash(c, "success", "Feed added.")
-	c.Redirect(http.StatusSeeOther, "/rss/feeds")
+	s.handleSuccess(c, "/rss/feeds", "Feed added.")
 }
 
 func (s *Server) handleRSSSave(c *gin.Context) {
@@ -87,21 +71,19 @@ func (s *Server) handleRSSSave(c *gin.Context) {
 		return
 	}
 
-	id, err := core.ParseUUID(c.Param("id"))
-	if err != nil {
-		s.renderError(c, http.StatusBadRequest, "Invalid ID")
+	id, ok := s.getUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
-	_, err = rss.SaveItemAsArticle(c.Request.Context(), s.db, user.ID, id)
+	_, err := rss.SaveItemAsArticle(c.Request.Context(), s.db, user.ID, id)
 	if err != nil {
 		s.renderError(c, http.StatusInternalServerError, "Failed to save: "+err.Error())
 		return
 	}
 
 	if c.GetHeader("HX-Request") == "true" {
-		// HTMX magic: Instead of entire HTML return just piece of code
-		c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(`<span style=\"color: #10b981; font-weight: bold;\">✅ Saved to Inbox</span>`))
+		c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(`<span style="color: #10b981; font-weight: bold;">✅ Saved to Inbox</span>`))
 		return
 	}
 
@@ -110,22 +92,13 @@ func (s *Server) handleRSSSave(c *gin.Context) {
 }
 
 func (s *Server) handleRSSFetch(c *gin.Context) {
-	// Triggers the parallel worker pool to fetch all feeds
 	err := rss.FetchAllActiveFeeds(c.Request.Context(), s.db)
 	if err != nil {
 		s.renderError(c, http.StatusInternalServerError, "Fetch failed: "+err.Error())
 		return
 	}
 
-	if c.GetHeader("HX-Request") == "true" {
-		// Reload the page to display newly fetched items
-		c.Header("HX-Refresh", "true")
-		c.Status(http.StatusOK)
-		return
-	}
-
-	s.setFlash(c, "success", "Feeds fetched.")
-	c.Redirect(http.StatusSeeOther, "/rss/feeds")
+	s.handleSuccess(c, "/rss/feeds", "Feeds fetched.")
 }
 
 func (s *Server) handleRSSFeeds(c *gin.Context) {
@@ -150,21 +123,19 @@ func (s *Server) handleRSSArchive(c *gin.Context) {
 		return
 	}
 
-	id, err := core.ParseUUID(c.Param("id"))
-	if err != nil {
-		s.renderError(c, http.StatusBadRequest, "Invalid ID")
+	id, ok := s.getUUIDParam(c, "id")
+	if !ok {
 		return
 	}
 
-	err = rss.MarkAsRead(c.Request.Context(), s.db, user.ID, id)
+	err := rss.MarkAsRead(c.Request.Context(), s.db, user.ID, id)
 	if err != nil {
 		s.renderError(c, http.StatusInternalServerError, "Failed to archive RSS item: "+err.Error())
 		return
 	}
 
 	if c.GetHeader("HX-Request") == "true" {
-		// Vrátíme ikonu odškrtnutí
-		c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(`<span style=\"color: var(--text-muted); font-size: 0.9rem;\">✓ Archived</span>`))
+		c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(`<span style="color: var(--text-muted); font-size: 0.9rem;">✓ Archived</span>`))
 		return
 	}
 
@@ -178,7 +149,6 @@ func (s *Server) handleRSSArchiveBatch(c *gin.Context) {
 		return
 	}
 
-	// HTMX will send the IDs as an array from the hidden inputs
 	idStrs := c.PostFormArray("ids")
 	var ids []uuid.UUID
 
@@ -196,16 +166,7 @@ func (s *Server) handleRSSArchiveBatch(c *gin.Context) {
 		}
 	}
 
-	page := 1
-	if p, err := strconv.Atoi(c.DefaultPostForm("page", "1")); err == nil && p > 0 {
-		page = p
-	}
-
-	limit := user.Preferences.PaginationSize
-	if limit <= 0 {
-		limit = 30
-	}
-	offset := (page - 1) * limit
+	page, limit, offset := s.getPagination(c, user)
 
 	items, err := rss.ListItemsToRead(c.Request.Context(), s.db, user.ID, limit+1, offset)
 	if err != nil {
