@@ -5,12 +5,36 @@ import (
 	"errors"
 	"net"
 	"net/http"
+	"strings"
 	"time"
 )
 
 type contextKey string
 
 const AllowLocalKey contextKey = "allow_local_ssrf"
+
+// BrowserTransport mimic standard browser to bypass Cloudflare etc protection against bots
+type BrowserTransport struct {
+	Transport http.RoundTripper
+}
+
+func (t *BrowserTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	reqClone := req.Clone(req.Context())
+
+	ua := reqClone.Header.Get("User-Agent")
+	if ua == "" || strings.Contains(ua, "Go-http-client") || strings.Contains(ua, "Gofeed") {
+		reqClone.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36")
+	}
+
+	if reqClone.Header.Get("Accept") == "" {
+		reqClone.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8")
+	}
+	if reqClone.Header.Get("Accept-Language") == "" {
+		reqClone.Header.Set("Accept-Language", "cs,en-US;q=0.7,en;q=0.3")
+	}
+
+	return t.Transport.RoundTrip(reqClone)
+}
 
 // SafeHTTPClient create client that block private and internals IPs.
 func SafeHTTPClient() *http.Client {
@@ -39,7 +63,7 @@ func SafeHTTPClient() *http.Client {
 						return nil, errors.New("SSRF blocked: access to internal IP address is not allowed")
 					}
 				}
-			}	
+			}
 
 			return dialer.DialContext(ctx, network, net.JoinHostPort(ips[0].IP.String(), port))
 		},
@@ -47,6 +71,6 @@ func SafeHTTPClient() *http.Client {
 
 	return &http.Client{
 		Timeout:   15 * time.Second,
-		Transport: transport,
+		Transport: &BrowserTransport{Transport: transport},
 	}
 }
