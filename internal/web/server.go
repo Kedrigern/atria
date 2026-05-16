@@ -14,6 +14,7 @@ import (
 	"html/template"
 	"io/fs"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -55,23 +56,27 @@ func NewServer(db *sql.DB) *Server {
 	return &Server{db: db}
 }
 
-// isProxyAllowed checks whether the request's client IP is in the PROXY_ALLOWLIST.
-// PROXY_ALLOWLIST is a comma-separated list of trusted proxy IPs (e.g. "127.0.0.1,10.0.0.5").
-// If the env var is not set, proxy header auth is disabled entirely.
+// isProxyAllowed checks whether the direct TCP connection (RemoteAddr) is in the PROXY_ALLOWLIST.
+// We intentionally use RemoteAddr instead of c.ClientIP() because ClientIP() unwraps
+// X-Forwarded-For — giving us the end-user's IP, not the proxy's IP.
 func isProxyAllowed(c *gin.Context) bool {
 	allowlistRaw := os.Getenv("PROXY_ALLOWLIST")
 	if allowlistRaw == "" {
 		debugLog("isProxyAllowed: PROXY_ALLOWLIST not set, rejecting proxy auth")
 		return false
 	}
-	clientIP := c.ClientIP()
-	debugLog("isProxyAllowed: clientIP=%q remoteAddr=%q allowlist=%q", clientIP, c.Request.RemoteAddr, allowlistRaw)
+	// Strip the port from host:port
+	remoteIP, _, err := net.SplitHostPort(c.Request.RemoteAddr)
+	if err != nil {
+		remoteIP = c.Request.RemoteAddr
+	}
+	debugLog("isProxyAllowed: remoteIP=%q allowlist=%q", remoteIP, allowlistRaw)
 	for _, allowed := range strings.Split(allowlistRaw, ",") {
-		if strings.TrimSpace(allowed) == clientIP {
+		if strings.TrimSpace(allowed) == remoteIP {
 			return true
 		}
 	}
-	debugLog("isProxyAllowed: clientIP %q not in allowlist, rejecting proxy auth", clientIP)
+	debugLog("isProxyAllowed: remoteIP %q not in allowlist, rejecting proxy auth", remoteIP)
 	return false
 }
 
