@@ -164,6 +164,7 @@ func (s *Server) SetupRouter() *gin.Engine {
 
 	auth := r.Group("/")
 	auth.Use(s.AuthMiddleware())
+	auth.Use(s.CSRFMiddleware())
 
 	// ==========================================
 	// 1. BASIC PAGES
@@ -280,6 +281,7 @@ func (s *Server) render(c *gin.Context, tmplName string, data gin.H) {
 	}
 
 	data["Flash"] = s.getFlash(c)
+	data["CSRFToken"] = s.GetCSRFToken(c)
 
 	funcMap := template.FuncMap{
 		"formatDate": func(t time.Time) string {
@@ -493,16 +495,24 @@ func (s *Server) setSessionCookie(c *gin.Context, email string) {
 
 	value := email + "|" + signature
 
-	c.SetCookie("atria_session", value, 3600*24*30, "/", "", true, true)
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name:     "atria_session",
+		Value:    value,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+		MaxAge:   3600 * 24 * 30,
+	})
 }
 
 func (s *Server) verifySessionCookie(c *gin.Context) string {
-	cookie, err := c.Cookie("atria_session")
+	cookie, err := c.Request.Cookie("atria_session")
 	if err != nil {
 		return ""
 	}
 
-	parts := strings.Split(cookie, "|")
+	parts := strings.Split(cookie.Value, "|")
 	if len(parts) != 2 {
 		return ""
 	}
@@ -513,16 +523,70 @@ func (s *Server) verifySessionCookie(c *gin.Context) string {
 		secret = "default_dev_secret_please_change"
 	}
 
-	// Znovu spočítáme podpis pro zadaný e-mail a porovnáme
+	// Recompute signature and compare (constant-time to prevent timing attacks)
 	mac := hmac.New(sha256.New, []byte(secret))
 	mac.Write([]byte(email))
 	expectedSignature := hex.EncodeToString(mac.Sum(nil))
 
-	// Bezpečné porovnání (zabraňuje timing attacks)
 	if hmac.Equal([]byte(signature), []byte(expectedSignature)) {
 		return email
 	}
 	return ""
+}
+
+// GetCSRFToken derives a per-user CSRF token from the session's HMAC signature.
+// The CSRF token is HMAC-SHA256("csrf:"+email, SESSION_SECRET) so it is tied
+// to the authenticated user without requiring a separate DB lookup.
+func (s *Server) GetCSRFToken(c *gin.Context) string {
+	email := s.verifySessionCookie(c)
+	if email == "" {
+		return ""
+	}
+
+	secret := os.Getenv("SESSION_SECRET")
+	if secret == "" {
+		secret = "default_dev_secret_please_change"
+	}
+
+	m := hmac.New(sha256.New, []byte(secret))
+	m.Write([]byte("csrf:" + email))
+	return hex.EncodeToString(m.Sum(nil))
+}
+
+func (s *Server) CSRFMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		method := c.Request.Method
+		if method == http.MethodGet || method == http.MethodHead || method == http.MethodOptions {
+			c.Next()
+			return
+		}
+
+		// Derive the expected CSRF token the same way GetCSRFToken does.
+		email := s.verifySessionCookie(c)
+		if email == "" {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Invalid CSRF token"})
+			return
+		}
+		secret := os.Getenv("SESSION_SECRET")
+		if secret == "" {
+			secret = "default_dev_secret_please_change"
+		}
+		m := hmac.New(sha256.New, []byte(secret))
+		m.Write([]byte("csrf:" + email))
+		storedCSRF := hex.EncodeToString(m.Sum(nil))
+
+		submittedCSRF := c.GetHeader("X-CSRF-Token")
+		if submittedCSRF == "" {
+			submittedCSRF = c.PostForm("_csrf")
+		}
+
+		if !hmac.Equal([]byte(submittedCSRF), []byte(storedCSRF)) {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Invalid CSRF token"})
+			return
+		}
+
+		c.Next()
+	}
 }
 
 func (s *Server) handleLoginGet(c *gin.Context) {
@@ -558,7 +622,15 @@ func (s *Server) handleLoginPost(c *gin.Context) {
 func (s *Server) handleLogout(c *gin.Context) {
 	user := s.getUser(c)
 
-	c.SetCookie("atria_session", "", -1, "/", "", true, true)
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name:     "atria_session",
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+		MaxAge:   -1,
+	})
 
 	if user != nil && user.AuthSource == core.AuthSourceProxy {
 		logoutURL := os.Getenv("SSO_LOGOUT_URL")
