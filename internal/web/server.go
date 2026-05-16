@@ -13,6 +13,7 @@ import (
 	"encoding/hex"
 	"html/template"
 	"io/fs"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -44,6 +45,34 @@ func NewServer(db *sql.DB) *Server {
 	return &Server{db: db}
 }
 
+// isProxyAllowed checks whether the request's client IP is in the PROXY_ALLOWLIST.
+// PROXY_ALLOWLIST is a comma-separated list of trusted proxy IPs (e.g. "127.0.0.1,10.0.0.5").
+// If the env var is not set, proxy header auth is disabled entirely.
+func isProxyAllowed(c *gin.Context) bool {
+	allowlistRaw := os.Getenv("PROXY_ALLOWLIST")
+	if allowlistRaw == "" {
+		return false
+	}
+	clientIP := c.ClientIP()
+	for _, allowed := range strings.Split(allowlistRaw, ",") {
+		if strings.TrimSpace(allowed) == clientIP {
+			return true
+		}
+	}
+	return false
+}
+
+// hasExactGroup checks whether groupHeader (a comma-separated list of group names)
+// contains the given group as an exact match.
+func hasExactGroup(groupHeader, group string) bool {
+	for _, g := range strings.Split(groupHeader, ",") {
+		if strings.TrimSpace(g) == group {
+			return true
+		}
+	}
+	return false
+}
+
 func (s *Server) AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if c.Request.URL.Path == "/login" {
@@ -59,7 +88,8 @@ func (s *Server) AuthMiddleware() gin.HandlerFunc {
 			headerName = "Remote-Email"
 		}
 
-		if proxyEmail := c.GetHeader(headerName); proxyEmail != "" {
+		// Only trust proxy auth headers if the request comes from an allowlisted IP.
+		if proxyEmail := c.GetHeader(headerName); proxyEmail != "" && isProxyAllowed(c) {
 			email = proxyEmail
 			authSource = core.AuthSourceProxy
 		} else {
@@ -74,12 +104,7 @@ func (s *Server) AuthMiddleware() gin.HandlerFunc {
 		}
 
 		if email == "" {
-			if c.GetHeader("HX-Request") == "true" || strings.HasPrefix(c.Request.URL.Path, "/api/") {
-				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-			} else {
-				c.Redirect(http.StatusFound, "/login")
-				c.Abort()
-			}
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 			return
 		}
 
@@ -94,13 +119,14 @@ func (s *Server) AuthMiddleware() gin.HandlerFunc {
 		if authSource == core.AuthSourceProxy {
 			groups := c.GetHeader("Remote-Groups")
 			newRole := core.RoleUser
-			if strings.Contains(groups, "admins") {
+			if hasExactGroup(groups, "admins") {
 				newRole = core.RoleAdmin
 			}
 
 			if user.Role != newRole {
-				// Předpokládá se existující metoda users.UpdateUserRole
-				// _ = users.UpdateUserRole(c.Request.Context(), s.db, user.Email, newRole)
+				if err := users.UpdateUserRole(c.Request.Context(), s.db, user.Email, newRole); err != nil {
+					log.Printf("ERROR: failed to update role for user %s: %v", user.Email, err)
+				}
 				user.Role = newRole
 			}
 		}

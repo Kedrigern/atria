@@ -20,6 +20,9 @@ type authResponse struct {
 	Role  core.Role `json:"role"`
 }
 
+// proxyClientIP is the RemoteAddr used in tests so it matches PROXY_ALLOWLIST.
+const proxyClientIP = "10.0.0.1:1234"
+
 // runAuthTest builds an HTTP request and runs it through the auth middleware.
 func runAuthTest(t *testing.T, srv *web.Server, env, atriaUser, headerEmail, headerGroups string) *httptest.ResponseRecorder {
 	t.Helper()
@@ -28,6 +31,8 @@ func runAuthTest(t *testing.T, srv *web.Server, env, atriaUser, headerEmail, hea
 	t.Setenv("ATRIA_ENV", env)
 	t.Setenv("ATRIA_USER", atriaUser)
 	t.Setenv("PROXY_AUTH_HEADER", "Remote-Email")
+	// Allowlist the IP used by test requests so proxy headers are trusted.
+	t.Setenv("PROXY_ALLOWLIST", "10.0.0.1")
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -52,6 +57,9 @@ func runAuthTest(t *testing.T, srv *web.Server, env, atriaUser, headerEmail, hea
 
 	req, err := http.NewRequest(http.MethodGet, "/test", nil)
 	require.NoError(t, err)
+
+	// Set RemoteAddr so c.ClientIP() returns an IP that matches the allowlist.
+	req.RemoteAddr = proxyClientIP
 
 	if headerEmail != "" {
 		req.Header.Set("Remote-Email", headerEmail)
