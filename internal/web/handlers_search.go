@@ -19,17 +19,19 @@ func (s *Server) handleSearch(c *gin.Context) {
 
 	q := c.Query("q")
 	filter := c.Query("in")
+	includeArchived := c.Query("archived") == "1"
 
-	results, err := search.Search(c.Request.Context(), s.db, user.ID, q, filter)
+	results, err := search.Search(c.Request.Context(), s.db, user.ID, q, filter, includeArchived)
 	if err != nil {
 		s.renderError(c, http.StatusInternalServerError, "Search failed: "+err.Error())
 		return
 	}
 
 	data := gin.H{
-		"Results": results,
-		"Query":   q,
-		"Filter":  filter,
+		"Results":         results,
+		"Query":           q,
+		"Filter":          filter,
+		"IncludeArchived": includeArchived,
 	}
 
 	// Only return the results fragment when the request comes from the search

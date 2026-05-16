@@ -8,6 +8,7 @@
         style="display: flex; gap: 10px; margin-bottom: 30px"
         hx-post="/api/tags/add"
     >
+        <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
         <input
             type="text"
             name="name"

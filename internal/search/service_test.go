@@ -82,7 +82,7 @@ func TestSearch(t *testing.T) {
 	}
 
 	t.Run("EmptyQueryReturnsNil", func(t *testing.T) {
-		results, err := search.Search(ctx, db, user.ID, "", "")
+		results, err := search.Search(ctx, db, user.ID, "", "", false)
 		require.NoError(t, err)
 		assert.Nil(t, results)
 	})
@@ -91,7 +91,7 @@ func TestSearch(t *testing.T) {
 		_, err := notes.CreateNote(ctx, db, user.ID, "Photosynthesis Note", "/", "photosynthesis is the process by which plants use sunlight")
 		require.NoError(t, err)
 
-		results, err := search.Search(ctx, db, user.ID, "photosynthesis", "notes")
+		results, err := search.Search(ctx, db, user.ID, "photosynthesis", "notes", false)
 		require.NoError(t, err)
 		require.Len(t, results, 1)
 		assert.Equal(t, "note", results[0].Type)
@@ -101,7 +101,7 @@ func TestSearch(t *testing.T) {
 	t.Run("FindsArticleByContent", func(t *testing.T) {
 		insertArticle(t, user.ID, "Mitochondria Article", "mitochondria is the powerhouse of the cell")
 
-		results, err := search.Search(ctx, db, user.ID, "mitochondria", "articles")
+		results, err := search.Search(ctx, db, user.ID, "mitochondria", "articles", false)
 		require.NoError(t, err)
 		require.Len(t, results, 1)
 		assert.Equal(t, "article", results[0].Type)
@@ -116,7 +116,7 @@ func TestSearch(t *testing.T) {
 
 		insertArticle(t, user.ID, "Chlorophyll Article", "chlorophyll is a pigment found in plants")
 
-		results, err := search.Search(ctx, db, user.ID, keyword, "notes")
+		results, err := search.Search(ctx, db, user.ID, keyword, "notes", false)
 		require.NoError(t, err)
 		require.Len(t, results, 1)
 		assert.Equal(t, "note", results[0].Type)
@@ -130,7 +130,7 @@ func TestSearch(t *testing.T) {
 
 		insertArticle(t, user.ID, "Ribosomes Article", "ribosomes are molecular machines")
 
-		results, err := search.Search(ctx, db, user.ID, keyword, "articles")
+		results, err := search.Search(ctx, db, user.ID, keyword, "articles", false)
 		require.NoError(t, err)
 		require.Len(t, results, 1)
 		assert.Equal(t, "article", results[0].Type)
@@ -147,7 +147,7 @@ func TestSearch(t *testing.T) {
 		_, err = db.ExecContext(ctx, `UPDATE entities SET visibility = 'private' WHERE id = $1`, entity.ID)
 		require.NoError(t, err)
 
-		results, err := search.Search(ctx, db, user.ID, "quasar", "notes")
+		results, err := search.Search(ctx, db, user.ID, "quasar", "notes", false)
 		require.NoError(t, err)
 		assert.Len(t, results, 0)
 	})
@@ -165,7 +165,7 @@ func TestSearch(t *testing.T) {
 		// Notes search_vector is based on markdown_content, touch it to re-fire trigger
 		// (visibility change doesn't affect tsvector, only entity join visibility check, so no re-trigger needed)
 
-		results, err := search.Search(ctx, db, user.ID, "nebula", "notes")
+		results, err := search.Search(ctx, db, user.ID, "nebula", "notes", false)
 		require.NoError(t, err)
 		require.Len(t, results, 1)
 		assert.Equal(t, "note", results[0].Type)
@@ -174,7 +174,7 @@ func TestSearch(t *testing.T) {
 	t.Run("RSSItemSearch", func(t *testing.T) {
 		insertRSSItem(t, user.ID, "Science Feed", "Supernova Explosion", "supernova occurs when a massive star collapses")
 
-		results, err := search.Search(ctx, db, user.ID, "supernova", "rss")
+		results, err := search.Search(ctx, db, user.ID, "supernova", "rss", false)
 		require.NoError(t, err)
 		require.Len(t, results, 1)
 		assert.Equal(t, "rss_item", results[0].Type)
@@ -182,7 +182,7 @@ func TestSearch(t *testing.T) {
 	})
 
 	t.Run("NoResultsForUnknownTerm", func(t *testing.T) {
-		results, err := search.Search(ctx, db, user.ID, "xyzzy_nonexistent_term_9847", "")
+		results, err := search.Search(ctx, db, user.ID, "xyzzy_nonexistent_term_9847", "", false)
 		require.NoError(t, err)
 		assert.Empty(t, results)
 	})
@@ -195,7 +195,7 @@ func TestSearch(t *testing.T) {
 
 		insertArticle(t, user.ID, "Cytoplasm Article", "cytoplasm is a thick solution inside the cell membrane")
 
-		results, err := search.Search(ctx, db, user.ID, keyword, "")
+		results, err := search.Search(ctx, db, user.ID, keyword, "", false)
 		require.NoError(t, err)
 		require.Len(t, results, 2)
 

@@ -184,6 +184,71 @@ func MarkAsRead(ctx context.Context, db *sql.DB, ownerID, itemID uuid.UUID) erro
 	return err
 }
 
+// ListFeedTags returns all distinct non-system tags attached to any of the user's RSS feeds.
+func ListFeedTags(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]core.Tag, error) {
+	query := `
+		SELECT DISTINCT t.id, t.name, t.color, t.icon
+		FROM tags t
+		JOIN rel_entity_tags ret ON ret.tag_id = t.id
+		JOIN entities e ON e.id = ret.entity_id
+		WHERE e.owner_id = $1
+		  AND e.type = 'rss'
+		  AND e.deleted_at IS NULL
+		  AND t.is_system = false
+		ORDER BY t.name
+	`
+	rows, err := db.QueryContext(ctx, query, ownerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var tags []core.Tag
+	for rows.Next() {
+		var t core.Tag
+		if err := rows.Scan(&t.ID, &t.Name, &t.Color, &t.Icon); err != nil {
+			return nil, err
+		}
+		tags = append(tags, t)
+	}
+	return tags, nil
+}
+
+// ListItemsToReadByTag retrieves unread items from feeds tagged with the given tag name.
+func ListItemsToReadByTag(ctx context.Context, db *sql.DB, ownerID uuid.UUID, tagName string, limit, offset int) ([]core.RSSItem, error) {
+	query := `
+		SELECT id, feed_id, source_name, title, link, description, content, published_at, created_at
+		FROM rss_to_read_view
+		WHERE owner_id = $1
+		  AND feed_id IN (
+		      SELECT e.id FROM entities e
+		      JOIN rel_entity_tags ret ON ret.entity_id = e.id
+		      JOIN tags t ON t.id = ret.tag_id
+		      WHERE e.owner_id = $1 AND t.name = $4
+		  )
+		ORDER BY published_at DESC
+		LIMIT $2 OFFSET $3
+	`
+	rows, err := db.QueryContext(ctx, query, ownerID, limit, offset, tagName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query triage items by tag: %w", err)
+	}
+	defer rows.Close()
+
+	var items []core.RSSItem
+	for rows.Next() {
+		var i core.RSSItem
+		if err := rows.Scan(
+			&i.ID, &i.FeedID, &i.SourceName, &i.Title,
+			&i.Link, &i.Description, &i.Content, &i.PublishedAt, &i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	return items, nil
+}
+
 // MarkBatchAsRead marks a specific list of RSS items as read.
 func MarkBatchAsRead(ctx context.Context, db *sql.DB, ownerID uuid.UUID, itemIDs []uuid.UUID) error {
 	if len(itemIDs) == 0 {
@@ -216,4 +281,94 @@ func MarkBatchAsRead(ctx context.Context, db *sql.DB, ownerID uuid.UUID, itemIDs
 	}
 
 	return tx.Commit()
+}
+
+// FeedItem extends RSSItem with read state for the feed detail view.
+type FeedItem struct {
+	core.RSSItem
+	ReadAt *time.Time
+}
+
+// FeedDetail holds a feed's metadata, paginated items, and stats.
+type FeedDetail struct {
+	core.FeedSummary
+	Items      []FeedItem
+	HasMore    bool
+	TotalItems int
+	ReadItems  int
+}
+
+// GetFeedDetail fetches a single feed's info plus its items and read stats.
+func GetFeedDetail(ctx context.Context, db *sql.DB, ownerID, feedID uuid.UUID, includeRead bool, limit, offset int) (*FeedDetail, error) {
+	var fd FeedDetail
+
+	queryFeed := `
+		SELECT id, title, feed_url, site_url, last_fetch_at, last_fetch_status, last_fetch_error
+		FROM rss_feeds_full_view
+		WHERE id = $1 AND owner_id = $2
+	`
+	err := db.QueryRowContext(ctx, queryFeed, feedID, ownerID).Scan(
+		&fd.ID, &fd.Title, &fd.FeedURL, &fd.SiteURL,
+		&fd.LastFetchedAt, &fd.LastFetchStatus, &fd.LastFetchError,
+	)
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("feed not found")
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch feed: %w", err)
+	}
+
+	readFilter := "AND ri.read_at IS NULL"
+	if includeRead {
+		readFilter = ""
+	}
+
+	itemsQuery := fmt.Sprintf(`
+		SELECT ri.id, ri.feed_id,
+		       (SELECT title FROM entities WHERE id = ri.feed_id) AS source_name,
+		       ri.title, ri.link,
+		       COALESCE(ri.description, '') AS description,
+		       COALESCE(ri.content, '') AS content,
+		       ri.published_at, ri.created_at, ri.read_at
+		FROM rss_items ri
+		WHERE ri.feed_id = $1 %s
+		ORDER BY ri.published_at DESC
+		LIMIT $2 OFFSET $3
+	`, readFilter)
+
+	rows, err := db.QueryContext(ctx, itemsQuery, feedID, limit+1, offset)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query feed items: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var item FeedItem
+		err := rows.Scan(
+			&item.ID, &item.FeedID, &item.SourceName,
+			&item.Title, &item.Link, &item.Description, &item.Content,
+			&item.PublishedAt, &item.CreatedAt, &item.ReadAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan feed item: %w", err)
+		}
+		fd.Items = append(fd.Items, item)
+	}
+
+	if len(fd.Items) > limit {
+		fd.HasMore = true
+		fd.Items = fd.Items[:limit]
+	}
+
+	queryStats := `
+		SELECT COUNT(*), COUNT(*) FILTER (WHERE read_at IS NOT NULL)
+		FROM rss_items
+		WHERE feed_id = $1
+	`
+	err = db.QueryRowContext(ctx, queryStats, feedID).Scan(&fd.TotalItems, &fd.ReadItems)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch feed stats: %w", err)
+	}
+
+	return &fd, nil
 }

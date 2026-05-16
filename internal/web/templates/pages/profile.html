@@ -26,6 +26,7 @@
                 <p class="text-muted" style="font-size: 0.9rem; margin-bottom: 15px;">Přizpůsobte si Atrii podle sebe. (Další nastavení lze provést přes CLI).</p>
 
                 <form action="/api/profile/preferences" method="POST">
+                    <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
 
                         <div>

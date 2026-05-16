@@ -25,7 +25,7 @@
             hx-get="/search"
             hx-target="#search-results"
             hx-trigger="input delay:300ms, search"
-            hx-include="#search-filter"
+            hx-include="#search-filter,#search-archived"
         />
         <select
             id="search-filter"
@@ -34,13 +34,23 @@
             hx-get="/search"
             hx-target="#search-results"
             hx-trigger="change"
-            hx-include="#search-input"
+            hx-include="#search-input,#search-archived"
         >
             <option value=""       {{if eq .Filter ""}}        selected{{end}}>All</option>
             <option value="notes"    {{if eq .Filter "notes"}}   selected{{end}}>Notes</option>
             <option value="articles" {{if eq .Filter "articles"}} selected{{end}}>Articles</option>
             <option value="rss"      {{if eq .Filter "rss"}}      selected{{end}}>RSS</option>
         </select>
+        <label style="display: flex; align-items: center; gap: 6px; margin: 0; flex: 0 0 auto">
+            <input type="checkbox" id="search-archived" name="archived" value="1"
+                {{if .IncludeArchived}}checked{{end}}
+                hx-get="/search"
+                hx-target="#search-results"
+                hx-trigger="change"
+                hx-include="#search-input,#search-filter"
+            />
+            Include archived
+        </label>
     </div>
 
     <div id="search-results">

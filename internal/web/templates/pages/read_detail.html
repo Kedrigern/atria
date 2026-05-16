@@ -55,6 +55,7 @@
             action="/api/read/refetch/{{.ID}}"
             style="margin: 0"
         >
+            <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
             <button
                 type="submit"
                 class="outline"
@@ -197,6 +198,7 @@
                 action="/api/read/archive/{{.ID}}"
                 style="margin: 0"
             >
+                <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
                 <button type="submit" style="margin: 0">✓ Archive</button>
             </form>
             <button

@@ -176,6 +176,7 @@ func (s *Server) SetupRouter() *gin.Engine {
 	auth.GET("/", s.handleHome)
 	auth.GET("/tables", s.makeHandler("table_list.html", nil))
 	auth.GET("/settings", s.makeHandler("settings.html", nil))
+	auth.GET("/settings/rss", s.handleRSSFeeds)
 	auth.GET("/profile", s.handleProfile)
 	auth.GET("/attachments", s.handleAttachments)
 	auth.GET("/search", s.handleSearch)
@@ -190,6 +191,7 @@ func (s *Server) SetupRouter() *gin.Engine {
 	{
 		rss.GET("", s.handleRSS)
 		rss.GET("/feeds", s.handleRSSFeeds)
+		rss.GET("/:id", s.handleRSSFeedDetail)
 	}
 
 	// Read (Articles)
@@ -290,6 +292,12 @@ func (s *Server) render(c *gin.Context, tmplName string, data gin.H) {
 
 	funcMap := template.FuncMap{
 		"formatDate": func(t time.Time) string {
+			return t.Format("02.01.2006 15:04")
+		},
+		"formatDatePtr": func(t *time.Time) string {
+			if t == nil {
+				return "Never"
+			}
 			return t.Format("02.01.2006 15:04")
 		},
 		"stripHTML": func(s string) string {

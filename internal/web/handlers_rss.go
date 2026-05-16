@@ -25,10 +25,23 @@ func (s *Server) handleRSS(c *gin.Context) {
 		limit = 30
 	}
 	offset := (page - 1) * limit
+	activeTag := c.Query("tag")
 
-	items, err := rss.ListItemsToRead(c.Request.Context(), s.db, user.ID, limit+1, offset)
+	var items []core.RSSItem
+	var err error
+	if activeTag != "" {
+		items, err = rss.ListItemsToReadByTag(c.Request.Context(), s.db, user.ID, activeTag, limit+1, offset)
+	} else {
+		items, err = rss.ListItemsToRead(c.Request.Context(), s.db, user.ID, limit+1, offset)
+	}
 	if err != nil {
 		s.renderError(c, http.StatusInternalServerError, "Failed to load RSS items: "+err.Error())
+		return
+	}
+
+	tags, err := rss.ListFeedTags(c.Request.Context(), s.db, user.ID)
+	if err != nil {
+		s.renderError(c, http.StatusInternalServerError, "Failed to load feed tags: "+err.Error())
 		return
 	}
 
@@ -39,11 +52,13 @@ func (s *Server) handleRSS(c *gin.Context) {
 	}
 
 	s.render(c, "rss.html", gin.H{
-		"Items":    items,
-		"Page":     page,
-		"HasNext":  hasNext,
-		"NextPage": page + 1,
-		"PrevPage": page - 1,
+		"Items":     items,
+		"Page":      page,
+		"HasNext":   hasNext,
+		"NextPage":  page + 1,
+		"PrevPage":  page - 1,
+		"Tags":      tags,
+		"ActiveTag": activeTag,
 	})
 }
 
@@ -170,6 +185,52 @@ func (s *Server) handleRSSArchive(c *gin.Context) {
 
 	s.setFlash(c, "success", "RSS item archived.")
 	c.Redirect(http.StatusSeeOther, "/rss")
+}
+
+func (s *Server) handleRSSFeedDetail(c *gin.Context) {
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+
+	feedID, err := core.ParseUUID(c.Param("id"))
+	if err != nil {
+		s.renderError(c, http.StatusBadRequest, "Invalid feed ID")
+		return
+	}
+
+	includeRead := c.Query("archived") == "1"
+
+	page := 1
+	if p, err := strconv.Atoi(c.Query("page")); err == nil && p > 0 {
+		page = p
+	}
+	limit := user.Preferences.PaginationSize
+	if limit <= 0 {
+		limit = 30
+	}
+	offset := (page - 1) * limit
+
+	detail, err := rss.GetFeedDetail(c.Request.Context(), s.db, user.ID, feedID, includeRead, limit, offset)
+	if err != nil {
+		s.renderError(c, http.StatusInternalServerError, "Failed to load feed: "+err.Error())
+		return
+	}
+
+	unreadItems := detail.TotalItems - detail.ReadItems
+
+	s.render(c, "rss_feed_detail.html", gin.H{
+		"Feed":            detail,
+		"Items":           detail.Items,
+		"TotalItems":      detail.TotalItems,
+		"ReadItems":       detail.ReadItems,
+		"UnreadItems":     unreadItems,
+		"IncludeArchived": includeRead,
+		"Page":            page,
+		"HasNext":         detail.HasMore,
+		"NextPage":        page + 1,
+		"PrevPage":        page - 1,
+	})
 }
 
 func (s *Server) handleRSSArchiveBatch(c *gin.Context) {

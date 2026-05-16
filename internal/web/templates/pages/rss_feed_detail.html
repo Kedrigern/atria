@@ -1,8 +1,5 @@
 {{define "content"}}
-
-<div class="centered-view" data-mobile-title="ATRIA: RSS">
-    <h2 class="hide-mobile">RSS</h2>
-
+<div class="centered-view" data-mobile-title="ATRIA: RSS Feed">
     {{if .Flash}}
     <div class="flash-message {{.Flash.Type}}">
         <div class="action-row" style="justify-content: space-between">
@@ -17,54 +14,162 @@
             </button>
         </div>
     </div>
-    {{end}}
+    {{end}} {{/* ── Navigation breadcrumb ── */}}
+    <div style="margin-bottom: 20px; font-size: 1.1rem">
+        <a href="/rss" style="color: var(--text-muted)">Unread Items</a>
+        <span style="color: var(--text-muted); margin: 0 10px">|</span>
+        <a href="/rss/feeds" style="color: var(--text-muted)">Manage Feeds</a>
+        <span style="color: var(--text-muted); margin: 0 10px">|</span>
+        <span style="font-weight: bold; color: var(--accent)"
+            >{{.Feed.Title}}</span
+        >
+    </div>
 
+    {{/* ── Feed header ── */}}
     <div
+        class="page-header-row"
         style="
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
+            margin-bottom: 10px;
+            align-items: flex-start;
+            gap: 12px;
             flex-wrap: wrap;
-            gap: 10px;
-            font-size: 1.1rem;
         "
     >
         <div>
-            <a
-                href="/rss"
-                style="{{if not .ActiveTag}}font-weight: bold; color: var(--accent){{else}}color: var(--text-muted){{end}}"
-                >All</a
+            <h2 style="margin: 0 0 4px 0">
+                {{if .Feed.SiteURL}}
+                <a
+                    href="{{.Feed.SiteURL}}"
+                    target="_blank"
+                    style="color: var(--text-heading); text-decoration: none"
+                >
+                    {{.Feed.Title}}
+                </a>
+                {{else}} {{.Feed.Title}} {{end}}
+            </h2>
+            <small
+                style="
+                    color: var(--text-muted);
+                    font-size: 0.85rem;
+                    word-break: break-all;
+                "
             >
-            {{range .Tags}}
-            <span style="color: var(--text-muted); margin: 0 10px">|</span>
-            <a
-                href="/rss?tag={{.Name}}"
-                style="{{if eq $.ActiveTag .Name}}font-weight: bold; color: var(--accent){{else}}color: var(--text-muted){{end}}"
-                >{{.Name}}</a
-            >
-            {{end}}
+                <a
+                    href="{{.Feed.FeedURL}}"
+                    target="_blank"
+                    style="color: var(--text-muted)"
+                    >{{.Feed.FeedURL}}</a
+                >
+            </small>
         </div>
-        <form
-            method="post"
-            action="/api/rss/fetch"
-            style="margin: 0"
-            hx-post="/api/rss/fetch"
-            hx-headers='{"X-CSRF-Token": "{{.CSRFToken}}"}'
-            hx-on::after-request="if(event.detail.successful){location.reload()}"
+
+        <a
+            href="/rss"
+            class="button-link outline"
+            style="
+                margin: 0;
+                padding: 4px 12px;
+                font-size: 0.9rem;
+                white-space: nowrap;
+            "
         >
-            <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
-            <button
-                type="submit"
-                class="outline"
-                style="padding: 6px 14px; font-size: 0.95rem"
-            >
-                ⟳ Fetch
-            </button>
-        </form>
+            ← Back
+        </a>
     </div>
 
-    <div id="rss-page-items">
+    {{/* ── Stats bar ── */}}
+    <div
+        style="
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            align-items: center;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            background: var(--background-alt);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 10px 14px;
+            margin-bottom: 18px;
+        "
+    >
+        <span>📦 <strong>{{.TotalItems}}</strong> total</span>
+        <span>·</span>
+        <span>📬 <strong>{{.UnreadItems}}</strong> unread</span>
+        <span>·</span>
+        <span>✓ <strong>{{.ReadItems}}</strong> read</span>
+
+        {{if .Feed.LastFetchedAt}}
+        <span style="margin-left: auto; font-size: 0.85rem">
+            Last fetched: {{formatDatePtr .Feed.LastFetchedAt}} {{if
+            .Feed.LastFetchStatus}} · Status
+            <strong>{{.Feed.LastFetchStatus}}</strong>
+            {{end}}
+        </span>
+        {{else}}
+        <span
+            style="
+                margin-left: auto;
+                font-size: 0.85rem;
+                color: var(--text-muted);
+            "
+            >Never fetched</span
+        >
+        {{end}}
+    </div>
+
+    {{/* ── Fetch error ── */}} {{if .Feed.LastFetchError}}
+    <div
+        style="
+            background: var(--background-alt);
+            border-left: 3px solid #f87171;
+            border-radius: 4px;
+            padding: 10px 14px;
+            margin-bottom: 18px;
+            font-size: 0.9rem;
+            color: #f87171;
+        "
+    >
+        ⚠️ Last fetch error: {{.Feed.LastFetchError}}
+    </div>
+    {{end}} {{/* ── Controls: Show archived checkbox ── */}}
+    <div
+        style="
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.95rem;
+        "
+    >
+        <label
+            style="
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                cursor: pointer;
+                color: var(--text-main);
+            "
+        >
+            <input
+                type="checkbox"
+                name="archived"
+                value="1"
+                {{if
+                .IncludeArchived}}checked{{end}}
+                hx-get="/rss/{{.Feed.ID}}"
+                hx-target="#feed-items"
+                hx-push-url="true"
+                hx-include="this"
+                hx-trigger="change"
+                style="width: auto; margin: 0"
+            />
+            Show archived items
+        </label>
+    </div>
+
+    {{/* ── Items list ── */}}
+    <div id="feed-items">
         {{range .Items}}
         <div
             class="list-item"
@@ -75,11 +180,18 @@
                     <h4 style="margin: 0 0 5px 0">
                         <a href="{{.Link}}" target="_blank">{{.Title}}</a>
                     </h4>
-                    <small style="color: var(--text-muted)"
-                        >{{.SourceName}} • {{formatDate .PublishedAt}}</small
-                    >
+                    <small style="color: var(--text-muted)">
+                        {{.SourceName}} • {{formatDate .PublishedAt}} {{if
+                        .ReadAt}} ·
+                        <span style="color: #10b981; font-size: 0.85rem"
+                            >✓ read</span
+                        >
+                        {{end}}
+                    </small>
                 </div>
+
                 <div class="action-row">
+                    {{if not .ReadAt}}
                     <form
                         method="post"
                         action="/api/rss/save/{{.ID}}"
@@ -99,6 +211,9 @@
                                 display: flex;
                                 align-items: center;
                             "
+                            hx-post="/api/rss/save/{{.ID}}"
+                            hx-target="this"
+                            hx-swap="outerHTML"
                         >
                             <svg
                                 class="icon-sm"
@@ -116,6 +231,7 @@
                             </svg>
                         </button>
                     </form>
+
                     <form
                         method="post"
                         action="/api/rss/archive/{{.ID}}"
@@ -135,6 +251,9 @@
                                 display: flex;
                                 align-items: center;
                             "
+                            hx-post="/api/rss/archive/{{.ID}}"
+                            hx-target="this"
+                            hx-swap="outerHTML"
                         >
                             <svg
                                 class="icon-sm"
@@ -150,7 +269,16 @@
                             </svg>
                         </button>
                     </form>
-                    {{if or .Content .Description}}
+                    {{else}}
+                    <span
+                        style="
+                            color: #10b981;
+                            font-size: 0.9rem;
+                            white-space: nowrap;
+                        "
+                        >✓ read</span
+                    >
+                    {{end}} {{if or .Content .Description}}
                     <button
                         type="button"
                         class="outline"
@@ -220,15 +348,18 @@
         </div>
         {{else}} {{if gt .Page 1}}
         <p class="page-empty-hint">
-            No unread RSS items remain on this page. You can go back to the
-            previous page.
+            No items on this page. You can go back to the previous page.
         </p>
         {{else}}
-        <p>Your triage is empty! 🎉 No unread RSS items.</p>
+        <p style="color: var(--text-muted)">
+            {{if .IncludeArchived}}No items in this feed yet.{{else}}No unread
+            items.
+            <a href="/rss/{{.Feed.ID}}?archived=1">Show archived</a>{{end}}
+        </p>
         {{end}} {{end}}
     </div>
 
-    {{if or .Items (gt .Page 1)}}
+    {{/* ── Pagination ── */}} {{if or .Items (gt .Page 1)}}
     <div
         class="pagination-bar"
         style="border-top: 1px solid var(--border-color)"
@@ -236,39 +367,21 @@
         <div class="action-row">
             {{if gt .Page 1}}
             <a
-                href="/rss?page={{.PrevPage}}"
+                href="/rss/{{.Feed.ID}}?page={{.PrevPage}}{{if .IncludeArchived}}&archived=1{{end}}"
                 class="button-link outline"
                 style="margin: 0"
                 >&laquo; Previous</a
             >
             {{end}} {{if .HasNext}}
             <a
-                href="/rss?page={{.NextPage}}"
+                href="/rss/{{.Feed.ID}}?page={{.NextPage}}{{if .IncludeArchived}}&archived=1{{end}}"
                 class="button-link outline"
                 style="margin: 0"
                 >Next &raquo;</a
             >
-            {{end}} {{if .Items}}
-            <form
-                method="post"
-                action="/api/rss/archive-batch"
-                style="margin: 0"
-                onsubmit="return confirm('Archive all items on this page?');"
-            >
-                <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
-                {{range .Items}}
-                <input type="hidden" name="ids" value="{{.ID}}" />
-                {{end}}
-                <input type="hidden" name="page" value="{{.Page}}" />
-                <button
-                    type="submit"
-                    class="button-link outline"
-                    style="margin: 0"
-                >
-                    ✓ Archive page
-                </button>
-            </form>
             {{end}}
+        </div>
+        <div class="action-row">
             <button
                 type="button"
                 class="button-link outline"

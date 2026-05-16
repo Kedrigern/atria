@@ -18,11 +18,34 @@
     </div>
     {{end}}
 
-    <div style="margin-bottom: 30px; font-size: 1.1rem">
-        <a href="/rss" style="color: var(--text-muted)">Unread Items</a>
-        <span style="color: var(--text-muted); margin: 0 10px">|</span>
-        <a href="/rss/feeds" style="font-weight: bold; color: var(--accent)"
-            >Manage Feeds</a
+    <div
+        style="
+            display: flex;
+            gap: 20px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 30px;
+            padding-bottom: 10px;
+        "
+    >
+        <a href="/settings" style="color: var(--text-muted); font-weight: bold"
+            >General</a
+        >
+        <a href="#" style="color: var(--text-muted); font-weight: bold"
+            >Users</a
+        >
+        <a
+            href="/settings/rss"
+            style="
+                font-weight: bold;
+                color: var(--links);
+                border-bottom: 2px solid var(--links);
+                padding-bottom: 10px;
+                margin-bottom: -11px;
+            "
+            >RSS</a
+        >
+        <a href="#" style="color: var(--text-muted); font-weight: bold"
+            >Sync (Zensical)</a
         >
     </div>
 
@@ -32,8 +55,9 @@
             method="post"
             action="/api/rss/fetch"
             style="margin: 0"
-            onsubmit="this.querySelector('button').innerText='Fetching...'"
+            onsubmit="this.querySelector('button').innerText = 'Fetching...'"
         >
+            <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
             <button class="outline" type="submit">⟳ Fetch Now</button>
         </form>
     </div>
@@ -49,6 +73,7 @@
             align-items: flex-start;
         "
     >
+        <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
         <input
             type="url"
             name="url"
@@ -102,7 +127,7 @@
                         padding: 10px;
                     "
                 >
-                    <strong>{{.Title}}</strong>
+                    <strong><a href="/rss/{{.ID}}">{{.Title}}</a></strong>
                 </td>
                 <td
                     style="
