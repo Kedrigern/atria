@@ -41,6 +41,10 @@ type FlashMessage struct {
 	Message string
 }
 
+func isSecureContext() bool {
+	return os.Getenv("ATRIA_ENV") != "development"
+}
+
 func NewServer(db *sql.DB) *Server {
 	return &Server{db: db}
 }
@@ -500,7 +504,7 @@ func (s *Server) setSessionCookie(c *gin.Context, email string) {
 		Value:    value,
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   true,
+		Secure:   isSecureContext(),
 		SameSite: http.SameSiteStrictMode,
 		MaxAge:   3600 * 24 * 30,
 	})
@@ -534,12 +538,12 @@ func (s *Server) verifySessionCookie(c *gin.Context) string {
 	return ""
 }
 
-// GetCSRFToken derives a per-user CSRF token from the session's HMAC signature.
+// GetCSRFToken derives a per-user CSRF token from the authenticated user in context.
 // The CSRF token is HMAC-SHA256("csrf:"+email, SESSION_SECRET) so it is tied
 // to the authenticated user without requiring a separate DB lookup.
 func (s *Server) GetCSRFToken(c *gin.Context) string {
-	email := s.verifySessionCookie(c)
-	if email == "" {
+	user := s.getUser(c)
+	if user == nil {
 		return ""
 	}
 
@@ -549,7 +553,7 @@ func (s *Server) GetCSRFToken(c *gin.Context) string {
 	}
 
 	m := hmac.New(sha256.New, []byte(secret))
-	m.Write([]byte("csrf:" + email))
+	m.Write([]byte("csrf:" + user.Email))
 	return hex.EncodeToString(m.Sum(nil))
 }
 
@@ -561,9 +565,10 @@ func (s *Server) CSRFMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// Derive the expected CSRF token the same way GetCSRFToken does.
-		email := s.verifySessionCookie(c)
-		if email == "" {
+		// Use the already-authenticated user from context (set by AuthMiddleware).
+		// This works for all auth sources: proxy, session cookie, and dev fallback.
+		user := s.getUser(c)
+		if user == nil {
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Invalid CSRF token"})
 			return
 		}
@@ -572,7 +577,7 @@ func (s *Server) CSRFMiddleware() gin.HandlerFunc {
 			secret = "default_dev_secret_please_change"
 		}
 		m := hmac.New(sha256.New, []byte(secret))
-		m.Write([]byte("csrf:" + email))
+		m.Write([]byte("csrf:" + user.Email))
 		storedCSRF := hex.EncodeToString(m.Sum(nil))
 
 		submittedCSRF := c.GetHeader("X-CSRF-Token")
@@ -627,7 +632,7 @@ func (s *Server) handleLogout(c *gin.Context) {
 		Value:    "",
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   true,
+		Secure:   isSecureContext(),
 		SameSite: http.SameSiteStrictMode,
 		MaxAge:   -1,
 	})
