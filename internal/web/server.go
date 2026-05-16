@@ -45,6 +45,12 @@ func isSecureContext() bool {
 	return os.Getenv("ATRIA_ENV") != "development"
 }
 
+func debugLog(format string, args ...any) {
+	if os.Getenv("DEBUG") == "true" {
+		log.Printf("[DEBUG] "+format, args...)
+	}
+}
+
 func NewServer(db *sql.DB) *Server {
 	return &Server{db: db}
 }
@@ -55,14 +61,17 @@ func NewServer(db *sql.DB) *Server {
 func isProxyAllowed(c *gin.Context) bool {
 	allowlistRaw := os.Getenv("PROXY_ALLOWLIST")
 	if allowlistRaw == "" {
+		debugLog("isProxyAllowed: PROXY_ALLOWLIST not set, rejecting proxy auth")
 		return false
 	}
 	clientIP := c.ClientIP()
+	debugLog("isProxyAllowed: clientIP=%q remoteAddr=%q allowlist=%q", clientIP, c.Request.RemoteAddr, allowlistRaw)
 	for _, allowed := range strings.Split(allowlistRaw, ",") {
 		if strings.TrimSpace(allowed) == clientIP {
 			return true
 		}
 	}
+	debugLog("isProxyAllowed: clientIP %q not in allowlist, rejecting proxy auth", clientIP)
 	return false
 }
 
