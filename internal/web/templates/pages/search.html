@@ -1,0 +1,50 @@
+{{define "content"}}
+<div class="centered-view" data-mobile-title="ATRIA: Search">
+    <div class="page-header-row" style="margin-bottom: 20px">
+        <h2 class="hide-mobile">Search</h2>
+    </div>
+
+    <div
+        id="search-form"
+        style="
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            align-items: flex-start;
+        "
+    >
+        <input
+            id="search-input"
+            type="search"
+            name="q"
+            value="{{.Query}}"
+            placeholder="Search notes, articles, RSS…"
+            style="flex: 1 1 300px; margin: 0"
+            autofocus
+            hx-get="/search"
+            hx-target="#search-results"
+            hx-trigger="input delay:300ms, search"
+            hx-include="#search-filter"
+        />
+        <select
+            id="search-filter"
+            name="in"
+            style="margin: 0; flex: 0 0 auto"
+            hx-get="/search"
+            hx-target="#search-results"
+            hx-trigger="change"
+            hx-include="#search-input"
+        >
+            <option value=""       {{if eq .Filter ""}}        selected{{end}}>All</option>
+            <option value="notes"    {{if eq .Filter "notes"}}   selected{{end}}>Notes</option>
+            <option value="articles" {{if eq .Filter "articles"}} selected{{end}}>Articles</option>
+            <option value="rss"      {{if eq .Filter "rss"}}      selected{{end}}>RSS</option>
+        </select>
+    </div>
+
+    <div id="search-results">
+        <p style="color: var(--text-muted)">Enter a search term above to get started.</p>
+    </div>
+</div>
+{{end}}

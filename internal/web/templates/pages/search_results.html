@@ -1,0 +1,59 @@
+{{define "content"}} {{if .Results}}
+<p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 15px">
+    {{len .Results}} result(s) for <strong>{{.Query}}</strong>
+</p>
+{{range .Results}}
+<div
+    class="list-item"
+    style="flex-direction: column; align-items: flex-start; gap: 5px"
+>
+    <div style="display: flex; align-items: center; gap: 8px; width: 100%">
+        <span
+            class="tag"
+            style="text-transform: uppercase; font-size: 0.7rem; flex-shrink: 0"
+            >{{.Type}}</span
+        >
+        <h4 style="margin: 0; flex: 1">
+            {{if eq .Type "note"}}
+            <a
+                href="/notes/{{.ID}}"
+                hx-get="/notes/{{.ID}}"
+                hx-target="#main-content"
+                hx-push-url="true"
+                >{{.Title}}</a
+            >
+            {{else if eq .Type "article"}}
+            <a
+                href="/read/{{.ID}}"
+                hx-get="/read/{{.ID}}"
+                hx-target="#main-content"
+                hx-push-url="true"
+                >{{.Title}}</a
+            >
+            {{else}}
+            <a href="/rss">{{.Title}}</a>
+            {{end}}
+        </h4>
+    </div>
+    {{if .Headline}}
+    <p
+        style="
+            margin: 0;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            padding-left: 4px;
+        "
+    >
+        {{safeHTML .Headline}}
+    </p>
+    {{end}}
+</div>
+{{end}} {{else if .Query}}
+<p style="color: var(--text-muted)">
+    No results for <strong>{{.Query}}</strong>.
+</p>
+{{else}}
+<p style="color: var(--text-muted)">
+    Enter a search term above to get started.
+</p>
+{{end}} {{end}}

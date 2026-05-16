@@ -178,6 +178,7 @@ func (s *Server) SetupRouter() *gin.Engine {
 	auth.GET("/settings", s.makeHandler("settings.html", nil))
 	auth.GET("/profile", s.handleProfile)
 	auth.GET("/attachments", s.handleAttachments)
+	auth.GET("/search", s.handleSearch)
 
 	// Login - has it own exception in midleware
 	auth.GET("/login", s.handleLoginGet)
