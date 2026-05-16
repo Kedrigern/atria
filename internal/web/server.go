@@ -79,11 +79,6 @@ func hasExactGroup(groupHeader, group string) bool {
 
 func (s *Server) AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if c.Request.URL.Path == "/login" {
-			c.Next()
-			return
-		}
-
 		var email string
 		var authSource core.AuthSource
 
@@ -181,9 +176,12 @@ func (s *Server) SetupRouter() *gin.Engine {
 	auth.GET("/attachments", s.handleAttachments)
 	auth.GET("/search", s.handleSearch)
 
-	// Login - has it own exception in midleware
-	auth.GET("/login", s.handleLoginGet)
-	auth.POST("/login", s.handleLoginPost)
+	// Login / logout are outside the auth+CSRF group:
+	// - /login has no authenticated user yet, so CSRF middleware cannot derive a token
+	r.GET("/login", s.handleLoginGet)
+	r.POST("/login", s.handleLoginPost)
+	// Logout stays in the auth group so AuthMiddleware populates the user context
+	// (needed for the Authelia SSO logout redirect).
 	auth.GET("/logout", s.handleLogout)
 
 	// RSS
