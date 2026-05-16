@@ -97,7 +97,10 @@ func (s *Server) AuthMiddleware() gin.HandlerFunc {
 		}
 
 		// Only trust proxy auth headers if the request comes from an allowlisted IP.
-		if proxyEmail := c.GetHeader(headerName); proxyEmail != "" && isProxyAllowed(c) {
+		proxyEmail := c.GetHeader(headerName)
+		debugLog("AuthMiddleware: path=%q remoteAddr=%q clientIP=%q header=%q proxyEmail=%q",
+			c.Request.URL.Path, c.Request.RemoteAddr, c.ClientIP(), headerName, proxyEmail)
+		if proxyEmail != "" && isProxyAllowed(c) {
 			email = proxyEmail
 			authSource = core.AuthSourceProxy
 		} else {
