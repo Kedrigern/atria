@@ -82,6 +82,7 @@
                     hx-target="#main-content"
                     hx-push-url="true"
                     class="nav-link active"
+                    title="Home"
                     ><svg class="icon" viewBox="0 0 24 24">
                         <path
                             d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
@@ -96,6 +97,7 @@
                     hx-target="#main-content"
                     hx-push-url="true"
                     class="nav-link"
+                    title="RSS"
                     ><svg class="icon" viewBox="0 0 24 24">
                         <path d="M4 11a9 9 0 0 1 9 9"></path>
                         <path d="M4 4a16 16 0 0 1 16 16"></path>
@@ -107,6 +109,7 @@
                     hx-target="#main-content"
                     hx-push-url="true"
                     class="nav-link"
+                    title="Articles"
                     ><svg class="icon" viewBox="0 0 24 24">
                         <path
                             d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"
@@ -118,6 +121,7 @@
                     hx-target="#main-content"
                     hx-push-url="true"
                     class="nav-link"
+                    title="Notes"
                     ><svg class="icon" viewBox="0 0 24 24">
                         <path
                             d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
@@ -127,21 +131,12 @@
                         <line x1="16" y1="17" x2="8" y2="17"></line></svg
                 ></a>
                 <a
-                    href="/search"
-                    hx-get="/search"
-                    hx-target="#main-content"
-                    hx-push-url="true"
-                    class="nav-link"
-                    ><svg class="icon" viewBox="0 0 24 24">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg
-                ></a>
-                <a
                     href="/tables"
                     hx-get="/tables"
                     hx-target="#main-content"
                     hx-push-url="true"
                     class="nav-link"
+                    title="Tables"
                     ><svg class="icon" viewBox="0 0 24 24">
                         <rect
                             x="3"
@@ -155,6 +150,17 @@
                         <line x1="3" y1="15" x2="21" y2="15"></line>
                         <line x1="9" y1="3" x2="9" y2="21"></line>
                         <line x1="15" y1="3" x2="15" y2="21"></line></svg
+                ></a>
+                <a
+                    href="/search"
+                    hx-get="/search"
+                    hx-target="#main-content"
+                    hx-push-url="true"
+                    class="nav-link"
+                    title="Search"
+                    ><svg class="icon" viewBox="0 0 24 24">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg
                 ></a>
             </nav>
             <div style="display: flex; flex-direction: column; width: 100%">

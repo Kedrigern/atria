@@ -1,0 +1,381 @@
+{{define "content"}}
+<div class="centered-view" data-mobile-title="ATRIA: Users">
+    <h2 class="hide-mobile">Settings</h2>
+
+    {{if .Flash}}
+    <div class="flash-message {{.Flash.Type}}">
+        <div class="action-row" style="justify-content: space-between">
+            <span>{{.Flash.Message}}</span>
+            <button
+                type="button"
+                class="outline"
+                data-flash-close
+                style="min-height: auto; padding: 4px 8px"
+            >
+                ×
+            </button>
+        </div>
+    </div>
+    {{end}} {{/* ── Tab bar ── */}}
+    <div
+        style="
+            display: flex;
+            gap: 20px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 30px;
+            padding-bottom: 10px;
+        "
+    >
+        <a href="/settings" style="color: var(--text-muted); font-weight: bold"
+            >General</a
+        >
+        <a
+            href="/settings/users"
+            style="
+                font-weight: bold;
+                color: var(--links);
+                border-bottom: 2px solid var(--links);
+                padding-bottom: 10px;
+                margin-bottom: -11px;
+            "
+            >Users</a
+        >
+        <a
+            href="/settings/rss"
+            style="color: var(--text-muted); font-weight: bold"
+            >RSS</a
+        >
+        <a href="/settings/tags" style="color: var(--text-muted); font-weight: bold"
+            >Tags</a
+        >
+        <a
+            href="/settings/attachments"
+            style="color: var(--text-muted); font-weight: bold"
+            >Attachments</a
+        >
+    </div>
+
+    {{/* ── Create user form ── */}}
+    <details
+        style="
+            margin-bottom: 30px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 15px;
+            background: var(--background);
+        "
+    >
+        <summary style="cursor: pointer; font-weight: bold">
+            ＋ Create New User
+        </summary>
+        <form
+            method="post"
+            action="/api/settings/users/create"
+            style="margin-top: 15px; display: grid; gap: 12px; max-width: 480px"
+        >
+            <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
+            <div>
+                <label
+                    style="
+                        display: block;
+                        font-weight: bold;
+                        margin-bottom: 4px;
+                    "
+                    >Display Name</label
+                >
+                <input
+                    type="text"
+                    name="display_name"
+                    required
+                    placeholder="Jane Doe"
+                />
+            </div>
+            <div>
+                <label
+                    style="
+                        display: block;
+                        font-weight: bold;
+                        margin-bottom: 4px;
+                    "
+                    >Email</label
+                >
+                <input
+                    type="email"
+                    name="email"
+                    required
+                    placeholder="jane@example.com"
+                />
+            </div>
+            <div>
+                <label
+                    style="
+                        display: block;
+                        font-weight: bold;
+                        margin-bottom: 4px;
+                    "
+                    >Password</label
+                >
+                <input
+                    type="password"
+                    name="password"
+                    required
+                    placeholder="Temporary password"
+                />
+            </div>
+            <div>
+                <label
+                    style="
+                        display: block;
+                        font-weight: bold;
+                        margin-bottom: 4px;
+                    "
+                    >Role</label
+                >
+                <select name="role">
+                    <option value="user" selected>User</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+            <button type="submit" style="width: fit-content">
+                Create User
+            </button>
+        </form>
+    </details>
+
+    {{/* ── User table ── */}}
+    <div style="overflow-x: auto">
+        <table style="width: 100%; border-collapse: collapse">
+            <thead>
+                <tr>
+                    <th
+                        style="
+                            text-align: left;
+                            padding: 10px;
+                            border-bottom: 2px solid var(--border);
+                        "
+                    >
+                        Display Name
+                    </th>
+                    <th
+                        style="
+                            text-align: left;
+                            padding: 10px;
+                            border-bottom: 2px solid var(--border);
+                        "
+                    >
+                        Email
+                    </th>
+                    <th
+                        style="
+                            text-align: left;
+                            padding: 10px;
+                            border-bottom: 2px solid var(--border);
+                        "
+                    >
+                        Role
+                    </th>
+                    <th
+                        style="
+                            text-align: left;
+                            padding: 10px;
+                            border-bottom: 2px solid var(--border);
+                        "
+                    >
+                        Last Login
+                    </th>
+                    <th
+                        style="
+                            text-align: left;
+                            padding: 10px;
+                            border-bottom: 2px solid var(--border);
+                        "
+                    >
+                        Member Since
+                    </th>
+                    <th
+                        style="
+                            text-align: left;
+                            padding: 10px;
+                            border-bottom: 2px solid var(--border);
+                        "
+                    >
+                        Actions
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .Users}}
+                <tr>
+                    <td
+                        style="
+                            padding: 10px;
+                            border-bottom: 1px solid var(--border);
+                        "
+                    >
+                        {{.DisplayName}} {{if eq .ID $.CurrentUser.ID}}
+                        <span
+                            style="font-size: 0.8rem; color: var(--text-muted)"
+                            >(you)</span
+                        >
+                        {{end}}
+                    </td>
+                    <td
+                        style="
+                            padding: 10px;
+                            border-bottom: 1px solid var(--border);
+                            color: var(--text-muted);
+                        "
+                    >
+                        {{.Email}}
+                    </td>
+                    <td
+                        style="
+                            padding: 10px;
+                            border-bottom: 1px solid var(--border);
+                        "
+                    >
+                        {{if eq .Role "admin"}}
+                        <span
+                            style="
+                                display: inline-block;
+                                padding: 2px 8px;
+                                border-radius: 4px;
+                                font-size: 0.8rem;
+                                font-weight: bold;
+                                background: var(--links);
+                                color: #fff;
+                            "
+                            >admin</span
+                        >
+                        {{else}}
+                        <span
+                            style="
+                                display: inline-block;
+                                padding: 2px 8px;
+                                border-radius: 4px;
+                                font-size: 0.8rem;
+                                font-weight: bold;
+                                background: var(--border);
+                                color: var(--text-muted);
+                            "
+                            >user</span
+                        >
+                        {{end}}
+                    </td>
+                    <td
+                        style="
+                            padding: 10px;
+                            border-bottom: 1px solid var(--border);
+                            color: var(--text-muted);
+                        "
+                    >
+                        {{formatDatePtr .LastLoginAt}}
+                    </td>
+                    <td
+                        style="
+                            padding: 10px;
+                            border-bottom: 1px solid var(--border);
+                            color: var(--text-muted);
+                        "
+                    >
+                        {{formatDate .CreatedAt}}
+                    </td>
+                    <td
+                        style="
+                            padding: 10px;
+                            border-bottom: 1px solid var(--border);
+                        "
+                    >
+                        {{if ne .ID $.CurrentUser.ID}}
+                        <div class="action-row" style="gap: 6px">
+                            {{/* Toggle role */}}
+                            <form
+                                method="post"
+                                action="/api/settings/users/role"
+                                style="margin: 0"
+                            >
+                                <input
+                                    type="hidden"
+                                    name="_csrf"
+                                    value="{{$.CSRFToken}}"
+                                />
+                                <input
+                                    type="hidden"
+                                    name="email"
+                                    value="{{.Email}}"
+                                />
+                                {{if eq .Role "admin"}}
+                                <input type="hidden" name="role" value="user" />
+                                <button
+                                    type="submit"
+                                    class="outline"
+                                    style="padding: 4px 10px; font-size: 0.8rem"
+                                >
+                                    → user
+                                </button>
+                                {{else}}
+                                <input
+                                    type="hidden"
+                                    name="role"
+                                    value="admin"
+                                />
+                                <button
+                                    type="submit"
+                                    class="outline"
+                                    style="padding: 4px 10px; font-size: 0.8rem"
+                                >
+                                    → admin
+                                </button>
+                                {{end}}
+                            </form>
+                            {{/* Delete */}}
+                            <form
+                                method="post"
+                                action="/api/settings/users/delete"
+                                style="margin: 0"
+                                onsubmit="return confirm('Delete user {{.Email}}? This cannot be undone.')"
+                            >
+                                <input
+                                    type="hidden"
+                                    name="_csrf"
+                                    value="{{$.CSRFToken}}"
+                                />
+                                <input
+                                    type="hidden"
+                                    name="email"
+                                    value="{{.Email}}"
+                                />
+                                <button
+                                    type="submit"
+                                    style="
+                                        padding: 4px 10px;
+                                        font-size: 0.8rem;
+                                        background: #ef4444;
+                                    "
+                                >
+                                    Delete
+                                </button>
+                            </form>
+                        </div>
+                        {{end}}
+                    </td>
+                </tr>
+                {{else}}
+                <tr>
+                    <td
+                        colspan="6"
+                        style="
+                            padding: 30px 10px;
+                            text-align: center;
+                            color: var(--text-muted);
+                        "
+                    >
+                        No users found.
+                    </td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+</div>
+{{end}}

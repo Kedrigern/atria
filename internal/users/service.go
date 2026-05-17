@@ -97,6 +97,18 @@ func UpdateUserRole(ctx context.Context, db *sql.DB, identifier string, newRole 
 	return nil
 }
 
+func DeleteUser(ctx context.Context, db *sql.DB, email string) error {
+	result, err := db.ExecContext(ctx, `DELETE FROM users WHERE email = $1`, email)
+	if err != nil {
+		return fmt.Errorf("failed to delete user: %w", err)
+	}
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("user not found: %s", email)
+	}
+	return nil
+}
+
 func UpdatePreferences(ctx context.Context, db *sql.DB, userID uuid.UUID, prefs core.UserPreferences) error {
 	prefsJSON, err := json.Marshal(prefs)
 	if err != nil {

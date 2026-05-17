@@ -21,7 +21,7 @@ func (s *Server) handleAttachments(c *gin.Context) {
 		return
 	}
 
-	s.render(c, "attachment_list.html", gin.H{
+	s.render(c, "attachments_list.html", gin.H{
 		"Attachments": list,
 	})
 }

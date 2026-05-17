@@ -5,7 +5,7 @@
     <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
         <div id="tag-list-{{.ID}}" style="display: flex; gap: 8px; flex-wrap: wrap;">
             {{range .Tags}}
-            <a href="/tags/{{.Name}}" class="tag">#{{.Name}}</a>
+            <a href="/settings/tags/{{.Name}}" class="tag">#{{.Name}}</a>
             {{end}}
         </div>
         <form hx-post="/api/entity/{{.ID}}/tags"

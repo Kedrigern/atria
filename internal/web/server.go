@@ -186,9 +186,10 @@ func (s *Server) SetupRouter() *gin.Engine {
 	auth.GET("/", s.handleHome)
 	auth.GET("/tables", s.makeHandler("table_list.html", nil))
 	auth.GET("/settings", s.makeHandler("settings.html", nil))
+	auth.GET("/settings/users", s.handleSettingsUsers)
 	auth.GET("/settings/rss", s.handleRSSFeeds)
+	auth.GET("/settings/attachments", s.handleAttachments)
 	auth.GET("/profile", s.handleProfile)
-	auth.GET("/attachments", s.handleAttachments)
 	auth.GET("/search", s.handleSearch)
 
 	// Login / logout are outside the auth+CSRF group:
@@ -227,7 +228,7 @@ func (s *Server) SetupRouter() *gin.Engine {
 	}
 
 	// Tags
-	tags := auth.Group("/tags")
+	tags := auth.Group("/settings/tags")
 	{
 		tags.GET("", s.handleTags)
 		tags.GET("/:name", s.handleTagDetail)
@@ -274,8 +275,11 @@ func (s *Server) SetupRouter() *gin.Engine {
 		}
 
 		// API: Other
-		api.POST("/tags/add", s.handleTagAdd)
+		api.POST("/settings/tags/add", s.handleTagAdd)
 		api.POST("/profile/preferences", s.handleProfilePreferences)
+		api.POST("/settings/users/create", s.handleSettingsUserCreate)
+		api.POST("/settings/users/role", s.handleSettingsUserRole)
+		api.POST("/settings/users/delete", s.handleSettingsUserDelete)
 	}
 
 	return r

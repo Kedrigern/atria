@@ -68,7 +68,7 @@ func (s *Server) handleTagAdd(c *gin.Context) {
 	}
 
 	s.setFlash(c, "success", "Tag vytvořen.")
-	c.Redirect(http.StatusSeeOther, "/tags")
+	c.Redirect(http.StatusSeeOther, "/settings/tags")
 }
 
 // handleTagAttach add tag to specific entity (article, note)
@@ -93,7 +93,7 @@ func (s *Server) handleTagAttach(c *gin.Context) {
 
 	if c.GetHeader("HX-Request") == "true" {
 		c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(
-			`<a href="/tags/`+tagName+`" class="tag">#`+tagName+`</a>`,
+			`<a href="/settings/tags/`+tagName+`" class="tag">#`+tagName+`</a>`,
 		))
 		return
 	}
