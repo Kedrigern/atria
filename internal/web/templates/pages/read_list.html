@@ -79,7 +79,7 @@
                 action="/api/read/archive/{{.ID}}?page={{$.Page}}"
                 style="margin: 0; display: flex"
             >
-                <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
+                <input type="hidden" name="_csrf" value="{{$.CSRFToken}}" />
                 <button
                     type="submit"
                     class="outline"
