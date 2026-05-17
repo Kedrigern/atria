@@ -159,10 +159,16 @@ func SaveItemAsArticle(ctx context.Context, db *sql.DB, ownerID, itemID uuid.UUI
 	autoNote := fmt.Sprintf("Uloženo z RSS: %s", feedTitle)
 
 	// 2. Create the article using the articles package
-	// This performs the readability extraction and saves it to the DB
+	// This performs the readability extraction and saves it to the DB.
+	// If the article was already saved before, find and return the existing one.
 	articleEntity, err := articles.CreateArticle(ctx, db, ownerID, link, autoNote)
 	if err != nil {
-		return nil, fmt.Errorf("failed to extract article: %w", err)
+		existing, findErr := articles.FindArticleByURL(ctx, db, ownerID, link)
+		if findErr != nil {
+			// Return the original error, not the lookup error
+			return nil, fmt.Errorf("failed to extract article: %w", err)
+		}
+		articleEntity = existing
 	}
 
 	// 3. Mark the RSS item as read to remove it from the triage view

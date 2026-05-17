@@ -147,6 +147,30 @@ func CreateArticle(ctx context.Context, db *sql.DB, ownerID uuid.UUID, urlStr st
 	}, nil
 }
 
+// FindArticleByURL returns the entity for an existing article saved from the given URL.
+func FindArticleByURL(ctx context.Context, db *sql.DB, ownerID uuid.UUID, urlStr string) (*core.Entity, error) {
+	var e core.Entity
+	query := `
+		SELECT e.id, e.owner_id, e.type, e.title, e.slug, e.created_at
+		FROM entities e
+		JOIN articles a ON a.id = e.id
+		WHERE e.owner_id = $1
+		  AND a.original_url = $2
+		  AND e.deleted_at IS NULL
+		LIMIT 1
+	`
+	err := db.QueryRowContext(ctx, query, ownerID, urlStr).Scan(
+		&e.ID, &e.OwnerID, &e.Type, &e.Title, &e.Slug, &e.CreatedAt,
+	)
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("article not found for url: %s", urlStr)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to find article by url: %w", err)
+	}
+	return &e, nil
+}
+
 // GetArticleText retrieves the plain text content of a saved article.
 func GetArticleText(ctx context.Context, db *sql.DB, articleID uuid.UUID) (string, error) {
 	var content sql.NullString
