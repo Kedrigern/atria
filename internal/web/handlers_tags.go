@@ -20,7 +20,7 @@ func (s *Server) handleTags(c *gin.Context) {
 		return
 	}
 
-	s.render(c, "tag_list.html", gin.H{
+	s.render(c, "settings_tags.html", gin.H{
 		"Tags": tags,
 	})
 }

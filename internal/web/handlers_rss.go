@@ -153,7 +153,7 @@ func (s *Server) handleRSSFeeds(c *gin.Context) {
 		s.renderError(c, http.StatusInternalServerError, "Failed to list feeds: "+err.Error())
 		return
 	}
-	s.render(c, "rss_feeds.html", gin.H{
+	s.render(c, "settings_rss.html", gin.H{
 		"Feeds": feeds,
 	})
 }

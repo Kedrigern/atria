@@ -1,60 +1,8 @@
 {{define "content"}}
-<div class="centered-view" data-mobile-title="ATRIA: RSS Feeds">
+<div class="centered-view wide" data-mobile-title="ATRIA: RSS Feeds">
     <h2 class="hide-mobile">RSS</h2>
 
-    {{if .Flash}}
-    <div class="flash-message {{.Flash.Type}}">
-        <div class="action-row" style="justify-content: space-between">
-            <span>{{.Flash.Message}}</span>
-            <button
-                type="button"
-                class="outline"
-                data-flash-close
-                style="min-height: auto; padding: 4px 8px"
-            >
-                ×
-            </button>
-        </div>
-    </div>
-    {{end}}
-
-    <div
-        style="
-            display: flex;
-            gap: 20px;
-            border-bottom: 1px solid var(--border);
-            margin-bottom: 30px;
-            padding-bottom: 10px;
-        "
-    >
-        <a href="/settings" style="color: var(--text-muted); font-weight: bold"
-            >General</a
-        >
-        <a
-            href="/settings/users"
-            style="color: var(--text-muted); font-weight: bold"
-            >Users</a
-        >
-        <a
-            href="/settings/rss"
-            style="
-                font-weight: bold;
-                color: var(--links);
-                border-bottom: 2px solid var(--links);
-                padding-bottom: 10px;
-                margin-bottom: -11px;
-            "
-            >RSS</a
-        >
-        <a href="/settings/tags" style="color: var(--text-muted); font-weight: bold"
-            >Tags</a
-        >
-        <a
-            href="/settings/attachments"
-            style="color: var(--text-muted); font-weight: bold"
-            >Attachments</a
-        >
-    </div>
+    {{template "flash_message" .}} {{template "settings_nav" "rss"}}
 
     <div class="page-header-row" style="margin-bottom: 15px">
         <h3>Subscribed Feeds</h3>

@@ -99,3 +99,31 @@
 {{define "tag_link"}}
 <a href="/settings/tags/{{.}}" class="tag">#{{.}}</a>
 {{end}}
+
+{{define "flash_message"}}
+{{if .Flash}}
+<div class="flash-message {{.Flash.Type}}">
+    <div class="action-row" style="justify-content: space-between">
+        <span>{{.Flash.Message}}</span>
+        <button
+            type="button"
+            class="outline"
+            data-flash-close
+            style="min-height: auto; padding: 4px 8px"
+        >
+            ×
+        </button>
+    </div>
+</div>
+{{end}}
+{{end}}
+
+{{define "settings_nav"}}
+<div class="tab-nav">
+    <a href="/settings" class="{{if eq . "general"}}active{{end}}">General</a>
+    <a href="/settings/users" class="{{if eq . "users"}}active{{end}}">Users</a>
+    <a href="/settings/rss" class="{{if eq . "rss"}}active{{end}}">RSS</a>
+    <a href="/settings/tags" class="{{if eq . "tags"}}active{{end}}">Tags</a>
+    <a href="/settings/attachments" class="{{if eq . "attachments"}}active{{end}}">Attachments</a>
+</div>
+{{end}}

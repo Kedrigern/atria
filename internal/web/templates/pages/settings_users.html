@@ -1,61 +1,9 @@
 {{define "content"}}
-<div class="centered-view" data-mobile-title="ATRIA: Users">
+<div class="centered-view wide" data-mobile-title="ATRIA: Users">
     <h2 class="hide-mobile">Settings</h2>
 
-    {{if .Flash}}
-    <div class="flash-message {{.Flash.Type}}">
-        <div class="action-row" style="justify-content: space-between">
-            <span>{{.Flash.Message}}</span>
-            <button
-                type="button"
-                class="outline"
-                data-flash-close
-                style="min-height: auto; padding: 4px 8px"
-            >
-                ×
-            </button>
-        </div>
-    </div>
-    {{end}} {{/* ── Tab bar ── */}}
-    <div
-        style="
-            display: flex;
-            gap: 20px;
-            border-bottom: 1px solid var(--border);
-            margin-bottom: 30px;
-            padding-bottom: 10px;
-        "
-    >
-        <a href="/settings" style="color: var(--text-muted); font-weight: bold"
-            >General</a
-        >
-        <a
-            href="/settings/users"
-            style="
-                font-weight: bold;
-                color: var(--links);
-                border-bottom: 2px solid var(--links);
-                padding-bottom: 10px;
-                margin-bottom: -11px;
-            "
-            >Users</a
-        >
-        <a
-            href="/settings/rss"
-            style="color: var(--text-muted); font-weight: bold"
-            >RSS</a
-        >
-        <a href="/settings/tags" style="color: var(--text-muted); font-weight: bold"
-            >Tags</a
-        >
-        <a
-            href="/settings/attachments"
-            style="color: var(--text-muted); font-weight: bold"
-            >Attachments</a
-        >
-    </div>
-
-    {{/* ── Create user form ── */}}
+    {{template "flash_message" .}} {{template "settings_nav" "users "}} {{/* ──
+    Create user form ── */}}
     <details
         style="
             margin-bottom: 30px;
