@@ -227,7 +227,7 @@ a.button-link.outline:hover {
 #mobile-header {
     display: none;
 }
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
     #mobile-header {
         display: flex;
         background: var(--background-alt);

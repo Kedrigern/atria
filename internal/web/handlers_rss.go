@@ -179,7 +179,7 @@ func (s *Server) handleRSSArchive(c *gin.Context) {
 
 	if c.GetHeader("HX-Request") == "true" {
 		// Vrátíme ikonu odškrtnutí
-		c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(`<span style=\"color: var(--text-muted); font-size: 0.9rem;\">✓ Archived</span>`))
+		c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(`<span style="color: var(--text-muted); font-size: 0.9rem; padding: 10px 0; display: block;">✓ Archived</span>`))
 		return
 	}
 

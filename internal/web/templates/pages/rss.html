@@ -120,6 +120,10 @@
                         method="post"
                         action="/api/rss/archive/{{.ID}}"
                         style="margin: 0"
+                        hx-post="/api/rss/archive/{{.ID}}"
+                        hx-headers='{"X-CSRF-Token": "{{$.CSRFToken}}"}'
+                        hx-target="closest .list-item"
+                        hx-swap="outerHTML swap:0.3s"
                     >
                         <input
                             type="hidden"
