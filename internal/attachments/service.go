@@ -175,3 +175,33 @@ func GetEntityAttachments(ctx context.Context, db *sql.DB, entityID uuid.UUID) (
 	}
 	return list, nil
 }
+
+// FindAttachments resolves an attachment by full UUID, short UUID suffix, or exact filename.
+func FindAttachments(ctx context.Context, db *sql.DB, ownerID uuid.UUID, identifier string) ([]core.Attachment, error) {
+	query := `SELECT id, filename FROM attachments WHERE owner_id = $1`
+	args := []interface{}{ownerID}
+
+	if parsedID, err := core.ParseUUID(identifier); err == nil {
+		args = append(args, parsedID)
+		query += fmt.Sprintf(` AND id = $%d`, len(args))
+	} else {
+		args = append(args, "%"+identifier, identifier)
+		query += fmt.Sprintf(` AND (id::text LIKE $%d OR filename = $%d)`, len(args)-1, len(args))
+	}
+
+	rows, err := db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("attachment search failed: %w", err)
+	}
+	defer rows.Close()
+
+	var results []core.Attachment
+	for rows.Next() {
+		var a core.Attachment
+		if err := rows.Scan(&a.ID, &a.Filename); err != nil {
+			return nil, err
+		}
+		results = append(results, a)
+	}
+	return results, nil
+}

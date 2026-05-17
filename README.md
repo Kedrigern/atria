@@ -56,6 +56,12 @@ go test ./... -p 1
 go test ./... -p 1 -v    # verbose
 ```
 
+Dev run app:
+
+```console
+go run ./cmd/atria server
+```
+
 Build app:
 
 ```console

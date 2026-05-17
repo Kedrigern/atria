@@ -17,43 +17,26 @@ type EntitySummary struct {
 	Type  EntityType
 }
 
-// FindEntities resolves an entity by full UUID, short UUID suffix (last 8 chars), or exact title.
+// FindEntities resolves an entity by full UUID, short UUID suffix, or exact title.
 func FindEntities(ctx context.Context, db *sql.DB, ownerID uuid.UUID, entityType EntityType, identifier string, includeDeleted bool) ([]EntitySummary, error) {
-	var query string
-	var args []interface{}
+	query := `SELECT id, title, type FROM entities WHERE owner_id = $1`
+	args := []interface{}{ownerID}
 
 	if parsedID, err := ParseUUID(identifier); err == nil {
-		if entityType != "" {
-			if includeDeleted {
-				query = `SELECT id, title, type FROM entities WHERE id = $1 AND owner_id = $2 AND type = $3`
-			} else {
-				query = `SELECT id, title, type FROM entities WHERE id = $1 AND owner_id = $2 AND type = $3 AND deleted_at IS NULL`
-			}
-			args = []interface{}{parsedID, ownerID, entityType}
-		} else {
-			if includeDeleted {
-				query = `SELECT id, title, type FROM entities WHERE id = $1 AND owner_id = $2`
-			} else {
-				query = `SELECT id, title, type FROM entities WHERE id = $1 AND owner_id = $2 AND deleted_at IS NULL`
-			}
-			args = []interface{}{parsedID, ownerID}
-		}
+		args = append(args, parsedID)
+		query += fmt.Sprintf(` AND id = $%d`, len(args))
 	} else {
-		if entityType != "" {
-			if includeDeleted {
-				query = `SELECT id, title, type FROM entities WHERE owner_id = $1 AND type = $2 AND (short_id = $3 OR title = $4)`
-			} else {
-				query = `SELECT id, title, type FROM entities WHERE owner_id = $1 AND type = $2 AND (short_id = $3 OR title = $4) AND deleted_at IS NULL`
-			}
-			args = []interface{}{ownerID, entityType, identifier, identifier}
-		} else {
-			if includeDeleted {
-				query = `SELECT id, title, type FROM entities WHERE owner_id = $1 AND (short_id = $2 OR title = $3)`
-			} else {
-				query = `SELECT id, title, type FROM entities WHERE owner_id = $1 AND (short_id = $2 OR title = $3) AND deleted_at IS NULL`
-			}
-			args = []interface{}{ownerID, identifier, identifier}
-		}
+		args = append(args, identifier, identifier)
+		query += fmt.Sprintf(` AND (short_id = $%d OR title = $%d)`, len(args)-1, len(args))
+	}
+
+	if entityType != "" {
+		args = append(args, entityType)
+		query += fmt.Sprintf(` AND type = $%d`, len(args))
+	}
+
+	if !includeDeleted {
+		query += ` AND deleted_at IS NULL`
 	}
 
 	rows, err := db.QueryContext(ctx, query, args...)

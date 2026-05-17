@@ -73,26 +73,45 @@ func getActiveUser(ctx context.Context, db *sql.DB) (*core.User, error) {
 	return core.FindUser(ctx, db, identifier)
 }
 
-// resolveEntity is a shared helper to find an entity or return an error.
-func resolveEntity(ctx context.Context, db *sql.DB, ownerID uuid.UUID, entityType core.EntityType, identifier string, includeDeleted bool) (*core.EntitySummary, error) {
-	results, err := core.FindEntities(ctx, db, ownerID, entityType, identifier, includeDeleted)
+func resolveSingle[T any](
+	identifier string,
+	items []T,
+	err error,
+	entityName string,
+	formatAmbiguous func(T) string,
+) (*T, error) {
 	if err != nil {
-		return nil, fmt.Errorf("search failed: %w", err)
+		return nil, fmt.Errorf("%s search failed: %w", entityName, err)
 	}
 
-	if len(results) == 0 {
-		return nil, fmt.Errorf("no %s found matching '%s'", entityType, identifier)
+	if len(items) == 0 {
+		return nil, fmt.Errorf("no %s found matching '%s'", entityName, identifier)
 	}
 
-	if len(results) > 1 {
-		errMsg := fmt.Sprintf("Ambiguous identifier '%s'. Please be more specific:\n", identifier)
-		for _, r := range results {
-			errMsg += fmt.Sprintf("  %s  %s\n", r.ID.String()[:8], r.Title)
+	if len(items) > 1 {
+		errMsg := fmt.Sprintf("Ambiguous %s identifier '%s'. Please be more specific:\n", entityName, identifier)
+		for _, item := range items {
+			errMsg += "  " + formatAmbiguous(item) + "\n"
 		}
 		return nil, fmt.Errorf("%s", errMsg)
 	}
 
-	return &results[0], nil
+	return &items[0], nil
+}
+
+// resolveEntity is a shared helper to find an entity or return an error.
+func resolveEntity(ctx context.Context, db *sql.DB, ownerID uuid.UUID, entityType core.EntityType, identifier string, includeDeleted bool) (*core.EntitySummary, error) {
+
+	items, err := core.FindEntities(ctx, db, ownerID, entityType, identifier, includeDeleted)
+
+	tName := string(entityType)
+	if tName == "" {
+		tName = "entity"
+	}
+
+	return resolveSingle(identifier, items, err, tName, func(e core.EntitySummary) string {
+		return fmt.Sprintf("%s  %s", ShortID(e.ID), e.Title)
+	})
 }
 
 // ShortID extracts the last 8 characters of a UUID for consistent CLI display.

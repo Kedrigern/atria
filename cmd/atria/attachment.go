@@ -111,44 +111,12 @@ var attachmentLinkCmd = &cobra.Command{
 
 // resolveAttachment search attachments by UUID, short UUID, or filename
 func resolveAttachment(ctx context.Context, db *sql.DB, ownerID uuid.UUID, identifier string) (*core.Attachment, error) {
-	var query string
-	var args []interface{}
 
-	if parsedID, err := core.ParseUUID(identifier); err == nil {
-		query = `SELECT id, filename FROM attachments WHERE id = $1 AND owner_id = $2`
-		args = []interface{}{parsedID, ownerID}
-	} else {
-		query = `SELECT id, filename FROM attachments WHERE owner_id = $1 AND (short_id = $2 OR filename = $3)`
-		args = []interface{}{ownerID, "%" + identifier, identifier}
-	}
+	items, err := attachments.FindAttachments(ctx, db, ownerID, identifier)
 
-	rows, err := db.QueryContext(ctx, query, args...)
-	if err != nil {
-		return nil, fmt.Errorf("attachment search failed: %w", err)
-	}
-	defer rows.Close()
-
-	var results []core.Attachment
-	for rows.Next() {
-		var a core.Attachment
-		if err := rows.Scan(&a.ID, &a.Filename); err != nil {
-			return nil, err
-		}
-		results = append(results, a)
-	}
-
-	if len(results) == 0 {
-		return nil, fmt.Errorf("no attachment found matching '%s'", identifier)
-	}
-	if len(results) > 1 {
-		errMsg := fmt.Sprintf("Ambiguous attachment identifier '%s'. Please be more specific:\n", identifier)
-		for _, r := range results {
-			errMsg += fmt.Sprintf("  %s  %s\n", ShortID(r.ID), r.Filename)
-		}
-		return nil, fmt.Errorf("%s", errMsg)
-	}
-
-	return &results[0], nil
+	return resolveSingle(identifier, items, err, "attachment", func(a core.Attachment) string {
+		return fmt.Sprintf("%s  %s", ShortID(a.ID), a.Filename)
+	})
 }
 
 func init() {
