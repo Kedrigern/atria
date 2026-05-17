@@ -58,7 +58,7 @@ main {
     height: 100vh;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow-y: auto;
 }
 
 .centered-view {
@@ -67,8 +67,6 @@ main {
     padding: 40px;
     width: 100%;
     box-sizing: border-box;
-    overflow-y: auto;
-    height: 100%;
     scroll-behavior: smooth;
 }
 
@@ -249,8 +247,6 @@ a.button-link.outline:hover {
     }
     main {
         padding-top: 60px;
-        height: 100vh;
-        box-sizing: border-box;
     }
     #sidebar {
         position: fixed;
