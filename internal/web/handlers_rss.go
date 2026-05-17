@@ -115,8 +115,7 @@ func (s *Server) handleRSSSave(c *gin.Context) {
 	}
 
 	if c.GetHeader("HX-Request") == "true" {
-		// HTMX magic: Instead of entire HTML return just piece of code
-		c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(`<span style=\"color: #10b981; font-weight: bold;\">✅ Saved to Inbox</span>`))
+		s.renderSnippet(c, "badge_saved", nil)
 		return
 	}
 
@@ -178,8 +177,7 @@ func (s *Server) handleRSSArchive(c *gin.Context) {
 	}
 
 	if c.GetHeader("HX-Request") == "true" {
-		// Vrátíme ikonu odškrtnutí
-		c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(`<span style="color: var(--text-muted); font-size: 0.9rem; padding: 10px 0; display: block;">✓ Archived</span>`))
+		s.renderSnippet(c, "badge_archived", nil)
 		return
 	}
 

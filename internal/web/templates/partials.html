@@ -87,3 +87,15 @@
     </form>
 </div>
 {{end}}
+
+{{define "badge_saved"}}
+<span style="color: #10b981; font-weight: bold;">✅ Saved to Inbox</span>
+{{end}}
+
+{{define "badge_archived"}}
+<span style="color: var(--text-muted); font-size: 0.9rem;">✓ Archived</span>
+{{end}}
+
+{{define "tag_link"}}
+<a href="/settings/tags/{{.}}" class="tag">#{{.}}</a>
+{{end}}

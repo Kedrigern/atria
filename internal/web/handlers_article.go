@@ -150,7 +150,7 @@ func (s *Server) handleReadArchive(c *gin.Context) {
 	}
 
 	if c.GetHeader("HX-Request") == "true" {
-		c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(`<span style="color: var(--text-muted); font-size: 0.9rem;">✓ Archived</span>`))
+		s.renderSnippet(c, "badge_archived", nil)
 		return
 	}
 

@@ -92,9 +92,7 @@ func (s *Server) handleTagAttach(c *gin.Context) {
 	}
 
 	if c.GetHeader("HX-Request") == "true" {
-		c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(
-			`<a href="/settings/tags/`+tagName+`" class="tag">#`+tagName+`</a>`,
-		))
+		s.renderSnippet(c, "tag_link", tagName)
 		return
 	}
 

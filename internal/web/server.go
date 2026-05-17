@@ -285,29 +285,8 @@ func (s *Server) SetupRouter() *gin.Engine {
 	return r
 }
 
-// render wrap parsing HTMX and adding useful functions (eg formatDate)
-func (s *Server) render(c *gin.Context, tmplName string, data gin.H) {
-	var t *template.Template
-	var err error
-
-	if data == nil {
-		data = gin.H{}
-	}
-
-	user := s.getUser(c)
-	if user == nil && tmplName != "login.html" {
-		return
-	}
-
-	if user != nil {
-		data["User"] = user
-		data["Theme"] = user.Preferences.Theme
-	}
-
-	data["Flash"] = s.getFlash(c)
-	data["CSRFToken"] = s.GetCSRFToken(c)
-
-	funcMap := template.FuncMap{
+func (s *Server) getTemplateFuncs() template.FuncMap {
+	return template.FuncMap{
 		"formatDate": func(t time.Time) string {
 			return t.Format("02.01.2006 15:04")
 		},
@@ -338,6 +317,46 @@ func (s *Server) render(c *gin.Context, tmplName string, data gin.H) {
 			return a / b
 		},
 	}
+}
+
+func (s *Server) renderSnippet(c *gin.Context, snippetName string, data any) {
+	c.Header("Content-Type", "text/html; charset=utf-8")
+
+	t := template.New("").Funcs(s.getTemplateFuncs())
+	t, err := t.ParseFS(TemplatesFS, "templates/partials.html")
+	if err != nil {
+		c.String(http.StatusInternalServerError, "Template parse error: %v", err)
+		return
+	}
+
+	if err := t.ExecuteTemplate(c.Writer, snippetName, data); err != nil {
+		c.String(http.StatusInternalServerError, "Template execution error: %v", err)
+	}
+}
+
+// render wrap parsing HTMX and adding useful functions (eg formatDate)
+func (s *Server) render(c *gin.Context, tmplName string, data gin.H) {
+	var t *template.Template
+	var err error
+
+	if data == nil {
+		data = gin.H{}
+	}
+
+	user := s.getUser(c)
+	if user == nil && tmplName != "login.html" {
+		return
+	}
+
+	if user != nil {
+		data["User"] = user
+		data["Theme"] = user.Preferences.Theme
+	}
+
+	data["Flash"] = s.getFlash(c)
+	data["CSRFToken"] = s.GetCSRFToken(c)
+
+	funcMap := s.getTemplateFuncs()
 
 	if c.GetHeader("HX-Request") == "true" {
 		t = template.New(tmplName).Funcs(funcMap)
