@@ -274,12 +274,23 @@ func (s *Server) SetupRouter() *gin.Engine {
 			apiNotes.POST("/delete/:id", s.handleNoteDelete)
 		}
 
+		// API: Settings Tags
+		apiTags := api.Group("/settings/tags")
+		{
+			apiTags.POST("/add", s.handleTagAdd)
+			apiTags.POST("/attach", s.handleTagAttachUniversal)
+		}	
+
+		// API: Settings Users
+		apiUsers := api.Group("/settings/users")
+		{
+			apiUsers.POST("/create", s.handleSettingsUserCreate)
+			apiUsers.POST("/role", s.handleSettingsUserRole)
+			apiUsers.POST("/delete", s.handleSettingsUserDelete)
+		}
+
 		// API: Other
-		api.POST("/settings/tags/add", s.handleTagAdd)
 		api.POST("/profile/preferences", s.handleProfilePreferences)
-		api.POST("/settings/users/create", s.handleSettingsUserCreate)
-		api.POST("/settings/users/role", s.handleSettingsUserRole)
-		api.POST("/settings/users/delete", s.handleSettingsUserDelete)
 	}
 
 	return r

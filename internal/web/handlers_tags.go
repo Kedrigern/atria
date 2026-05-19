@@ -98,3 +98,50 @@ func (s *Server) handleTagAttach(c *gin.Context) {
 
 	c.Redirect(http.StatusSeeOther, c.Request.Referer())
 }
+
+func (s *Server) handleTagAttachUniversal(c *gin.Context) {
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+
+	entityIdentifier := c.PostForm("entity_identifier")
+	tagName := c.PostForm("tag_name")
+
+	if entityIdentifier == "" || tagName == "" {
+		s.setFlash(c, "error", "Identifikátor entity i tag musí být vyplněny.")
+		c.Redirect(http.StatusSeeOther, "/settings/tags")
+		return
+	}
+
+	entities, err := core.FindEntities(c.Request.Context(), s.db, user.ID, "", entityIdentifier, false)
+	if err != nil {
+		s.setFlash(c, "error", "Chyba databáze při vyhledávání: "+err.Error())
+		c.Redirect(http.StatusSeeOther, "/settings/tags")
+		return
+	}
+
+	if len(entities) == 0 {
+		s.setFlash(c, "error", "Nenalezena žádná entita odpovídající '"+entityIdentifier+"'.")
+		c.Redirect(http.StatusSeeOther, "/settings/tags")
+		return
+	}
+
+	if len(entities) > 1 {
+		s.setFlash(c, "error", "Nalezeno více entit. Buďte specifičtější (zadejte Short ID).")
+		c.Redirect(http.StatusSeeOther, "/settings/tags")
+		return
+	}
+
+	targetEntity := entities[0]
+
+	err = core.AttachTagByTitle(c.Request.Context(), s.db, user.ID, targetEntity.ID, tagName)
+	if err != nil {
+		s.setFlash(c, "error", "Nepodařilo se připojit tag: "+err.Error())
+		c.Redirect(http.StatusSeeOther, "/settings/tags")
+		return
+	}
+
+	s.setFlash(c, "success", "Tag #"+tagName+" byl úspěšně připojen k: "+targetEntity.Title)
+	c.Redirect(http.StatusSeeOther, "/settings/tags")
+}

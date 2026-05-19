@@ -22,6 +22,68 @@
         <button type="submit">Vytvořit Tag</button>
     </form>
 
+    <details
+        style="
+            margin-bottom: 30px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 15px;
+            background: var(--background);
+        "
+    >
+        <summary style="cursor: pointer; font-weight: bold">
+            🔗 Přiřadit Tag k Entitě
+        </summary>
+        <form
+            method="post"
+            action="/api/settings/tags/attach"
+            style="margin-top: 15px; display: grid; gap: 12px; max-width: 480px"
+        >
+            <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
+
+            <div>
+                <label
+                    style="
+                        display: block;
+                        font-weight: bold;
+                        margin-bottom: 4px;
+                    "
+                    >Entita (Název, UUID, nebo Short ID)</label
+                >
+                <input
+                    type="text"
+                    name="entity_identifier"
+                    required
+                    placeholder="např. Solar Setup nebo 8e6a1f..."
+                    style="width: 100%"
+                />
+            </div>
+
+            <div>
+                <label
+                    style="
+                        display: block;
+                        font-weight: bold;
+                        margin-bottom: 4px;
+                    "
+                    >Vyberte Tag</label
+                >
+                <select name="tag_name" required style="width: 100%">
+                    <option value="" disabled selected>
+                        Zvolte tag ze seznamu...
+                    </option>
+                    {{range .Tags}}
+                    <option value="{{.Name}}">#{{.Name}}</option>
+                    {{end}}
+                </select>
+            </div>
+
+            <button type="submit" style="width: fit-content">
+                Připojit Tag
+            </button>
+        </form>
+    </details>
+
     <div style="display: flex; flex-wrap: wrap; gap: 15px">
         {{range .Tags}}
         <div
