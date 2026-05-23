@@ -11,11 +11,11 @@
     },
     "show_summary": true,
     "show_command": true,
-    "tags": ["bin"],
+    "tags": ["test"],
   },
   {
-    "label": "2 Compile",
-    "command": "go build -o atria cmd/atria/*.go",
+    "label": "2 Run local",
+    "command": "go run ./cmd/atria/ server",
     "use_new_terminal": false,
     "allow_concurrent_runs": false,
     "reveal": "always",
@@ -29,7 +29,7 @@
   },
   {
     "label": "3 DB ping",
-    "command": "go run cmd/atria/main.go db ping",
+    "command": "go run ./cmd/atria/  db ping",
     "use_new_terminal": false,
     "allow_concurrent_runs": false,
     "reveal": "always",
@@ -40,5 +40,34 @@
     "show_summary": true,
     "show_command": true,
     "tags": ["db"],
+  },
+
+  {
+    "label": "4 DB migrate",
+    "command": "go run ./cmd/atria/ db migrate",
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "always",
+    "hide": "never",
+    "shell": {
+      "program": "sh",
+    },
+    "show_summary": true,
+    "show_command": true,
+    "tags": ["db"],
+  },
+  {
+    "label": "5 Compile",
+    "command": "go build -o atria cmd/atria/*.go",
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "always",
+    "hide": "never",
+    "shell": {
+      "program": "sh",
+    },
+    "show_summary": true,
+    "show_command": true,
+    "tags": ["bin"],
   },
 ]
