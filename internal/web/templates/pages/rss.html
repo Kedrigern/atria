@@ -73,7 +73,22 @@
             <div class="page-header-row" style="width: 100%">
                 <div>
                     <h4 style="margin: 0 0 5px 0">
-                        <a href="{{.Link}}" target="_blank">{{.Title}}</a>
+                        <a
+                            href="javascript:void(0)"
+                            onclick="
+                                const d =
+                                    this.closest('.list-item').querySelector(
+                                        '.inline-content',
+                                    );
+                                if (d)
+                                    d.style.display =
+                                        d.style.display === 'none'
+                                            ? 'block'
+                                            : 'none';
+                            "
+                        >
+                            {{.Title}}
+                        </a>
                     </h4>
                     <small style="color: var(--text-muted)"
                         >{{.SourceName}} • {{formatDate .PublishedAt}}</small
@@ -155,18 +170,16 @@
                         </button>
                     </form>
                     {{if or .Content .Description}}
-                    <button
-                        type="button"
-                        class="outline"
-                        title="Read inline"
-                        style="padding: 6px; display: flex; align-items: center"
-                        onclick="
-                            const d =
-                                this.closest('.list-item').querySelector(
-                                    '.inline-content',
-                                );
-                            d.style.display =
-                                d.style.display === 'none' ? 'block' : 'none';
+                    <a
+                        href="{{.Link}}"
+                        target="_blank"
+                        class="button-link outline"
+                        title="Otevřít originál"
+                        style="
+                            margin: 0;
+                            padding: 6px;
+                            display: flex;
+                            align-items: center;
                         "
                     >
                         <svg
@@ -177,14 +190,14 @@
                             stroke-width="2"
                             stroke-linecap="round"
                             stroke-linejoin="round"
-                            style="pointer-events: none"
                         >
                             <path
-                                d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"
+                                d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
                             ></path>
-                            <circle cx="12" cy="12" r="3"></circle>
+                            <polyline points="15 3 21 3 21 9"></polyline>
+                            <line x1="10" y1="14" x2="21" y2="3"></line>
                         </svg>
-                    </button>
+                    </a>
                     {{end}}
                 </div>
             </div>
