@@ -197,6 +197,9 @@
                         method="post"
                         action="/api/rss/save/{{.ID}}"
                         style="margin: 0"
+                        hx-post="/api/rss/save/{{.ID}}"
+                        hx-target="closest .list-item"
+                        hx-swap="outerHTML swap:0.3s"
                     >
                         <input
                             type="hidden"
