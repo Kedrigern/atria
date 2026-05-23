@@ -11,6 +11,7 @@ import (
 	"database/sql"
 	"embed"
 	"encoding/hex"
+	"html"
 	"html/template"
 	"io/fs"
 	"log"
@@ -279,7 +280,7 @@ func (s *Server) SetupRouter() *gin.Engine {
 		{
 			apiTags.POST("/add", s.handleTagAdd)
 			apiTags.POST("/attach", s.handleTagAttachUniversal)
-		}	
+		}
 
 		// API: Settings Users
 		apiUsers := api.Group("/settings/users")
@@ -309,7 +310,9 @@ func (s *Server) getTemplateFuncs() template.FuncMap {
 		},
 		"stripHTML": func(s string) string {
 			re := regexp.MustCompile(`<[^>]*>`)
-			return re.ReplaceAllString(s, "")
+			stripped := re.ReplaceAllString(s, "")
+
+			return html.UnescapeString(stripped)
 		},
 		"truncate": func(s string, l int) string {
 			runes := []rune(s)
