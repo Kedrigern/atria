@@ -1,20 +1,6 @@
 {{define "content"}}
 <div class="centered-view" data-mobile-title="ATRIA: Articles">
-    {{if .Flash}}
-    <div class="flash-message {{.Flash.Type}}">
-        <div class="action-row" style="justify-content: space-between">
-            <span>{{.Flash.Message}}</span>
-            <button
-                type="button"
-                class="outline"
-                data-flash-close
-                style="min-height: auto; padding: 4px 8px"
-            >
-                ×
-            </button>
-        </div>
-    </div>
-    {{end}}
+    {{template "flash_message" .}}
 
     <div class="page-header-row" style="margin-bottom: 15px">
         <h2 class="hide-mobile">Read-it-Later Inbox</h2>

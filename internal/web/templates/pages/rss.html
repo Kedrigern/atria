@@ -3,21 +3,7 @@
 <div class="centered-view" data-mobile-title="ATRIA: RSS">
     <h2 class="hide-mobile">RSS</h2>
 
-    {{if .Flash}}
-    <div class="flash-message {{.Flash.Type}}">
-        <div class="action-row" style="justify-content: space-between">
-            <span>{{.Flash.Message}}</span>
-            <button
-                type="button"
-                class="outline"
-                data-flash-close
-                style="padding: 4px 8px; min-height: auto"
-            >
-                ×
-            </button>
-        </div>
-    </div>
-    {{end}}
+    {{template "flash_message" .}}
 
     <div
         style="

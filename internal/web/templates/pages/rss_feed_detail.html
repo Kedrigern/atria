@@ -1,20 +1,6 @@
 {{define "content"}}
 <div class="centered-view" data-mobile-title="ATRIA: RSS Feed">
-    {{if .Flash}}
-    <div class="flash-message {{.Flash.Type}}">
-        <div class="action-row" style="justify-content: space-between">
-            <span>{{.Flash.Message}}</span>
-            <button
-                type="button"
-                class="outline"
-                data-flash-close
-                style="padding: 4px 8px; min-height: auto"
-            >
-                ×
-            </button>
-        </div>
-    </div>
-    {{end}} {{/* ── Navigation breadcrumb ── */}}
+    {{template "flash_message" .}} {{/* ── Navigation breadcrumb ── */}}
     <div style="margin-bottom: 20px; font-size: 1.1rem">
         <a href="/rss" style="color: var(--text-muted)">Unread Items</a>
         <span style="color: var(--text-muted); margin: 0 10px">|</span>
