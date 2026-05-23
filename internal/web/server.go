@@ -253,9 +253,11 @@ func (s *Server) SetupRouter() *gin.Engine {
 		{
 			apiRSS.POST("/add", s.handleRSSAdd)
 			apiRSS.POST("/fetch", s.handleRSSFetch)
-			apiRSS.POST("/archive-batch", s.handleRSSArchiveBatch)
-			apiRSS.POST("/archive/:id", s.handleRSSArchive)
+			apiRSS.POST("/fetch/:id", s.handleRSSFetchFeed)
 			apiRSS.POST("/save/:id", s.handleRSSSave)
+			apiRSS.POST("/archive/item/:id", s.handleRSSArchive)
+			apiRSS.POST("/archive/feed/:id", s.handleRSSFeedArchiveAll)
+			apiRSS.POST("/archive/batch", s.handleRSSArchiveBatch)
 		}
 
 		// API: Read (Articles)

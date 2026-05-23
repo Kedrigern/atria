@@ -302,3 +302,65 @@ func (s *Server) handleRSSArchiveBatch(c *gin.Context) {
 		"PrevPage": page - 1,
 	})
 }
+
+func (s *Server) handleRSSFeedArchiveAll(c *gin.Context) {
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+
+	feedID, err := core.ParseUUID(c.Param("id"))
+	if err != nil {
+		s.renderError(c, http.StatusBadRequest, "Invalid feed ID")
+		return
+	}
+
+	if err := rss.MarkFeedAsRead(c.Request.Context(), s.db, user.ID, feedID); err != nil {
+		s.renderError(c, http.StatusInternalServerError, "Failed to mark feed as read: "+err.Error())
+		return
+	}
+
+	if c.GetHeader("HX-Request") == "true" {
+		c.Header("HX-Refresh", "true") // Okamžitě obnoví celou stránku
+		c.Status(http.StatusOK)
+		return
+	}
+
+	s.setFlash(c, "success", "All items marked as read.")
+	c.Redirect(http.StatusSeeOther, "/rss/"+feedID.String())
+}
+
+func (s *Server) handleRSSFetchFeed(c *gin.Context) {
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+
+	feedID, err := core.ParseUUID(c.Param("id"))
+	if err != nil {
+		s.renderError(c, http.StatusBadRequest, "Invalid feed ID")
+		return
+	}
+
+	// Bezpečnostní ověření, že uživatel je vlastníkem feedu
+	var ownerID uuid.UUID
+	err = s.db.QueryRowContext(c.Request.Context(), "SELECT owner_id FROM entities WHERE id = $1 AND deleted_at IS NULL", feedID).Scan(&ownerID)
+	if err != nil || ownerID != user.ID {
+		s.renderError(c, http.StatusForbidden, "Forbidden")
+		return
+	}
+
+	if err := rss.FetchFeed(c.Request.Context(), s.db, feedID); err != nil {
+		s.renderError(c, http.StatusInternalServerError, "Fetch failed: "+err.Error())
+		return
+	}
+
+	if c.GetHeader("HX-Request") == "true" {
+		c.Header("HX-Refresh", "true")
+		c.Status(http.StatusOK)
+		return
+	}
+
+	s.setFlash(c, "success", "Zdroj úspěšně synchronizován.")
+	c.Redirect(http.StatusSeeOther, "/rss/"+feedID.String())
+}

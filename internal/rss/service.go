@@ -289,16 +289,10 @@ func MarkBatchAsRead(ctx context.Context, db *sql.DB, ownerID uuid.UUID, itemIDs
 	return tx.Commit()
 }
 
-// FeedItem extends RSSItem with read state for the feed detail view.
-type FeedItem struct {
-	core.RSSItem
-	ReadAt *time.Time
-}
-
 // FeedDetail holds a feed's metadata, paginated items, and stats.
 type FeedDetail struct {
 	core.FeedSummary
-	Items      []FeedItem
+	Items      []core.RSSItem
 	HasMore    bool
 	TotalItems int
 	ReadItems  int
@@ -349,7 +343,7 @@ func GetFeedDetail(ctx context.Context, db *sql.DB, ownerID, feedID uuid.UUID, i
 	defer rows.Close()
 
 	for rows.Next() {
-		var item FeedItem
+		var item core.RSSItem
 		err := rows.Scan(
 			&item.ID, &item.FeedID, &item.SourceName,
 			&item.Title, &item.Link, &item.Description, &item.Content,
@@ -377,4 +371,16 @@ func GetFeedDetail(ctx context.Context, db *sql.DB, ownerID, feedID uuid.UUID, i
 	}
 
 	return &fd, nil
+}
+
+// MarkFeedAsRead označní všechny nepřečtené položky daného zdroje za přečtené.
+func MarkFeedAsRead(ctx context.Context, db *sql.DB, ownerID, feedID uuid.UUID) error {
+	query := `
+		UPDATE rss_items
+		SET read_at = NOW()
+		WHERE feed_id = $1 AND read_at IS NULL
+		  AND feed_id IN (SELECT id FROM entities WHERE owner_id = $2)
+	`
+	_, err := db.ExecContext(ctx, query, feedID, ownerID)
+	return err
 }

@@ -127,7 +127,6 @@
     <a href="/settings/attachments" class="{{if eq . "attachments"}}active{{end}}">Attachments</a>
 </div>
 {{end}}
-
 {{define "rss_list_item"}}
 <div class="list-item" style="flex-direction: column; align-items: flex-start; gap: 8px">
     <div class="page-header-row" style="width: 100%">
@@ -140,25 +139,23 @@
             </h4>
             <small style="color: var(--text-muted)">
                 {{.SourceName}} • {{formatDate .PublishedAt}}
-                {{if .ReadAt}} · <span style="color: #10b981; font-size: 0.85rem">✓ read</span>{{end}}
+                {{if .ReadAt}} <span style="color: #10b981; font-size: 0.85rem; margin-left: 8px;">✓ read</span>{{end}}
             </small>
         </div>
 
         <div class="action-row">
-            {{if not .ReadAt}}
             <form method="post" action="/api/rss/save/{{.ID}}" style="margin: 0" hx-post="/api/rss/save/{{.ID}}" hx-target="closest .list-item" hx-swap="outerHTML swap:0.3s">
                 <button type="submit" class="outline" title="Save to Read-it-Later" style="padding: 6px; display: flex; align-items: center">
                     <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
                 </button>
             </form>
 
-            <form method="post" action="/api/rss/archive/{{.ID}}" style="margin: 0" hx-post="/api/rss/archive/{{.ID}}" hx-target="closest .list-item" hx-swap="outerHTML swap:0.3s">
+            {{if not .ReadAt}}
+            <form method="post" action="/api/rss/archive/item/{{.ID}}" style="margin: 0" hx-post="/api/rss/archive/item/{{.ID}}" hx-target="closest .list-item" hx-swap="outerHTML swap:0.3s">
                 <button type="submit" class="outline" title="Archive (Mark as Read)" style="padding: 6px; display: flex; align-items: center">
                     <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                 </button>
             </form>
-            {{else}}
-            <span style="color: #10b981; font-size: 0.9rem; white-space: nowrap;">✓ read</span>
             {{end}}
 
             <a href="{{.Link}}" target="_blank" class="button-link outline" title="Otevřít originál" style="margin: 0; padding: 6px; display: flex; align-items: center">
@@ -185,7 +182,6 @@
                 ↑ Zobrazit méně
             </button>
 
-            {{if not .ReadAt}}
             <div class="action-row">
                 <form method="post" action="/api/rss/save/{{.ID}}" style="margin: 0" hx-post="/api/rss/save/{{.ID}}" hx-target="closest .list-item" hx-swap="outerHTML swap:0.3s">
                     <button type="submit" class="outline" title="Save to Read-it-Later" style="padding: 4px 12px; display: flex; align-items: center; gap: 6px; font-size: 0.9rem;">
@@ -194,14 +190,15 @@
                     </button>
                 </form>
 
-                <form method="post" action="/api/rss/archive/{{.ID}}" style="margin: 0" hx-post="/api/rss/archive/{{.ID}}" hx-target="closest .list-item" hx-swap="outerHTML swap:0.3s">
+                {{if not .ReadAt}}
+                <form method="post" action="/api/rss/archive/item/{{.ID}}" style="margin: 0" hx-post="/api/rss/archive/item/{{.ID}}" hx-target="closest .list-item" hx-swap="outerHTML swap:0.3s">
                     <button type="submit" class="outline" title="Archive (Mark as Read)" style="padding: 4px 12px; display: flex; align-items: center; gap: 6px; font-size: 0.9rem;">
                         <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                         Archivovat
                     </button>
                 </form>
+                {{end}}
             </div>
-            {{end}}
         </div>
     </div>
 </div>

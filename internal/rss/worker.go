@@ -3,13 +3,16 @@ package rss
 import (
 	"context"
 	"database/sql"
+	"io"
 	"log"
+	"net/http"
 	"sync"
 	"time"
 
 	"atria/internal/core"
 	"atria/internal/netutil"
 
+	"github.com/gofrs/uuid/v5"
 	"github.com/mmcdole/gofeed"
 )
 
@@ -97,4 +100,69 @@ func FetchAllActiveFeeds(ctx context.Context, db *sql.DB) error {
 
 	wg.Wait()
 	return nil
+}
+
+// FetchFeed imidietly fetch one feed
+func FetchFeed(ctx context.Context, db *sql.DB, feedID uuid.UUID) error {
+	query := `
+		SELECT id, feed_url, etag_header, last_modified_header,
+		       http_auth_type, http_auth_username, http_auth_token
+		FROM rss_feeds
+		WHERE id = $1
+	`
+	var f FeedToFetch
+	err := db.QueryRowContext(ctx, query, feedID).Scan(&f.ID, &f.FeedURL, &f.ETag, &f.LastMod, &f.AuthType, &f.AuthUsername, &f.AuthToken)
+	if err != nil {
+		return err
+	}
+
+	fp := gofeed.NewParser()
+	fp.Client = netutil.SafeHTTPClient()
+
+	log.Printf("RSS Worker: Vynucené stažení zdroje %s", f.FeedURL)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, f.FeedURL, nil)
+	if err != nil {
+		_ = UpdateFetchStatus(ctx, db, f.ID, 0, err)
+		return err
+	}
+
+	resp, err := fp.Client.Do(req)
+	if err != nil {
+		_ = UpdateFetchStatus(ctx, db, f.ID, 0, err)
+		return err
+	}
+	defer resp.Body.Close()
+
+	// Bezpečnostní pojistka 5 MB
+	limitedXMLReader := io.LimitReader(resp.Body, 5*1024*1024)
+	feed, err := fp.Parse(limitedXMLReader)
+	if err != nil {
+		_ = UpdateFetchStatus(ctx, db, f.ID, resp.StatusCode, err)
+		return err
+	}
+
+	for _, item := range feed.Items {
+		itemID := core.NewUUID()
+		pubDate := time.Now().UTC()
+		if item.PublishedParsed != nil {
+			pubDate = item.PublishedParsed.UTC()
+		} else if item.UpdatedParsed != nil {
+			pubDate = item.UpdatedParsed.UTC()
+		}
+
+		queryItem := `
+			INSERT INTO rss_items (id, feed_id, title, link, description, content, guid, published_at)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+			ON CONFLICT (feed_id, guid) DO NOTHING
+		`
+		_, err = db.ExecContext(ctx, queryItem,
+			itemID, f.ID, item.Title, item.Link, item.Description, item.Content, item.GUID, pubDate,
+		)
+		if err != nil {
+			log.Printf("RSS Worker: nepodařilo se uložit položku %s: %v", item.Link, err)
+		}
+	}
+
+	return UpdateFetchStatus(ctx, db, f.ID, 200, nil)
 }

@@ -159,15 +159,16 @@ type FeedSummary struct {
 
 // RSSItem represents a single entry from a feed for triage.
 type RSSItem struct {
-	ID          uuid.UUID `json:"id"`
-	FeedID      uuid.UUID `json:"feed_id"`
-	SourceName  string    `json:"source_name"`
-	Title       string    `json:"title"`
-	Link        string    `json:"link"`
-	Description string    `json:"description"`
-	Content     string    `json:"content"`
-	PublishedAt time.Time `json:"published_at"`
-	CreatedAt   time.Time `json:"created_at"`
+	ID          uuid.UUID  `json:"id"`
+	FeedID      uuid.UUID  `json:"feed_id"`
+	SourceName  string     `json:"source_name"`
+	Title       string     `json:"title"`
+	Link        string     `json:"link"`
+	Description string     `json:"description"`
+	Content     string     `json:"content"`
+	PublishedAt time.Time  `json:"published_at"`
+	CreatedAt   time.Time  `json:"created_at"`
+	ReadAt      *time.Time `json:"read_at,omitempty"`
 }
 
 // NOTE
