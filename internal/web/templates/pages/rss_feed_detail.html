@@ -44,9 +44,9 @@
         <div style="display: flex; gap: 10px; flex-wrap: wrap">
             <form
                 method="post"
-                action="/api/rss/fetch/{{.Feed.ID}}"
+                action="/api/rss/{{.Feed.ID}}/fetch"
                 style="margin: 0"
-                hx-post="/api/rss/fetch/{{.Feed.ID}}"
+                hx-post="/api/rss/{{.Feed.ID}}/fetch"
             >
                 <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
                 <button
@@ -175,10 +175,10 @@
         {{if gt .UnreadItems 0}}
         <form
             method="post"
-            action="/api/rss/archive/feed/{{.Feed.ID}}"
+            action="/api/rss/{{.Feed.ID}}/archive-all"
             style="margin: 0"
             onsubmit="return confirm('Opravdu chcete označit všech {{.UnreadItems}} položek jako přečtených?');"
-            hx-post="/api/rss/archive/feed/{{.Feed.ID}}"
+            hx-post="/api/rss/{{.Feed.ID}}/archive-all"
         >
             <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
             <button

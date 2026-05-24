@@ -7,9 +7,9 @@
 
     <form
         method="post"
-        action="/api/settings/tags/add"
+        action="/api/tags/create"
         style="display: flex; gap: 10px; margin-bottom: 30px"
-        hx-post="/api/settings/tags/add"
+        hx-post="/api/tags/create"
     >
         <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
         <input
@@ -36,7 +36,7 @@
         </summary>
         <form
             method="post"
-            action="/api/settings/tags/attach"
+            action="/api/tags/attach"
             style="margin-top: 15px; display: grid; gap: 12px; max-width: 480px"
         >
             <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />

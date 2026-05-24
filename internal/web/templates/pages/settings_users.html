@@ -18,7 +18,7 @@
         </summary>
         <form
             method="post"
-            action="/api/settings/users/create"
+            action="/api/users/create"
             style="margin-top: 15px; display: grid; gap: 12px; max-width: 480px"
         >
             <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
@@ -239,7 +239,7 @@
                             {{/* Toggle role */}}
                             <form
                                 method="post"
-                                action="/api/settings/users/role"
+                                action="/api/users/role"
                                 style="margin: 0"
                             >
                                 <input
@@ -279,7 +279,7 @@
                             {{/* Delete */}}
                             <form
                                 method="post"
-                                action="/api/settings/users/delete"
+                                action="/api/users/delete"
                                 style="margin: 0"
                                 onsubmit="return confirm('Delete user {{.Email}}? This cannot be undone.')"
                             >

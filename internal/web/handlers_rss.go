@@ -10,7 +10,7 @@ import (
 	"github.com/gofrs/uuid/v5"
 )
 
-func (s *Server) handleRSS(c *gin.Context) {
+func (s *Server) handleRSSItemList(c *gin.Context) {
 	user := s.getUser(c)
 	if user == nil {
 		return
@@ -62,7 +62,7 @@ func (s *Server) handleRSS(c *gin.Context) {
 	})
 }
 
-func (s *Server) handleRSSAdd(c *gin.Context) {
+func (s *Server) handleRSSFeedAdd(c *gin.Context) {
 	user := s.getUser(c)
 	if user == nil {
 		return
@@ -96,7 +96,7 @@ func (s *Server) handleRSSAdd(c *gin.Context) {
 	c.Redirect(http.StatusSeeOther, "/rss/feeds")
 }
 
-func (s *Server) handleRSSSave(c *gin.Context) {
+func (s *Server) handleRSSFeedUpdate(c *gin.Context) {
 	user := s.getUser(c)
 	if user == nil {
 		return
@@ -123,7 +123,7 @@ func (s *Server) handleRSSSave(c *gin.Context) {
 	c.Redirect(http.StatusSeeOther, "/rss")
 }
 
-func (s *Server) handleRSSFetch(c *gin.Context) {
+func (s *Server) handleRSSFetchAll(c *gin.Context) {
 	// Triggers the parallel worker pool to fetch all feeds
 	err := rss.FetchAllActiveFeeds(c.Request.Context(), s.db)
 	if err != nil {
@@ -142,7 +142,7 @@ func (s *Server) handleRSSFetch(c *gin.Context) {
 	c.Redirect(http.StatusSeeOther, "/rss/feeds")
 }
 
-func (s *Server) handleRSSFeeds(c *gin.Context) {
+func (s *Server) handleRSSFeedList(c *gin.Context) {
 	user := s.getUser(c)
 	if user == nil {
 		return
@@ -158,7 +158,7 @@ func (s *Server) handleRSSFeeds(c *gin.Context) {
 	})
 }
 
-func (s *Server) handleRSSArchive(c *gin.Context) {
+func (s *Server) handleRSSItemArchive(c *gin.Context) {
 	user := s.getUser(c)
 	if user == nil {
 		return
@@ -231,7 +231,7 @@ func (s *Server) handleRSSFeedDetail(c *gin.Context) {
 	})
 }
 
-func (s *Server) handleRSSArchiveBatch(c *gin.Context) {
+func (s *Server) handleRSSItemArchiveBatch(c *gin.Context) {
 	user := s.getUser(c)
 	if user == nil {
 		return
@@ -330,7 +330,7 @@ func (s *Server) handleRSSFeedArchiveAll(c *gin.Context) {
 	c.Redirect(http.StatusSeeOther, "/rss/"+feedID.String())
 }
 
-func (s *Server) handleRSSFetchFeed(c *gin.Context) {
+func (s *Server) handleRSSFeedFetch(c *gin.Context) {
 	user := s.getUser(c)
 	if user == nil {
 		return

@@ -52,7 +52,7 @@
 
         <form
             method="post"
-            action="/api/read/refetch/{{.ID}}"
+            action="/api/articles/{{.ID}}/refetch"
             style="margin: 0"
         >
             <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
@@ -132,7 +132,7 @@
             </div>
             <form
                 id="note-edit"
-                hx-post="/api/read/note/{{.ID}}"
+                hx-post="/api/articles/{{.ID}}/note"
                 style="display: none; margin: 0"
             >
                 <input
@@ -195,7 +195,7 @@
         >
             <form
                 method="post"
-                action="/api/read/archive/{{.ID}}"
+                action="/api/articles/{{.ID}}/archive"
                 style="margin: 0"
             >
                 <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />

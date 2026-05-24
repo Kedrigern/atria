@@ -8,7 +8,7 @@ import (
 )
 
 // handleTags list all tags of the user
-func (s *Server) handleTags(c *gin.Context) {
+func (s *Server) handleTagList(c *gin.Context) {
 	user := s.getUser(c)
 	if user == nil {
 		return
@@ -47,7 +47,7 @@ func (s *Server) handleTagDetail(c *gin.Context) {
 }
 
 // handleTagAdd process cration of new tag
-func (s *Server) handleTagAdd(c *gin.Context) {
+func (s *Server) handleTagCreate(c *gin.Context) {
 	user := s.getUser(c)
 	if user == nil {
 		return

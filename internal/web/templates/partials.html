@@ -145,14 +145,14 @@
         </div>
 
         <div class="action-row">
-            <form method="post" action="/api/rss/save/{{.ID}}" style="margin: 0" hx-post="/api/rss/save/{{.ID}}" hx-target="closest .list-item" hx-swap="outerHTML swap:0.3s">
+            <form method="post" action="/api/rss/{{.ID}}/update" style="margin: 0" hx-post="/api/rss/{{.ID}}/update" hx-target="closest .list-item" hx-swap="outerHTML swap:0.3s">
                 <button type="submit" class="outline" title="Save to Read-it-Later" style="padding: 6px; display: flex; align-items: center">
                     <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
                 </button>
             </form>
 
             {{if not .ReadAt}}
-            <form method="post" action="/api/rss/archive/item/{{.ID}}" style="margin: 0" hx-post="/api/rss/archive/item/{{.ID}}" hx-target="closest .list-item" hx-swap="outerHTML swap:0.3s">
+            <form method="post" action="/api/rss/{{.ID}}/archive" style="margin: 0" hx-post="/api/rss/{{.ID}}/archive" hx-target="closest .list-item" hx-swap="outerHTML swap:0.3s">
                 <button type="submit" class="outline" title="Archive (Mark as Read)" style="padding: 6px; display: flex; align-items: center">
                     <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                 </button>
@@ -184,7 +184,7 @@
             </button>
 
             <div class="action-row">
-                <form method="post" action="/api/rss/save/{{.ID}}" style="margin: 0" hx-post="/api/rss/save/{{.ID}}" hx-target="closest .list-item" hx-swap="outerHTML swap:0.3s">
+                <form method="post" action="/api/rss/{{.ID}}/update" style="margin: 0" hx-post="/api/rss/{{.ID}}/update" hx-target="closest .list-item" hx-swap="outerHTML swap:0.3s">
                     <button type="submit" class="outline" title="Save to Read-it-Later" style="padding: 4px 12px; display: flex; align-items: center; gap: 6px; font-size: 0.9rem;">
                         <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
                         Uložit do Inboxu
@@ -192,7 +192,7 @@
                 </form>
 
                 {{if not .ReadAt}}
-                <form method="post" action="/api/rss/archive/item/{{.ID}}" style="margin: 0" hx-post="/api/rss/archive/item/{{.ID}}" hx-target="closest .list-item" hx-swap="outerHTML swap:0.3s">
+                <form method="post" action="/api/rss/{{.ID}}/archive" style="margin: 0" hx-post="/api/rss/{{.ID}}/archive" hx-target="closest .list-item" hx-swap="outerHTML swap:0.3s">
                     <button type="submit" class="outline" title="Archive (Mark as Read)" style="padding: 4px 12px; display: flex; align-items: center; gap: 6px; font-size: 0.9rem;">
                         <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                         Archivovat

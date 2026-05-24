@@ -18,7 +18,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func (s *Server) handleRead(c *gin.Context) {
+func (s *Server) handleArticleList(c *gin.Context) {
 	user := s.getUser(c)
 	if user == nil {
 		return
@@ -55,7 +55,7 @@ func (s *Server) handleRead(c *gin.Context) {
 	})
 }
 
-func (s *Server) handleReadDetail(c *gin.Context) {
+func (s *Server) handleArticleDetail(c *gin.Context) {
 	user := s.getUser(c)
 	if user == nil {
 		return
@@ -112,7 +112,7 @@ func (s *Server) handleReadDetail(c *gin.Context) {
 	})
 }
 
-func (s *Server) handleReadArchive(c *gin.Context) {
+func (s *Server) handleArticleArchive(c *gin.Context) {
 	user := s.getUser(c)
 	if user == nil {
 		return
@@ -158,7 +158,7 @@ func (s *Server) handleReadArchive(c *gin.Context) {
 	c.Redirect(http.StatusSeeOther, "/read?page="+strconv.Itoa(page))
 }
 
-func (s *Server) handleReadAdd(c *gin.Context) {
+func (s *Server) handleArticleAdd(c *gin.Context) {
 	user := s.getUser(c)
 	if user == nil {
 		return
@@ -188,7 +188,7 @@ func (s *Server) handleReadAdd(c *gin.Context) {
 	c.Redirect(http.StatusSeeOther, "/read")
 }
 
-func (s *Server) handleReadRefetch(c *gin.Context) {
+func (s *Server) handleArticleRefetch(c *gin.Context) {
 	user := s.getUser(c)
 	if user == nil {
 		return
@@ -210,8 +210,8 @@ func (s *Server) handleReadRefetch(c *gin.Context) {
 	c.Redirect(http.StatusSeeOther, "/read/"+id.String())
 }
 
-// handleReadUpdateNote processes the update of the user note for the given article
-func (s *Server) handleReadUpdateNote(c *gin.Context) {
+// handleArticleNoteUpdate processes the update of the user note for the given article
+func (s *Server) handleArticleNoteUpdate(c *gin.Context) {
 	user := s.getUser(c)
 	if user == nil {
 		return
@@ -239,7 +239,7 @@ func (s *Server) handleReadUpdateNote(c *gin.Context) {
 	c.Redirect(http.StatusSeeOther, "/read/"+articleID.String())
 }
 
-func (s *Server) handleReadExportMD(c *gin.Context) {
+func (s *Server) handleArticleExportMD(c *gin.Context) {
 	user := s.getUser(c)
 	if user == nil {
 		return
@@ -280,7 +280,7 @@ func (s *Server) handleReadExportMD(c *gin.Context) {
 	c.Data(http.StatusOK, "text/markdown", []byte(finalOutput))
 }
 
-func (s *Server) handleReadExportEPUB(c *gin.Context) {
+func (s *Server) handleArticleExportEPUB(c *gin.Context) {
 	user := s.getUser(c)
 	if user == nil {
 		return

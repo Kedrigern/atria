@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (s *Server) handleSettingsUsers(c *gin.Context) {
+func (s *Server) handleUserList(c *gin.Context) {
 	user := s.getUser(c)
 	if user == nil {
 		return
@@ -32,7 +32,7 @@ func (s *Server) handleSettingsUsers(c *gin.Context) {
 	})
 }
 
-func (s *Server) handleSettingsUserCreate(c *gin.Context) {
+func (s *Server) handleUserCreate(c *gin.Context) {
 	admin := s.getUser(c)
 	if admin == nil {
 		return
@@ -68,7 +68,7 @@ func (s *Server) handleSettingsUserCreate(c *gin.Context) {
 	c.Redirect(http.StatusSeeOther, "/settings/users")
 }
 
-func (s *Server) handleSettingsUserRole(c *gin.Context) {
+func (s *Server) handleUserRoleUpdate(c *gin.Context) {
 	admin := s.getUser(c)
 	if admin == nil {
 		return
@@ -101,7 +101,7 @@ func (s *Server) handleSettingsUserRole(c *gin.Context) {
 	c.Redirect(http.StatusSeeOther, "/settings/users")
 }
 
-func (s *Server) handleSettingsUserDelete(c *gin.Context) {
+func (s *Server) handleUserDelete(c *gin.Context) {
 	admin := s.getUser(c)
 	if admin == nil {
 		return

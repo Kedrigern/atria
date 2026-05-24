@@ -8,7 +8,7 @@
 
     <form
         method="post"
-        action="/api/read/add"
+        action="/api/articles/add"
         style="
             display: flex;
             gap: 10px;
@@ -56,7 +56,7 @@
         <div class="action-row">
             <form
                 method="post"
-                action="/api/read/archive/{{.ID}}?page={{$.Page}}"
+                action="/api/articles/{{.ID}}/archive?page={{$.Page}}"
                 style="margin: 0; display: flex"
             >
                 <input type="hidden" name="_csrf" value="{{$.CSRFToken}}" />

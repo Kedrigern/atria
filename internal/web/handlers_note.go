@@ -17,7 +17,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func (s *Server) handleNotes(c *gin.Context) {
+func (s *Server) handleNoteList(c *gin.Context) {
 	user := s.getUser(c)
 	if user == nil {
 		return

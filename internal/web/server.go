@@ -187,8 +187,8 @@ func (s *Server) SetupRouter() *gin.Engine {
 	auth.GET("/", s.handleHome)
 	auth.GET("/tables", s.makeHandler("table_list.html", nil))
 	auth.GET("/settings", s.makeHandler("settings.html", nil))
-	auth.GET("/settings/users", s.handleSettingsUsers)
-	auth.GET("/settings/rss", s.handleRSSFeeds)
+	auth.GET("/settings/users", s.handleUserList)
+	auth.GET("/settings/rss", s.handleRSSFeedList)
 	auth.GET("/settings/attachments", s.handleAttachments)
 	auth.GET("/profile", s.handleProfile)
 	auth.GET("/search", s.handleSearch)
@@ -204,24 +204,24 @@ func (s *Server) SetupRouter() *gin.Engine {
 	// RSS
 	rss := auth.Group("/rss")
 	{
-		rss.GET("", s.handleRSS)
-		rss.GET("/feeds", s.handleRSSFeeds)
+		rss.GET("", s.handleRSSItemList)
+		rss.GET("/feeds", s.handleRSSFeedList)
 		rss.GET("/:id", s.handleRSSFeedDetail)
 	}
 
 	// Read (Articles)
 	read := auth.Group("/read")
 	{
-		read.GET("", s.handleRead)
-		read.GET("/:id", s.handleReadDetail)
-		read.GET("/:id/export/md", s.handleReadExportMD)
-		read.GET("/:id/export/epub", s.handleReadExportEPUB)
+		read.GET("", s.handleArticleList)
+		read.GET("/:id", s.handleArticleDetail)
+		read.GET("/:id/export/md", s.handleArticleExportMD)
+		read.GET("/:id/export/epub", s.handleArticleExportEPUB)
 	}
 
 	// Notes
 	notes := auth.Group("/notes")
 	{
-		notes.GET("", s.handleNotes)
+		notes.GET("", s.handleNoteList)
 		notes.GET("/new", s.handleNoteAdd)
 		notes.GET("/:id", s.handleNoteDetail)
 		notes.GET("/:id/export/md", s.handleNoteExportMD)
@@ -231,7 +231,7 @@ func (s *Server) SetupRouter() *gin.Engine {
 	// Tags
 	tags := auth.Group("/settings/tags")
 	{
-		tags.GET("", s.handleTags)
+		tags.GET("", s.handleTagList)
 		tags.GET("/:name", s.handleTagDetail)
 	}
 
@@ -251,49 +251,49 @@ func (s *Server) SetupRouter() *gin.Engine {
 		// API: RSS
 		apiRSS := api.Group("/rss")
 		{
-			apiRSS.POST("/add", s.handleRSSAdd)
-			apiRSS.POST("/fetch", s.handleRSSFetch)
-			apiRSS.POST("/fetch/:id", s.handleRSSFetchFeed)
-			apiRSS.POST("/save/:id", s.handleRSSSave)
-			apiRSS.POST("/archive/item/:id", s.handleRSSArchive)
-			apiRSS.POST("/archive/feed/:id", s.handleRSSFeedArchiveAll)
-			apiRSS.POST("/archive/batch", s.handleRSSArchiveBatch)
+			apiRSS.POST("/add", s.handleRSSFeedAdd)
+			apiRSS.POST("/fetch", s.handleRSSFetchAll)
+			apiRSS.POST("/:id/fetch", s.handleRSSFeedFetch)
+			apiRSS.POST("/:id/update", s.handleRSSFeedUpdate)
+			apiRSS.POST("/:id/archive", s.handleRSSItemArchive)
+			apiRSS.POST("/:id/archive-all", s.handleRSSFeedArchiveAll)
+			apiRSS.POST("/archive-batch", s.handleRSSItemArchiveBatch)
 		}
 
-		// API: Read (Articles)
-		apiRead := api.Group("/read")
+		// API: Articles
+		apiArticles := api.Group("/articles")
 		{
-			apiRead.POST("/add", s.handleReadAdd)
-			apiRead.POST("/archive/:id", s.handleReadArchive)
-			apiRead.POST("/refetch/:id", s.handleReadRefetch)
-			apiRead.POST("/note/:id", s.handleReadUpdateNote)
+			apiArticles.POST("/add", s.handleArticleAdd)
+			apiArticles.POST("/:id/archive", s.handleArticleArchive)
+			apiArticles.POST("/:id/refetch", s.handleArticleRefetch)
+			apiArticles.POST("/:id/note", s.handleArticleNoteUpdate)
 		}
 
 		// API: Notes
 		apiNotes := api.Group("/notes")
 		{
 			apiNotes.POST("/create", s.handleNoteCreate)
-			apiNotes.POST("/update/:id", s.handleNoteUpdate)
-			apiNotes.POST("/delete/:id", s.handleNoteDelete)
+			apiNotes.POST("/:id/update", s.handleNoteUpdate)
+			apiNotes.POST("/:id/delete", s.handleNoteDelete)
 		}
 
-		// API: Settings Tags
-		apiTags := api.Group("/settings/tags")
+		// API: Tags
+		apiTags := api.Group("/tags")
 		{
-			apiTags.POST("/add", s.handleTagAdd)
+			apiTags.POST("/create", s.handleTagCreate)
 			apiTags.POST("/attach", s.handleTagAttachUniversal)
 		}
 
-		// API: Settings Users
-		apiUsers := api.Group("/settings/users")
+		// API: Users
+		apiUsers := api.Group("/users")
 		{
-			apiUsers.POST("/create", s.handleSettingsUserCreate)
-			apiUsers.POST("/role", s.handleSettingsUserRole)
-			apiUsers.POST("/delete", s.handleSettingsUserDelete)
+			apiUsers.POST("/create", s.handleUserCreate)
+			apiUsers.POST("/role", s.handleUserRoleUpdate)
+			apiUsers.POST("/delete", s.handleUserDelete)
 		}
 
-		// API: Other
-		api.POST("/profile/preferences", s.handleProfilePreferences)
+		// API: Profile
+		api.POST("/profile/preferences", s.handleProfilePreferencesUpdate)
 	}
 
 	return r
@@ -506,7 +506,7 @@ func (s *Server) handleProfile(c *gin.Context) {
 	})
 }
 
-func (s *Server) handleProfilePreferences(c *gin.Context) {
+func (s *Server) handleProfilePreferencesUpdate(c *gin.Context) {
 	user := s.getUser(c)
 	if user == nil {
 		c.String(http.StatusUnauthorized, "Unauthorized")
