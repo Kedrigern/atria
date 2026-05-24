@@ -178,6 +178,8 @@ func (s *Server) SetupRouter() *gin.Engine {
 	}
 	r.StaticFS("/static", http.FS(subFS))
 
+	r.GET("/data/attachments/:year/:month/:filename", s.handleProtectedAttachment)
+
 	auth := r.Group("/")
 	auth.Use(s.AuthMiddleware())
 	auth.Use(s.CSRFMiddleware())
