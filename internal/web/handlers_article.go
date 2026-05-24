@@ -70,11 +70,12 @@ func (s *Server) handleArticleDetail(c *gin.Context) {
 	var title, shortID, domain, originalURL string
 	var createdAt time.Time
 	var userNote sql.NullString
+	var charCount int
 
-	query := `SELECT title, domain, original_url, created_at, COALESCE(user_note, ''), short_id
+	query := `SELECT title, domain, original_url, created_at, COALESCE(user_note, ''), short_id, COALESCE(LENGTH(text_content), 0)
               FROM articles_full_view WHERE id = $1 AND owner_id = $2`
 	err = s.db.QueryRowContext(c.Request.Context(), query, id, user.ID).
-		Scan(&title, &domain, &originalURL, &createdAt, &userNote, &shortID)
+		Scan(&title, &domain, &originalURL, &createdAt, &userNote, &shortID, &charCount)
 	if err != nil {
 		s.renderError(c, http.StatusNotFound, "Article not found")
 		return
@@ -109,6 +110,7 @@ func (s *Server) handleArticleDetail(c *gin.Context) {
 		"Attachments":   atts,
 		"OutgoingLinks": outgoingLinks,
 		"IncomingLinks": incomingLinks,
+		"CharCount":     charCount,
 	})
 }
 

@@ -1,217 +1,156 @@
 {{define "content"}}
-<div class="centered-view" data-mobile-title="ATRIA: Reading">
-    <div
-        class="action-row"
-        style="
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid var(--border);
-        "
-    >
-        <div style="display: flex; align-items: center; gap: 15px">
-            <button
-                hx-get="/read"
-                hx-target="#main-content"
-                hx-push-url="true"
-                class="outline"
-                style="margin: 0; padding: 4px 12px; font-size: 0.9rem"
-            >
-                ← Back to Inbox
-            </button>
-
-            <span
-                class="tag"
+<div
+    class="centered-view"
+    style="max-width: 1100px"
+    data-mobile-title="ATRIA: Reading"
+>
+    {{template "flash_message" .}} {{/* ── Two-column layout ── */}}
+    <div class="article-layout">
+        {{/* ── Left: article content ── */}}
+        <div>
+            {{/* ── Top toolbar ── */}}
+            <div class="toolbar-top">{{template "article-toolbar" .}}</div>
+            <h1
                 style="
-                    cursor: pointer;
-                    font-family: monospace;
-                    background: var(--background-alt);
-                    border: 1px dashed var(--border);
+                    margin-top: 0;
+                    color: var(--text-heading);
+                    font-size: 2rem;
                 "
-                onclick="navigator.clipboard.writeText('{{.ShortID}}'); const old = this.innerText; this.innerText='Zkopírováno!'; setTimeout(() => this.innerText=old, 2000);"
-                title="Kliknutím zkopíruješ Short ID"
-                >ID: {{.ShortID}}</span
             >
-            <a
-                href="/read/{{.ID}}/export/md"
-                class="button-link outline"
-                style="margin: 0; padding: 4px 12px; font-size: 0.9rem"
-                title="Download Markdown"
-                >⬇️ MD</a
+                {{.Title}}
+            </h1>
+            <p
+                style="
+                    color: var(--text-muted);
+                    margin-bottom: 30px;
+                    font-size: 0.9rem;
+                "
             >
-            <a
-                href="/read/{{.ID}}/export/epub"
-                class="button-link outline"
-                style="margin: 0; padding: 4px 12px; font-size: 0.9rem"
-                title="Download EPUB"
-                >⬇️ EPUB</a
+                Saved from <strong>{{.Domain}}</strong> &bull; {{formatDate
+                .CreatedAt}} {{if .CharCount}}&bull;
+                <span title="Normostrany (1 NS = 1800 znaků)"
+                    >{{normoPages .CharCount}}</span
+                >{{end}}
+            </p>
+
+            <div
+                style="
+                    font-size: 1.1rem;
+                    line-height: 1.7;
+                    color: var(--text-main);
+                "
             >
+                {{.Content}}
+            </div>
+
+            {{/* ── Bottom toolbar ── */}}
+            <div
+                style="
+                    margin-top: 40px;
+                    padding-top: 20px;
+                    border-top: 1px solid var(--border);
+                "
+            >
+                {{template "article-toolbar" .}}
+            </div>
         </div>
 
-        <form
-            method="post"
-            action="/api/articles/{{.ID}}/refetch"
-            style="margin: 0"
-        >
-            <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
-            <button
-                type="submit"
-                class="outline"
-                style="margin: 0; padding: 4px 12px; font-size: 0.9rem"
-            >
-                ⟳ Refetch
-            </button>
-        </form>
-    </div>
-
-    <h1 style="margin-top: 0; color: var(--text-heading); font-size: 2.2rem">
-        {{.Title}}
-    </h1>
-    <p style="color: var(--text-muted); margin-bottom: 30px">
-        Saved from <strong>{{.Domain}}</strong> • Captured {{formatDate
-        .CreatedAt}}
-    </p>
-
-    <div style="font-size: 1.1rem; line-height: 1.7; color: var(--text-main)">
-        {{.Content}}
-    </div>
-
-    <div
-        style="
-            margin-top: 50px;
-            padding-top: 30px;
-            border-top: 1px solid var(--border);
-        "
-    >
-        <div
-            id="user-note-section"
-            style="
-                margin-bottom: 25px;
-                border-left: 3px solid var(--links);
-                padding-left: 15px;
-            "
-        >
-            <div id="note-view">
-                <div
-                    style="
-                        display: flex;
-                        gap: 15px;
-                        align-items: baseline;
-                        margin-bottom: 5px;
-                    "
-                >
-                    <strong
+        {{/* ── Right: metadata sidebar ── */}}
+        <div class="article-sidebar">
+            {{/* Poznámka */}}
+            <div id="user-note-section" style="margin-bottom: 25px">
+                <div id="note-view">
+                    <div
+                        style="
+                            display: flex;
+                            gap: 10px;
+                            align-items: baseline;
+                            margin-bottom: 6px;
+                        "
+                    >
+                        <strong
+                            style="
+                                color: var(--text-main);
+                                font-size: 0.8rem;
+                                text-transform: uppercase;
+                                letter-spacing: 0.05em;
+                            "
+                            >Poznámka</strong
+                        >
+                        <a
+                            href="#"
+                            onclick="
+                                document.getElementById(
+                                    'note-view',
+                                ).style.display = 'none';
+                                document.getElementById(
+                                    'note-edit',
+                                ).style.display = 'block';
+                                return false;
+                            "
+                            style="font-size: 0.8rem; color: var(--text-muted)"
+                            >Upravit</a
+                        >
+                    </div>
+                    <div
                         style="
                             color: var(--text-main);
-                            font-size: 0.85rem;
-                            text-transform: uppercase;
+                            font-size: 0.9rem;
+                            border-left: 3px solid var(--links);
+                            padding-left: 10px;
                         "
-                        >Poznámka</strong
                     >
-                    <a
-                        href="#"
-                        onclick="
-                            document.getElementById('note-view').style.display =
-                                'none';
-                            document.getElementById('note-edit').style.display =
-                                'block';
-                            return false;
-                        "
-                        style="font-size: 0.85rem; color: var(--text-muted)"
-                        >Upravit</a
-                    >
+                        {{if .UserNote}}{{.UserNote}}{{else}}<em
+                            style="color: var(--text-muted)"
+                            >Bez poznámky...</em
+                        >{{end}}
+                    </div>
                 </div>
-                <div style="color: var(--text-main); font-size: 0.95rem">
-                    {{if .UserNote}}{{.UserNote}}{{else}}<em
-                        style="color: var(--text-muted)"
-                        >Bez poznámky...</em
-                    >{{end}}
-                </div>
+                <form
+                    id="note-edit"
+                    hx-post="/api/articles/{{.ID}}/note"
+                    style="display: none; margin: 0"
+                >
+                    <input
+                        type="text"
+                        name="user_note"
+                        value="{{.UserNote}}"
+                        style="width: 100%; margin-bottom: 8px"
+                    />
+                    <div style="display: flex; gap: 8px">
+                        <button
+                            type="submit"
+                            style="
+                                padding: 4px 10px;
+                                font-size: 0.85rem;
+                                margin: 0;
+                            "
+                        >
+                            Uložit
+                        </button>
+                        <button
+                            type="button"
+                            class="outline"
+                            onclick="
+                                this.closest('form').style.display = 'none';
+                                document.getElementById(
+                                    'note-view',
+                                ).style.display = 'block';
+                            "
+                            style="
+                                padding: 4px 10px;
+                                font-size: 0.85rem;
+                                margin: 0;
+                            "
+                        >
+                            Zrušit
+                        </button>
+                    </div>
+                </form>
             </div>
-            <form
-                id="note-edit"
-                hx-post="/api/articles/{{.ID}}/note"
-                style="display: none; margin: 0"
-            >
-                <input
-                    type="text"
-                    name="user_note"
-                    value="{{.UserNote}}"
-                    style="width: 100%; margin-bottom: 10px"
-                />
-                <button
-                    type="submit"
-                    style="padding: 4px 12px; font-size: 0.9rem"
-                >
-                    Uložit
-                </button>
-                <button
-                    type="button"
-                    class="outline"
-                    onclick="
-                        this.parentElement.style.display = 'none';
-                        document.getElementById('note-view').style.display =
-                            'block';
-                    "
-                    style="padding: 4px 12px; font-size: 0.9rem"
-                >
-                    Zrušit
-                </button>
-            </form>
-        </div>
 
-        {{template "tags_section" .}} {{template "links_section" .}} {{template
-        "attachments_section" .}}
-
-        <div
-            style="
-                font-size: 0.85rem;
-                color: var(--text-muted);
-                background: var(--background-alt);
-                padding: 12px;
-                border-radius: 6px;
-                margin-bottom: 25px;
-            "
-        >
-            <strong>Source:</strong>
-            <a
-                href="{{.OriginalURL}}"
-                target="_blank"
-                style="color: inherit; text-decoration: underline"
-                >{{.OriginalURL}}</a
-            >
-        </div>
-
-        <div
-            style="
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                border-top: 1px solid var(--border);
-                padding-top: 20px;
-            "
-        >
-            <form
-                method="post"
-                action="/api/articles/{{.ID}}/archive"
-                style="margin: 0"
-            >
-                <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
-                <button type="submit" style="margin: 0">✓ Archive</button>
-            </form>
-            <button
-                type="button"
-                class="outline"
-                onclick="
-                    document
-                        .getElementById('main-content')
-                        .scrollTo({ top: 0, behavior: 'smooth' })
-                "
-            >
-                ↑ Top
-            </button>
+            {{template "tags_section" .}} {{template "links_section" .}}
+            {{template "attachments_section" .}}
         </div>
     </div>
 </div>

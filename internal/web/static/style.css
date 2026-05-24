@@ -212,6 +212,75 @@ a.button-link.outline:hover {
     display: initial;
 }
 
+/* --- Article toolbar --- */
+.article-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 25px;
+    flex-wrap: nowrap;
+}
+.article-toolbar .toolbar-sep {
+    width: 1px;
+    height: 20px;
+    background: var(--border);
+    margin: 0 4px;
+    flex-shrink: 0;
+}
+.toolbar-top .btn-hide-top {
+    display: none;
+}
+
+/* --- Article two-column layout --- */
+.article-layout {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 40px;
+    align-items: start;
+}
+.article-sidebar {
+    position: sticky;
+    top: 20px;
+    border-left: 1px solid var(--border);
+    padding-left: 25px;
+}
+
+/* Export dropdown */
+.dropdown {
+    position: relative;
+    display: inline-flex;
+}
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    background: var(--background-alt);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 0;
+    z-index: 50;
+    min-width: 130px;
+}
+.dropdown-menu a {
+    display: block;
+    padding: 7px 14px;
+    font-size: 0.85rem;
+    color: var(--text-main);
+    text-decoration: none !important;
+    white-space: nowrap;
+}
+.dropdown-menu a:hover {
+    color: var(--links);
+    background: var(--background);
+}
+.dropdown:focus-within .dropdown-menu {
+    display: block;
+}
+
 /* --- Flash Messages --- */
 .flash-message {
     padding: 12px 16px;
@@ -283,6 +352,19 @@ a.button-link.outline:hover {
     }
     .hide-mobile {
         display: none !important;
+    }
+    .article-layout {
+        grid-template-columns: 1fr;
+    }
+    .article-sidebar {
+        position: static;
+        border-left: none;
+        border-top: 1px solid var(--border);
+        padding-left: 0;
+        padding-top: 25px;
+    }
+    .toolbar-btn .btn-label {
+        display: none;
     }
 }
 
