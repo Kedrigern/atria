@@ -58,7 +58,43 @@
             previous page.
         </p>
         {{else}}
-        <p>Your triage is empty! 🎉 No unread RSS items.</p>
+        <div style="text-align: center; margin-top: 40px; margin-bottom: 40px">
+            <h3 style="margin-bottom: 10px">🎉 Hotovo! Triáž je prázdná.</h3>
+            <p style="color: var(--text-muted); margin-bottom: 30px">
+                Prošli jste všechny nové RSS položky. Kam dál?
+            </p>
+
+            <div
+                style="
+                    display: flex;
+                    gap: 15px;
+                    justify-content: center;
+                    flex-wrap: wrap;
+                "
+            >
+                <a
+                    href="/read"
+                    class="button-link outline"
+                    style="padding: 12px 20px"
+                >
+                    📄 Číst uložené články
+                </a>
+                <a
+                    href="/notes"
+                    class="button-link outline"
+                    style="padding: 12px 20px"
+                >
+                    📝 Přejít na poznámky
+                </a>
+                <a
+                    href="/"
+                    class="button-link outline"
+                    style="padding: 12px 20px"
+                >
+                    🏠 Domů
+                </a>
+            </div>
+        </div>
         {{end}} {{end}}
     </div>
 
