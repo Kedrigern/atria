@@ -1,30 +1,31 @@
 {{define "content"}}
-<div class="centered-view">
-    <div
-        class="doc-header"
-        style="
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid var(--border);
-        "
-    >
-        <div style="display: flex; align-items: center; gap: 15px">
-            <button
-                hx-get="/notes"
-                hx-target="#main-content"
-                hx-push-url="true"
-                class="outline"
-                style="margin: 0; padding: 4px 12px; font-size: 0.9rem"
+<div
+    class="centered-view"
+    style="max-width: 1100px"
+    data-mobile-title="ATRIA: Notes"
+>
+    {{template "flash_message" .}}
+
+    <div class="article-layout">
+        {{/* ── Left: note content ── */}}
+        <div>
+            {{/* ── Top toolbar ── */}}
+            <div class="toolbar-top">{{template "note-toolbar" .}}</div>
+
+            <h1
+                style="
+                    margin: 0 0 8px 0;
+                    color: var(--text-heading);
+                    font-size: 2rem;
+                "
             >
-                ← Back to list
-            </button>
-            <span
+                {{.Title}}
+            </h1>
+            <p
                 style="
                     color: var(--text-muted);
                     font-size: 0.9rem;
+                    margin-bottom: 30px;
                     display: flex;
                     align-items: center;
                     gap: 6px;
@@ -36,170 +37,89 @@
                     fill="none"
                     stroke="currentColor"
                     stroke-width="2"
-                    style="width: 16px; height: 16px"
                 >
                     <path
                         d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
                     ></path>
                 </svg>
                 {{.Path}}
-            </span>
-            <span
-                class="tag"
+            </p>
+
+            <div
+                id="note-view"
                 style="
-                    cursor: pointer;
-                    font-family: monospace;
-                    background: var(--background-alt);
-                    border: 1px dashed var(--border);
-                "
-                onclick="navigator.clipboard.writeText('{{.ShortID}}'); const old = this.innerText; this.innerText='Zkopírováno!'; setTimeout(() => this.innerText=old, 2000);"
-                title="Kliknutím zkopíruješ Short ID"
-                >ID: {{.ShortID}}</span
-            >
-            <a
-                href="/notes/{{.ID}}/export/md"
-                class="button-link outline"
-                style="margin: 0; padding: 4px 12px; font-size: 0.9rem"
-                title="Download Markdown"
-                >⬇️ MD</a
-            >
-            <a
-                href="/notes/{{.ID}}/export/epub"
-                class="button-link outline"
-                style="margin: 0; padding: 4px 12px; font-size: 0.9rem"
-                title="Download EPUB"
-                >⬇️ EPUB</a
-            >
-        </div>
-        <button
-            class="outline"
-            onclick="
-                document.getElementById('note-view').style.display = 'none';
-                document.getElementById('note-edit').style.display = 'block';
-            "
-            style="margin: 0; padding: 4px 12px; font-size: 0.9rem"
-        >
-            Upravit
-        </button>
-    </div>
-
-    <h1
-        style="
-            margin: 0 0 20px 0;
-            color: var(--text-heading);
-            font-size: 2.2rem;
-        "
-    >
-        {{.Title}}
-    </h1>
-
-    <div
-        id="note-view"
-        style="
-            font-size: 1.1rem;
-            line-height: 1.7;
-            color: var(--text-main);
-            display: block;
-        "
-    >
-        <style>
-            #note-view > h1:first-child {
-                margin-top: 0;
-                font-size: 1.4rem;
-                color: var(--text-muted);
-                border-bottom: none;
-                padding-bottom: 0;
-            }
-        </style>
-        {{.Content}}
-    </div>
-
-    <div id="note-edit" style="display: none; margin-bottom: 30px">
-        <form hx-post="/api/notes/{{.ID}}/update" style="margin: 0">
-            <textarea
-                name="markdown_content"
-                style="
-                    width: 100%;
-                    height: 400px;
-                    font-family: monospace;
-                    font-size: 1rem;
-                    line-height: 1.5;
-                    margin-bottom: 15px;
+                    font-size: 1.1rem;
+                    line-height: 1.7;
+                    color: var(--text-main);
                 "
             >
-{{.RawContent}}</textarea
-            >
-            <div style="display: flex; gap: 10px">
-                <button type="submit" style="margin: 0">Uložit změny</button>
-                <button
-                    type="button"
-                    class="outline"
-                    onclick="
-                        document.getElementById('note-edit').style.display =
-                            'none';
-                        document.getElementById('note-view').style.display =
-                            'block';
-                    "
-                    style="margin: 0"
-                >
-                    Zrušit
-                </button>
+                <style>
+                    #note-view > h1:first-child {
+                        margin-top: 0;
+                        font-size: 1.4rem;
+                        color: var(--text-muted);
+                        border-bottom: none;
+                        padding-bottom: 0;
+                    }
+                </style>
+                {{.Content}}
             </div>
-        </form>
-    </div>
 
-    <div
-        style="
-            margin-top: 50px;
-            padding-top: 30px;
-            border-top: 1px solid var(--border);
-        "
-    >
-        {{template "tags_section" .}} {{template "links_section" .}} {{template
-        "attachments_section" .}}
-    </div>
+            <div id="note-edit" style="display: none; margin-bottom: 30px">
+                <form hx-post="/api/notes/{{.ID}}/update" style="margin: 0">
+                    <textarea
+                        name="markdown_content"
+                        style="
+                            width: 100%;
+                            height: 400px;
+                            font-family: monospace;
+                            font-size: 1rem;
+                            line-height: 1.5;
+                            margin-bottom: 15px;
+                        "
+                    >
+{{.RawContent}}</textarea
+                    >
+                    <div style="display: flex; gap: 10px">
+                        <button type="submit" style="margin: 0">
+                            Uložit změny
+                        </button>
+                        <button
+                            type="button"
+                            class="outline"
+                            onclick="
+                                document.getElementById(
+                                    'note-edit',
+                                ).style.display = 'none';
+                                document.getElementById(
+                                    'note-view',
+                                ).style.display = 'block';
+                            "
+                            style="margin: 0"
+                        >
+                            Zrušit
+                        </button>
+                    </div>
+                </form>
+            </div>
 
-    <div
-        style="
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-top: 1px solid var(--border);
-            padding-top: 20px;
-            margin-top: 25px;
-        "
-    >
-        <form
-            method="post"
-            action="/api/notes/{{.ID}}/delete"
-            style="margin: 0"
-            onsubmit="
-                return confirm(
-                    'Opravdu chcete tuto poznámku přesunout do koše?',
-                );
-            "
-        >
-            <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
-            <button
-                type="submit"
-                class="outline"
-                style="margin: 0; color: #dc2626; border-color: #f87171"
+            {{/* ── Bottom toolbar ── */}}
+            <div
+                style="
+                    margin-top: 40px;
+                    padding-top: 20px;
+                    border-top: 1px solid var(--border);
+                "
             >
-                🗑️ Smazat
-            </button>
-        </form>
-        <button
-            type="button"
-            class="outline"
-            onclick="
-                document
-                    .getElementById('main-content')
-                    .scrollTo({ top: 0, behavior: 'smooth' })
-            "
-            style="margin: 0"
-        >
-            ↑ Top
-        </button>
+                {{template "note-toolbar" .}}
+            </div>
+        </div>
+
+        {{/* ── Right: metadata sidebar ── */}}
+        <div class="article-sidebar">
+            {{template "tags_section" .}} {{template "links_section" .}}
+            {{template "attachments_section" .}}
+        </div>
     </div>
 </div>
 {{end}}

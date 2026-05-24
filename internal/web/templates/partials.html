@@ -205,31 +205,60 @@
 </div>
 {{end}}
 
-{{define "article-toolbar"}}
-<div class="article-toolbar">
-    {{/* Levá skupina */}}
-    <div style="display: flex; align-items: center; gap: 8px; flex: 1">
-        <button
-            hx-get="/read"
-            hx-target="#main-content"
-            hx-push-url="true"
-            class="outline"
-            style="margin: 0; padding: 4px 12px; font-size: 0.9rem; gap: 6px"
-            title="Article list"
-        >
+{{define "note-toolbar"}}
+<div class="toolbar">
+    <div class="toolbar-group">
+        <button hx-get="/notes" hx-target="#main-content" hx-push-url="true" class="outline btn-sm-label" title="Note list">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            Note list
+        </button>
+        <div class="dropdown hide-mobile" tabindex="0">
+            <button type="button" class="outline btn-sm" title="Export">
+                <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            </button>
+            <div class="dropdown-menu">
+                <a href="/notes/{{.ID}}/export/md">⬇ Markdown</a>
+                <a href="/notes/{{.ID}}/export/epub">⬇ EPUB</a>
+            </div>
+        </div>
+        <div class="toolbar-sep hide-mobile"></div>
+        <span class="tag hide-mobile" style="cursor: pointer; font-family: monospace; background: var(--background-alt); border: 1px dashed var(--border);"
+            onclick="navigator.clipboard.writeText('{{.ShortID}}'); const old = this.innerText; this.innerText='Copied!'; setTimeout(() => this.innerText=old, 2000);"
+            title="Click to copy Short ID">ID: {{.ShortID}}</span>
+    </div>
+    <div class="toolbar-group">
+        <button type="button" class="btn-sm-label" title="Edit note"
+            onclick="document.getElementById('note-view').style.display='none'; document.getElementById('note-edit').style.display='block';">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+            <span class="btn-label">Upravit</span>
+        </button>
+        <button type="button" class="outline btn-sm btn-hide-top" title="Back to top"
+            onclick="document.getElementById('main-content').scrollTo({ top: 0, behavior: 'smooth' })">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+        </button>
+        <form method="post" action="/api/notes/{{.ID}}/delete" style="display: contents"
+            onsubmit="return confirm('Opravdu chcete tuto poznámku přesunout do koše?');">
+            <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
+            <button type="submit" class="outline btn-sm btn-hide-top btn-danger" title="Delete note">
+                <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>
+            </button>
+        </form>
+    </div>
+</div>
+{{end}}
+
+{{define "toolbar"}}
+<div class="toolbar">
+    <div class="toolbar-group">
+        <button hx-get="/read" hx-target="#main-content" hx-push-url="true" class="outline btn-sm-label" title="Article list">
             <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
             Article list
         </button>
-
-        <a href="{{.OriginalURL}}" target="_blank" rel="noopener"
-            class="button-link outline"
-            style="margin: 0; padding: 4px 8px"
-            title="Open original source">
+        <a href="{{.OriginalURL}}" target="_blank" rel="noopener" class="button-link outline btn-sm" title="Open original source">
             <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
         </a>
-
         <div class="dropdown hide-mobile" tabindex="0">
-            <button type="button" class="outline" style="margin: 0; padding: 4px 8px" title="Export">
+            <button type="button" class="outline btn-sm" title="Export">
                 <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
             </button>
             <div class="dropdown-menu">
@@ -237,36 +266,26 @@
                 <a href="/read/{{.ID}}/export/epub">⬇ EPUB</a>
             </div>
         </div>
-
-        <form method="post" action="/api/articles/{{.ID}}/refetch" style="margin: 0; display: contents">
+        <form method="post" action="/api/articles/{{.ID}}/refetch" style="display: contents">
             <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
-            <button type="submit" class="outline" style="margin: 0; padding: 4px 8px" title="Refetch article">
+            <button type="submit" class="outline btn-sm" title="Refetch article">
                 <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
             </button>
         </form>
-
         <div class="toolbar-sep hide-mobile"></div>
-
-        <span
-            class="tag hide-mobile"
-            style="cursor: pointer; font-family: monospace; background: var(--background-alt); border: 1px dashed var(--border);"
+        <span class="tag hide-mobile" style="cursor: pointer; font-family: monospace; background: var(--background-alt); border: 1px dashed var(--border);"
             onclick="navigator.clipboard.writeText('{{.ShortID}}'); const old = this.innerText; this.innerText='Copied!'; setTimeout(() => this.innerText=old, 2000);"
-            title="Click to copy Short ID"
-        >ID: {{.ShortID}}</span>
-
+            title="Click to copy Short ID">ID: {{.ShortID}}</span>
     </div>
-
-    {{/* Pravá skupina */}}
-    <div style="display: flex; align-items: center; gap: 8px">
-        <form method="post" action="/api/articles/{{.ID}}/archive" style="margin: 0; display: contents">
+    <div class="toolbar-group">
+        <form method="post" action="/api/articles/{{.ID}}/archive" style="display: contents">
             <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
-            <button type="submit" style="margin: 0; padding: 4px 12px; font-size: 0.9rem; gap: 6px" title="Archive article">
+            <button type="submit" class="btn-sm-label" title="Archive article">
                 <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                 Archive
             </button>
         </form>
-
-        <button type="button" class="outline btn-hide-top" style="margin: 0; padding: 4px 8px" title="Back to top"
+        <button type="button" class="outline btn-sm btn-hide-top" title="Back to top"
             onclick="document.getElementById('main-content').scrollTo({ top: 0, behavior: 'smooth' })">
             <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
         </button>
