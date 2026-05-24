@@ -287,6 +287,13 @@ func (s *Server) SetupRouter() *gin.Engine {
 			apiTags.POST("/attach", s.handleTagAttachUniversal)
 		}
 
+		// API: Attachments
+		apiAttachments := api.Group("/attachments")
+		{
+			apiAttachments.POST("/:id/rename", s.handleAttachmentRename)
+			apiAttachments.POST("/:id/delete", s.handleAttachmentDelete)
+		}
+
 		// API: Users
 		apiUsers := api.Group("/users")
 		{
@@ -348,6 +355,9 @@ func (s *Server) getTemplateFuncs() template.FuncMap {
 				return 0
 			}
 			return a / b
+		},
+		"isImage": func(mimeType string) bool {
+			return strings.HasPrefix(mimeType, "image/")
 		},
 	}
 }

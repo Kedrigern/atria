@@ -13,16 +13,51 @@
                 <th style="text-align: left; padding: 10px">Typ</th>
                 <th style="text-align: left; padding: 10px">Velikost</th>
                 <th style="text-align: left; padding: 10px">Nahráno</th>
+                <th style="text-align: left; padding: 10px">Odkázáno</th>
+                <th style="text-align: left; padding: 10px">Akce</th>
             </tr>
         </thead>
         <tbody>
             {{range .Attachments}}
-            <tr style="border-bottom: 1px solid var(--border)">
-                <td style="padding: 10px"><strong>{{.Filename}}</strong></td>
-                <td style="padding: 10px"><small>{{.MimeType}}</small></td>
-                <td style="padding: 10px">{{divide .SizeBytes 1024}} KB</td>
-                <td style="padding: 10px; color: var(--text-muted)">
-                    {{formatDate .CreatedAt}}
+            <tr style="border-bottom: 1px solid var(--border);">
+                <td style="padding: 10px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <a href="/data/attachments/{{.DiskPath}}" target="_blank"><strong>{{.Filename}}</strong></a>
+
+                        <button type="button" class="outline btn-sm"
+                                hx-post="/api/attachments/{{.ID}}/rename"
+                                hx-prompt="Zadejte nový název přílohy (včetně koncovky):"
+                                title="Přejmenovat"
+                                style="padding: 2px 6px; margin: 0; border: none; opacity: 0.6;">
+                            ✏️
+                        </button>
+                    </div>
+                </td>
+                <td style="padding: 10px;"><small>{{.MimeType}}</small></td>
+                <td style="padding: 10px;">{{divide .SizeBytes 1024}} KB</td>
+                <td style="padding: 10px; color: var(--text-muted);">{{formatDate .CreatedAt}}</td>
+
+                <td style="padding: 10px;">
+                    {{if eq .LinkCount 0}}
+                        <span class="tag" style="background: #fee2e2; color: #dc2626; border-color: #fca5a5;">Sirotek</span>
+                    {{else}}
+                        <span class="tag">{{.LinkCount}}x</span>
+                    {{end}}
+                </td>
+
+                <td style="padding: 10px; text-align: right;">
+                    {{if eq .LinkCount 0}}
+                        <form method="post" action="/api/attachments/{{.ID}}/delete" style="margin: 0;" onsubmit="return confirm('Opravdu smazat tento soubor? Akce je nevratná.');">
+                            <input type="hidden" name="_csrf" value="{{$.CSRFToken}}" />
+                            <button type="submit" class="outline btn-sm btn-danger" title="Smazat" style="padding: 4px 8px; margin: 0;">
+                                <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>
+                            </button>
+                        </form>
+                    {{else}}
+                        <button disabled class="outline btn-sm" title="Příloha je připojena. Nejprve ji odpojte z entit." style="padding: 4px 8px; margin: 0; opacity: 0.3;">
+                            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>
+                        </button>
+                    {{end}}
                 </td>
             </tr>
             {{else}}

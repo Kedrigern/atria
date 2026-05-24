@@ -132,7 +132,13 @@ func LinkAttachment(ctx context.Context, db *sql.DB, entityID, attachmentID uuid
 
 // ListAttachments vrací seznam všech příloh uživatele.
 func ListAttachments(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]core.Attachment, error) {
-	query := `SELECT id, filename, mime_type, size_bytes, disk_path, created_at FROM attachments WHERE owner_id = $1 ORDER BY created_at DESC`
+	query := `
+		SELECT a.id, a.filename, a.mime_type, a.size_bytes, a.disk_path, a.created_at,
+	    (SELECT COUNT(*) FROM rel_entity_attachments WHERE attachment_id = a.id) AS link_count
+		FROM attachments a
+		WHERE a.owner_id = $1
+		ORDER BY a.created_at DESC
+	`
 	rows, err := db.QueryContext(ctx, query, ownerID)
 	if err != nil {
 		return nil, err
@@ -142,7 +148,7 @@ func ListAttachments(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]core
 	var list []core.Attachment
 	for rows.Next() {
 		var a core.Attachment
-		if err := rows.Scan(&a.ID, &a.Filename, &a.MimeType, &a.SizeBytes, &a.DiskPath, &a.CreatedAt); err != nil {
+		if err := rows.Scan(&a.ID, &a.Filename, &a.MimeType, &a.SizeBytes, &a.DiskPath, &a.CreatedAt, &a.LinkCount); err != nil {
 			return nil, err
 		}
 		list = append(list, a)
@@ -204,4 +210,49 @@ func FindAttachments(ctx context.Context, db *sql.DB, ownerID uuid.UUID, identif
 		results = append(results, a)
 	}
 	return results, nil
+}
+
+// RenameAttachment změní název přílohy v DB
+func RenameAttachment(ctx context.Context, db *sql.DB, ownerID, attachmentID uuid.UUID, newName string) error {
+	query := `UPDATE attachments SET filename = $1, updated_at = NOW() WHERE id = $2 AND owner_id = $3`
+	_, err := db.ExecContext(ctx, query, newName, attachmentID, ownerID)
+	return err
+}
+
+// DeleteAttachment bezpečně odstraní sirotka z DB i z disku
+func DeleteAttachment(ctx context.Context, db *sql.DB, ownerID, attachmentID uuid.UUID) error {
+	var diskPath string
+	var linkCount int
+
+	// Ověříme, že soubor existuje a spočítáme jeho linky
+	queryCheck := `
+		SELECT disk_path, (SELECT COUNT(*) FROM rel_entity_attachments WHERE attachment_id = a.id)
+		FROM attachments a WHERE id = $1 AND owner_id = $2
+	`
+	err := db.QueryRowContext(ctx, queryCheck, attachmentID, ownerID).Scan(&diskPath, &linkCount)
+	if err != nil {
+		return err
+	}
+
+	if linkCount > 0 {
+		return fmt.Errorf("přílohu nelze smazat, protože je stále propojena s %d entitami", linkCount)
+	}
+
+	// 1. Smazání z databáze
+	_, err = db.ExecContext(ctx, `DELETE FROM attachments WHERE id = $1 AND owner_id = $2`, attachmentID, ownerID)
+	if err != nil {
+		return err
+	}
+
+	// 2. Fyzické smazání z disku
+	storagePath := os.Getenv("STORAGE_PATH")
+	if storagePath == "" {
+		storagePath = "./data/attachments"
+	}
+	absPath := filepath.Join(storagePath, diskPath)
+
+	// Fyzické smazání může selhat (soubor už tam třeba není), ale to nevadí, ignorujeme to
+	_ = os.Remove(absPath)
+
+	return nil
 }

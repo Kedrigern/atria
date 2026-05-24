@@ -149,3 +149,60 @@ func (s *Server) handleProtectedAttachment(c *gin.Context) {
 
 	c.File(absPath)
 }
+
+func (s *Server) handleAttachmentRename(c *gin.Context) {
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+
+	attID, err := core.ParseUUID(c.Param("id"))
+	if err != nil {
+		s.renderError(c, http.StatusBadRequest, "Invalid ID")
+		return
+	}
+
+	// HTMX hx-prompt posílá hodnotu v této hlavičce
+	newName := c.GetHeader("HX-Prompt")
+	if newName != "" {
+		err = attachments.RenameAttachment(c.Request.Context(), s.db, user.ID, attID, newName)
+		if err != nil {
+			s.renderError(c, http.StatusInternalServerError, "Failed to rename: "+err.Error())
+			return
+		}
+	}
+
+	if c.GetHeader("HX-Request") == "true" {
+		c.Header("HX-Refresh", "true")
+		c.Status(http.StatusOK)
+		return
+	}
+	c.Redirect(http.StatusSeeOther, "/settings/attachments")
+}
+
+func (s *Server) handleAttachmentDelete(c *gin.Context) {
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+
+	attID, err := core.ParseUUID(c.Param("id"))
+	if err != nil {
+		s.renderError(c, http.StatusBadRequest, "Invalid ID")
+		return
+	}
+
+	err = attachments.DeleteAttachment(c.Request.Context(), s.db, user.ID, attID)
+	if err != nil {
+		s.setFlash(c, "error", "Nepodařilo se smazat: "+err.Error())
+	} else {
+		s.setFlash(c, "success", "Příloha byla trvale smazána z disku.")
+	}
+
+	if c.GetHeader("HX-Request") == "true" {
+		c.Header("HX-Refresh", "true")
+		c.Status(http.StatusOK)
+		return
+	}
+	c.Redirect(http.StatusSeeOther, "/settings/attachments")
+}

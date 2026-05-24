@@ -32,7 +32,7 @@
             <a href="/data/attachments/{{.DiskPath}}" target="_blank" style="font-weight: 500;">{{.Filename}}</a>
             <small style="color: var(--text-muted);">({{divide .SizeBytes 1024}} KB)</small>
 
-            <input type="text" readonly value="![{{.Filename}}](/data/attachments/{{.DiskPath}})"
+            <input type="text" readonly value="{{if isImage .MimeType}}!{{end}}[{{.Filename}}](/data/attachments/{{.DiskPath}})"
                    onclick="this.select(); navigator.clipboard.writeText(this.value); this.style.borderColor='var(--links)';"
                    style="padding: 2px 8px; font-size: 0.75rem; margin: 0 0 0 auto; width: 220px; background: transparent; border: 1px solid var(--border); border-radius: 4px; cursor: copy;"
                    title="Klikni pro zkopírování Markdown odkazu">
