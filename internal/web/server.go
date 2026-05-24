@@ -11,6 +11,7 @@ import (
 	"database/sql"
 	"embed"
 	"encoding/hex"
+	"fmt"
 	"html"
 	"html/template"
 	"io/fs"
@@ -325,6 +326,20 @@ func (s *Server) getTemplateFuncs() template.FuncMap {
 		},
 		"safeHTML": func(s string) template.HTML {
 			return template.HTML(s)
+		},
+		"normoPages": func(charCount int) string {
+			// 1 normostrана = 1800 znaků (česká norma ČSN)
+			if charCount <= 0 {
+				return ""
+			}
+			pages := float64(charCount) / 1800.0
+			if pages < 0.1 {
+				return ""
+			}
+			if pages < 1.0 {
+				return fmt.Sprintf("%.1f NS", pages)
+			}
+			return fmt.Sprintf("%.0f NS", pages)
 		},
 		"divide": func(a, b int) int {
 			if b == 0 {

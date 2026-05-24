@@ -50,7 +50,8 @@
                 >
             </h4>
             <small style="color: var(--text-muted)"
-                >{{.Domain}} • Saved {{formatDate .CreatedAt}}</small
+                >{{.Domain}} • Saved {{formatDate .CreatedAt}}{{if .CharCount}}
+                • {{normoPages .CharCount}}{{end}}</small
             >
         </div>
         <div class="action-row">
