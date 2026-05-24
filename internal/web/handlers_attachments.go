@@ -47,7 +47,7 @@ func (s *Server) handleEntityAttachmentUpload(c *gin.Context) {
 	}
 	defer os.Remove(tempPath)
 
-	att, err := attachments.AddAttachment(c.Request.Context(), s.db, user.ID, tempPath)
+	att, err := attachments.AddAttachment(c.Request.Context(), s.db, user.ID, tempPath, file.Filename)
 	if err != nil {
 		s.renderError(c, http.StatusInternalServerError, "Upload failed: "+err.Error())
 		return

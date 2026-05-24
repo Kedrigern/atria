@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/gofrs/uuid/v5"
 	"github.com/spf13/cobra"
@@ -30,7 +31,7 @@ var attachmentAddCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		localPath := args[0]
 
-		attachment, err := attachments.AddAttachment(app.Ctx, app.DB, app.Owner.ID, localPath)
+		attachment, err := attachments.AddAttachment(app.Ctx, app.DB, app.Owner.ID, localPath, filepath.Base(localPath))
 		if err != nil {
 			return fmt.Errorf("upload failed: %w", err)
 		}

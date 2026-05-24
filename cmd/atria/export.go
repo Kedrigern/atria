@@ -73,7 +73,7 @@ var exportEpubCmd = &cobra.Command{
 		// 4. Handle attachment storage
 		if exportSaveAsAttachment {
 			// Use our existing attachment service to hash, move and store the record
-			att, err := attachments.AddAttachment(app.Ctx, app.DB, app.Owner.ID, finalOutPath)
+			att, err := attachments.AddAttachment(app.Ctx, app.DB, app.Owner.ID, finalOutPath, filepath.Base(finalOutPath))
 			if err != nil {
 				return fmt.Errorf("failed to store export as attachment: %w", err)
 			}

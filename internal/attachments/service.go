@@ -19,7 +19,7 @@ import (
 
 // AddAttachment save local file into Atria storage
 // Ensure deduplication by hash
-func AddAttachment(ctx context.Context, db *sql.DB, ownerID uuid.UUID, localPath string) (*core.Attachment, error) {
+func AddAttachment(ctx context.Context, db *sql.DB, ownerID uuid.UUID, localPath string, originalFilename string) (*core.Attachment, error) {
 	storagePath := os.Getenv("STORAGE_PATH")
 	if storagePath == "" {
 		storagePath = "./data/attachments" // Fallback default value
@@ -96,7 +96,7 @@ func AddAttachment(ctx context.Context, db *sql.DB, ownerID uuid.UUID, localPath
 	attachment := &core.Attachment{
 		ID:         core.NewUUID(),
 		OwnerID:    ownerID,
-		Filename:   filepath.Base(localPath),
+		Filename:   originalFilename,
 		MimeType:   mtype.String(),
 		SizeBytes:  int(size),
 		FileHash:   fileHash,
