@@ -509,3 +509,53 @@ html[data-theme="dark"] .callout-danger {
     font-weight: bold;
     border-bottom-color: var(--links);
 }
+
+/* --- Dashboard --- */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.dashboard-card {
+    border: 1px solid var(--border);
+    padding: 20px;
+    border-radius: 8px; /* Mírně kulatější rohy evokují tlačítko/kartu */
+    background: var(--background-alt);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04); /* NOVÉ: Jemný stín, který kartu "zvedne" z papíru i bez hoveru */
+}
+
+.dashboard-card h4 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: var(--links);
+}
+
+.dashboard-card.full-width {
+    grid-column: 1 / -1;
+}
+
+.dashboard-card p {
+    margin-top: 0;
+}
+
+/* Interaktivní chování pro karty, které jsou odkazy */
+a.dashboard-card {
+    /* Přidána plynulá animace i pro stín */
+    transition:
+        border-color 0.2s ease,
+        transform 0.1s ease,
+        box-shadow 0.2s ease;
+}
+
+a.dashboard-card:hover {
+    border-color: var(--links);
+    transform: translateY(-2px);
+    /* Silnější stín při najetí myší pro světlý režim */
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+/* Výraznější stín pro tmavý režim (černá na černé potřebuje vyšší opacitu) */
+html[data-theme="dark"] a.dashboard-card:hover {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
