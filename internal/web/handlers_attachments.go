@@ -3,6 +3,7 @@ package web
 import (
 	"atria/internal/attachments"
 	"atria/internal/core"
+	"fmt"
 	"net/http"
 	"os"
 
@@ -25,8 +26,21 @@ func (s *Server) handleAttachments(c *gin.Context) {
 		return
 	}
 
+	var totalBytes int64
+	for _, a := range list {
+		totalBytes += int64(a.SizeBytes)
+	}
+
+	var totalFormatted string
+	if totalBytes > 1024*1024*1024 {
+		totalFormatted = fmt.Sprintf("%.2f GB", float64(totalBytes)/(1024*1024*1024))
+	} else {
+		totalFormatted = fmt.Sprintf("%.2f MB", float64(totalBytes)/(1024*1024))
+	}
+
 	s.render(c, "settings_attachments.html", gin.H{
 		"Attachments": list,
+		"TotalSize":   totalFormatted, // Předáme do šablony
 	})
 }
 
