@@ -41,6 +41,34 @@ html[data-theme="dark"] {
     }
 }
 
+/* --- Theme Aware Logo --- */
+.theme-logo-dark {
+    display: none;
+}
+.theme-logo-light {
+    display: inline-block;
+}
+
+/* Vynucený tmavý režim */
+html[data-theme="dark"] .theme-logo-light {
+    display: none;
+}
+html[data-theme="dark"] .theme-logo-dark {
+    display: inline-block;
+}
+
+/* Systémový režim - detekce OS */
+@media (prefers-color-scheme: dark) {
+    html[data-theme="system"] .theme-logo-light,
+    html:not([data-theme]) .theme-logo-light {
+        display: none;
+    }
+    html[data-theme="system"] .theme-logo-dark,
+    html:not([data-theme]) .theme-logo-dark {
+        display: inline-block;
+    }
+}
+
 /* ==========================================================================
    2. Baisc App Layout
    ========================================================================== */
