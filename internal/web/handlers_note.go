@@ -11,11 +11,20 @@ import (
 	"html/template"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gofrs/uuid/v5"
 	"gopkg.in/yaml.v3"
 )
+
+// TreeNode represents a single folder in the notes tree structure
+type TreeNode struct {
+	Name     string
+	Level    int
+	Notes    []notes.NoteSummary
+	Children map[string]*TreeNode
+}
 
 func (s *Server) handleNoteList(c *gin.Context) {
 	user := s.getUser(c)
@@ -23,19 +32,42 @@ func (s *Server) handleNoteList(c *gin.Context) {
 		return
 	}
 
+	// Fetch flat list of notes optimized for tree building
 	list, err := notes.ListNotes(c.Request.Context(), s.db, user.ID)
 	if err != nil {
 		s.renderError(c, http.StatusInternalServerError, "Failed to load notes: "+err.Error())
 		return
 	}
 
-	groupedNotes := make(map[string][]core.Entity)
+	root := &TreeNode{
+		Name:     "Root",
+		Level:    0,
+		Children: make(map[string]*TreeNode),
+	}
+
 	for _, n := range list {
-		groupedNotes[n.Path] = append(groupedNotes[n.Path], n)
+		current := root
+		cleanPath := strings.Trim(n.Path, "/")
+
+		if cleanPath != "" {
+			parts := strings.Split(cleanPath, "/")
+			for _, part := range parts {
+				if _, exists := current.Children[part]; !exists {
+					current.Children[part] = &TreeNode{
+						Name:     part,
+						Level:    current.Level + 1,
+						Children: make(map[string]*TreeNode),
+					}
+				}
+				current = current.Children[part]
+			}
+		}
+		// Append note to the final resolved folder
+		current.Notes = append(current.Notes, n)
 	}
 
 	s.render(c, "note_list.html", gin.H{
-		"GroupedNotes": groupedNotes,
+		"TreeRoot": root,
 	})
 }
 

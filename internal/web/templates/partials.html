@@ -292,3 +292,46 @@
     </div>
 </div>
 {{end}}
+
+{{define "tree_node"}}
+
+    {{if .Notes}}
+    <ul style="list-style: none; padding-left: 20px; margin: 0 0 10px 0;">
+        {{range .Notes}}
+        <li style="margin-bottom: 8px; display: flex; align-items: baseline; justify-content: space-between; gap: 15px; flex-wrap: wrap;">
+
+            <a href="/notes/{{.ID}}" hx-get="/notes/{{.ID}}" hx-target="#main-content" hx-push-url="true" style="font-weight: 500; display: inline-flex; align-items: center; text-decoration: none; min-width: 0;">
+                <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; margin-right: 8px; color: var(--links); flex-shrink: 0;">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line>
+                </svg>
+                <span style="text-decoration: underline; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{.Title}}</span>
+            </a>
+
+            <span style="color: var(--text-muted); font-size: 0.85rem; display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+                <span>{{formatDateOnly .CreatedAt}}</span>
+                {{if .CharCount}}
+                    <span>&bull;</span>
+                    <span title="Délka (1 NS = 1800 znaků)">{{normoPages .CharCount}}</span>
+                {{end}}
+            </span>
+        </li>
+        {{end}}
+    </ul>
+    {{end}}
+
+    {{range $folderName, $folderNode := .Children}}
+    <details {{if lt .Level 3}}open{{end}} style="background: transparent; border: none; border-left: 1px dashed var(--border); padding: 0 0 0 10px; margin: 4px 0 4px 8px; border-radius: 0;">
+        <summary style="background: transparent; padding: 4px 0; margin: 0; font-weight: 600; color: var(--text-main); border: none; cursor: pointer;">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; margin-right: 4px; color: var(--text-muted); vertical-align: text-bottom;">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+            </svg>
+            {{$folderName}}
+        </summary>
+
+        <div style="margin-top: 8px;">
+            {{template "tree_node" $folderNode}}
+        </div>
+    </details>
+    {{end}}
+
+{{end}}

@@ -314,6 +314,9 @@ func (s *Server) getTemplateFuncs() template.FuncMap {
 		"formatDate": func(t time.Time) string {
 			return t.Format("02.01.2006 15:04")
 		},
+		"formatDateOnly": func(t time.Time) string {
+			return t.Format("02.01.2006")
+		},
 		"formatDatePtr": func(t *time.Time) string {
 			if t == nil {
 				return "Never"

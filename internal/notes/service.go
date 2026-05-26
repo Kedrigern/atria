@@ -12,12 +12,13 @@ import (
 	"atria/internal/core"
 )
 
-// NoteSummary is a lightweight struct for listing and disambiguation.
+// NoteSummary is a lightweight struct for listing and tree views.
 type NoteSummary struct {
 	ID        uuid.UUID
 	Title     string
 	Path      string
 	CreatedAt time.Time
+	CharCount int
 }
 
 // EnsurePath traverses the virtual path (e.g., "/home/solar") and creates missing folders.
@@ -117,43 +118,15 @@ func CreateNote(ctx context.Context, db *sql.DB, ownerID uuid.UUID, title, path,
 	return entity, nil
 }
 
-// ListNotes retrieves all active (non-deleted) notes for a specific user.
-func ListNotes(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]core.Entity, error) {
-	query := `
-			SELECT id, parent_id, owner_id, type, visibility, title, slug, path, created_at, updated_at
-			FROM notes_full_view
-			WHERE owner_id = $1
-			ORDER BY path ASC, title ASC
-		`
-
-	rows, err := db.QueryContext(ctx, query, ownerID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list notes: %w", err)
-	}
-	defer rows.Close()
-
-	var noteList []core.Entity
-	for rows.Next() {
-		var n core.Entity
-		err := rows.Scan(
-			&n.ID, &n.ParentID, &n.OwnerID, &n.Type, &n.Visibility,
-			&n.Title, &n.Slug, &n.Path, &n.CreatedAt, &n.UpdatedAt,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan note: %w", err)
-		}
-		noteList = append(noteList, n)
-	}
-	return noteList, nil
-}
-
 // FindNotes resolves an identifier and returns matching notes.
 // If includeDeleted is true, it also searches the "trash" (soft-deleted items).
 func FindNotes(ctx context.Context, db *sql.DB, ownerID uuid.UUID, identifier string, includeDeleted bool) ([]NoteSummary, error) {
+	// Added JOIN with notes to calculate the character count of markdown_content
 	query := `
-		SELECT n.id, n.title, COALESCE(p.full_path, '/') AS path, n.created_at
+		SELECT n.id, n.title, COALESCE(p.full_path, '/') AS path, n.created_at, COALESCE(LENGTH(nt.markdown_content), 0) AS char_count
 		FROM entities n
 		LEFT JOIN entity_paths_view p ON n.parent_id = p.id
+		JOIN notes nt ON n.id = nt.id
 		WHERE n.owner_id = $1 AND n.type = 'note'
 	`
 	var args []interface{}
@@ -179,12 +152,42 @@ func FindNotes(ctx context.Context, db *sql.DB, ownerID uuid.UUID, identifier st
 	var results []NoteSummary
 	for rows.Next() {
 		var n NoteSummary
-		if err := rows.Scan(&n.ID, &n.Title, &n.Path, &n.CreatedAt); err != nil {
+		// Added &n.CharCount to match the updated query
+		if err := rows.Scan(&n.ID, &n.Title, &n.Path, &n.CreatedAt, &n.CharCount); err != nil {
 			return nil, err
 		}
 		results = append(results, n)
 	}
 	return results, nil
+}
+
+// ListNotes retrieves notes for the authenticated user, optimized for tree view display.
+func ListNotes(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]NoteSummary, error) {
+	query := `
+		SELECT id, title, path, created_at, COALESCE(LENGTH(markdown_content), 0) as char_count
+		FROM notes_full_view
+		WHERE owner_id = $1
+		ORDER BY path ASC, title ASC
+	`
+	rows, err := db.QueryContext(ctx, query, ownerID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query notes for tree: %w", err)
+	}
+	defer rows.Close()
+
+	var list []NoteSummary
+	for rows.Next() {
+		var n NoteSummary
+		if err := rows.Scan(&n.ID, &n.Title, &n.Path, &n.CreatedAt, &n.CharCount); err != nil {
+			return nil, fmt.Errorf("failed to scan note row for tree: %w", err)
+		}
+		list = append(list, n)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows iteration error in note tree: %w", err)
+	}
+
+	return list, nil
 }
 
 // DeleteEntity safely deletes a note or folder. Defaults to soft-delete unless 'hard' is true.

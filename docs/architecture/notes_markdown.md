@@ -41,11 +41,6 @@ To ensure interoperability with modern tools (like GitHub and Obsidian), Atria s
 * **Mermaid Diagrams:** Fenced blocks identified with ````mermaid ```` are rendered as `<pre><code class="language-mermaid">`. A frontend script loaded from a CDN (Mermaid.js) intercepts these blocks and renders vector graphs.
 * **Mathematics (MathJax / KaTeX):** Inline math wrapped in single dollars (`$...$`) and block math in double dollars (`$$...$$`) remain preserved in the HTML. A frontend script (MathJax) processes them into typographic mathematical notation (Obsidian-compatible).
 
-## 6. Tree View Navigation via Tabulator.js
+## 6. Tree View Navigation 
 
-The main navigation page of Atria utilizes a dedicated file manager interface mapping the hierarchical note tree using Tabulator's Data Tree functionality.
-
-* **Hierarchical Mapping:** The tree architecture is resolved purely by Tabulator using the `dataTree: true` module. The backend provides a JSON payload reconstructed from the `entities.parent_id` self-referential relations.
-* **Rich Metadata Display:** Unlike narrow sidebar trees, the full-page manager renders folders and notes across a full data grid layout, showcasing columns for `updated_at`, `visibility` tags, and associated entity `tags`.
-* **Drag-and-Drop Restructuring:** Row movement is enabled globally via `movableRows: true`. Dragging an entity row into a folder row fires a frontend event that dispatches a light asynchronous request to the Go backend, updating only the target entity's `parent_id` in the database.
-* **Client-Side Optimization:** Tabulator's virtual DOM architecture handles thousands of hidden or deeply nested note rows efficiently, rendering only the expanded nodes currently present in the viewport. Local sorting, multi-selection for bulk actions (e.g., trash soft-deletion via `deleted_at`), and real-time input filtering are managed fully on the client side without database roundtrips.
+To align with Atria’s lightweight, server-rendered philosophy, the notes tree view architecture deliberately avoids heavy client-side JavaScript libraries. Instead, the backend retrieves a flat list of note paths via a highly optimized SQL query and dynamically constructs a hierarchical TreeNode data structure in memory within the Go handler. This in-memory tree is then passed to a recursive Go template that utilizes native HTML5 <details> and <summary> tags to render the collapsible folder structure entirely on the server. This approach guarantees lightning-fast load times, native accessibility, and seamless integration with HTMX for smooth, partial page updates without the overhead of client-side state management.
