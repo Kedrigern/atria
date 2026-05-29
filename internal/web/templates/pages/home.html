@@ -30,40 +30,57 @@
     </div>
 
     <h2>Dashboard</h2>
-        <div class="dashboard-grid">
+    <div class="dashboard-grid">
+        <a
+            href="/rss"
+            hx-get="/rss"
+            hx-target="#main-content"
+            hx-push-url="true"
+            class="dashboard-card"
+        >
+            <h4 class="flex-row" style="gap: 8px">
+                <span class="icon icon-rss"></span>
+                RSS Triage
+            </h4>
+            <p>Unread items: <strong>{{.UnreadCount}}</strong></p>
+        </a>
 
-            <a href="/rss" hx-get="/rss" hx-target="#main-content" hx-push-url="true" class="dashboard-card" style="display: block; text-decoration: none; color: inherit;">
-                <h4 style="display: flex; align-items: center; gap: 8px;">
-                    <svg class="icon" viewBox="0 0 24 24"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg>
-                    RSS Triage
-                </h4>
-                <p>Unread items: <strong>{{.UnreadCount}}</strong></p>
-            </a>
+        <a
+            href="/read"
+            hx-get="/read"
+            hx-target="#main-content"
+            hx-push-url="true"
+            class="dashboard-card"
+        >
+            <h4 class="flex-row" style="gap: 8px">
+                <span class="icon icon-bookmark"></span>
+                Read-it-Later
+            </h4>
+            <p>Items in Inbox: <strong>{{.InboxCount}}</strong></p>
+        </a>
 
-            <a href="/read" hx-get="/read" hx-target="#main-content" hx-push-url="true" class="dashboard-card" style="display: block; text-decoration: none; color: inherit;">
-                <h4 style="display: flex; align-items: center; gap: 8px;">
-                    <svg class="icon" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
-                    Read-it-Later
-                </h4>
-                <p>Items in Inbox: <strong>{{.InboxCount}}</strong></p>
-            </a>
-
-            <div class="dashboard-card full-width">
-                <h4 style="display: flex; align-items: center; gap: 8px;">
-                    <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
-                    Recent Notes
-                </h4>
-                <ul style="padding-left: 20px; margin-bottom: 0;">
-                    {{range .RecentNotes}}
-                    <li>
-                        <a href="/notes/{{.ID}}" hx-get="/notes/{{.ID}}" hx-target="#main-content" hx-push-url="true">{{.Title}}</a>
-                    </li>
-                    {{else}}
-                    <li style="color: var(--text-muted);">No recent notes found. Time to write something!</li>
-                    {{end}}
-                </ul>
-            </div>
-
+        <div class="dashboard-card full-width">
+            <h4 class="flex-row" style="gap: 8px">
+                <span class="icon icon-note"></span>
+                Recent Notes
+            </h4>
+            <ul style="padding-left: 20px; margin-bottom: 0">
+                {{range .RecentNotes}}
+                <li>
+                    <a
+                        href="/notes/{{.ID}}"
+                        hx-get="/notes/{{.ID}}"
+                        hx-target="#main-content"
+                        hx-push-url="true"
+                        >{{.Title}}</a
+                    >
+                </li>
+                {{else}}
+                <li class="text-muted">
+                    No recent notes found. Time to write something!
+                </li>
+                {{end}}
+            </ul>
         </div>
     </div>
 </div>

@@ -1,9 +1,9 @@
 {{define "tags_section"}}
-<div id="tag-container-{{.ID}}" style="margin-bottom: 25px;">
-    <strong style="color: var(--text-main); font-size: 0.85rem; text-transform: uppercase; display: block; margin-bottom: 12px;">Tagy</strong>
+<div id="tag-container-{{.ID}}" class="meta-section">
+    <strong class="meta-section-title">Tagy</strong>
 
-    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-        <div id="tag-list-{{.ID}}" style="display: flex; gap: 8px; flex-wrap: wrap;">
+    <div class="flex-row flex-wrap">
+        <div id="tag-list-{{.ID}}" class="flex-row flex-wrap">
             {{range .Tags}}
             <a href="/settings/tags/{{.Name}}" class="tag">#{{.Name}}</a>
             {{end}}
@@ -11,30 +11,30 @@
         <form hx-post="/api/entity/{{.ID}}/tags"
               hx-target="#tag-list-{{.ID}}"
               hx-swap="beforeend"
-              style="display: flex; margin: 0; gap: 5px;"
+              class="flex-row"
               hx-on::after-request="if(event.detail.successful) this.reset()">
             <input type="text" name="tag_name" placeholder="+ přidat tag"
-                   style="width: 110px; padding: 4px 8px; margin: 0; font-size: 0.85rem;" required>
-            <button type="submit" class="outline" style="padding: 4px 10px; margin: 0; min-height: auto;">+</button>
+                   class="form-control" style="width: 110px; font-size: 0.85rem;" required>
+            <button type="submit" class="outline btn-sm">+</button>
         </form>
     </div>
 </div>
 {{end}}
 
 {{define "attachments_section"}}
-<div style="margin-bottom: 25px;">
-    <strong style="color: var(--text-main); font-size: 0.85rem; text-transform: uppercase; display: block; margin-bottom: 12px;">Přílohy</strong>
+<div class="meta-section">
+    <strong class="meta-section-title">Přílohy</strong>
 
-    <ul id="attachment-list-{{.ID}}" style="list-style: none; padding: 0; margin: 0 0 15px 0;">
+    <ul id="attachment-list-{{.ID}}" class="meta-list">
         {{range .Attachments}}
-        <li style="margin-bottom: 8px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--background-alt); padding: 8px 12px; border-radius: 6px;">
-            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
+        <li class="meta-list-item">
+            <span class="icon-sm icon-file"></span>
             <a href="/data/attachments/{{.DiskPath}}" target="_blank" style="font-weight: 500;">{{.Filename}}</a>
             <small style="color: var(--text-muted);">({{divide .SizeBytes 1024}} KB)</small>
 
             <input type="text" readonly value="{{if isImage .MimeType}}!{{end}}[{{.Filename}}](/data/attachments/{{.DiskPath}})"
                    onclick="this.select(); navigator.clipboard.writeText(this.value); this.style.borderColor='var(--links)';"
-                   style="padding: 2px 8px; font-size: 0.75rem; margin: 0 0 0 auto; width: 220px; background: transparent; border: 1px solid var(--border); border-radius: 4px; cursor: copy;"
+                   class="form-control" style="width: 220px; font-size: 0.75rem; background: transparent; cursor: copy; margin-left: auto;"
                    title="Klikni pro zkopírování Markdown odkazu">
         </li>
         {{end}}
@@ -43,24 +43,24 @@
     <form hx-post="/api/entity/{{.ID}}/attachments"
           hx-encoding="multipart/form-data"
           hx-target="#main-content"
-          style="margin: 0; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
-        <input type="file" name="file" style="font-size: 0.85rem; padding: 0; margin: 0; border: none; background: none; width: auto; flex: 1; min-width: 0;" required>
-        <button type="submit" class="outline" style="padding: 4px 12px; margin: 0; font-size: 0.85rem; white-space: nowrap;">Nahrát soubor</button>
+          class="flex-row flex-wrap">
+        <input type="file" name="file" class="form-control" style="border: none; background: none; width: auto; flex: 1; min-width: 0; font-size: 0.85rem;" required>
+        <button type="submit" class="outline btn-sm" style="white-space: nowrap;">Nahrát soubor</button>
     </form>
 </div>
 {{end}}
 {{define "links_section"}}
-<div style="margin-bottom: 25px;">
-    <strong style="color: var(--text-main); font-size: 0.85rem; text-transform: uppercase; display: block; margin-bottom: 12px;">Propojení a Zmínky</strong>
+<div class="meta-section">
+    <strong class="meta-section-title">Propojení a Zmínky</strong>
 
     {{if or .OutgoingLinks .IncomingLinks}}
-    <div style="display: flex; gap: 40px; flex-wrap: wrap; margin-bottom: 15px;">
+    <div class="flex-row flex-wrap mb-3" style="gap: 40px;">
         {{if .OutgoingLinks}}
         <div>
-            <span style="color: var(--text-muted); font-size: 0.85rem; display: block; margin-bottom: 4px;">Odkazuje na:</span>
-            <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.95rem;">
+            <span class="text-muted" style="font-size: 0.85rem; display: block; margin-bottom: 4px;">Odkazuje na:</span>
+            <ul class="meta-list">
                 {{range .OutgoingLinks}}
-                <li style="margin-bottom: 4px;">🔗 <a href="/{{if eq .Type "note"}}notes{{else}}read{{end}}/{{.ID}}">{{.Title}}</a></li>
+                <li class="meta-list-item">🔗 <a href="/{{if eq .Type "note"}}notes{{else}}read{{end}}/{{.ID}}">{{.Title}}</a></li>
                 {{end}}
             </ul>
         </div>
@@ -68,10 +68,10 @@
 
         {{if .IncomingLinks}}
         <div>
-            <span style="color: var(--text-muted); font-size: 0.85rem; display: block; margin-bottom: 4px;">Backlinky (Zmiňováno v):</span>
-            <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.95rem;">
+            <span class="text-muted" style="font-size: 0.85rem; display: block; margin-bottom: 4px;">Backlinky (Zmiňováno v):</span>
+            <ul class="meta-list">
                 {{range .IncomingLinks}}
-                <li style="margin-bottom: 4px;">⬅️ <a href="/{{if eq .Type "note"}}notes{{else}}read{{end}}/{{.ID}}">{{.Title}}</a></li>
+                <li class="meta-list-item">⬅️ <a href="/{{if eq .Type "note"}}notes{{else}}read{{end}}/{{.ID}}">{{.Title}}</a></li>
                 {{end}}
             </ul>
         </div>
@@ -81,15 +81,15 @@
 
     <form hx-post="/api/entity/{{.ID}}/links"
           hx-target="#main-content"
-          style="margin: 0; display: inline-flex; gap: 10px; align-items: center; background: var(--background-alt); padding: 8px 12px; border-radius: 6px; border: 1px dashed var(--border);">
-        <input type="text" name="target_identifier" placeholder="Název nebo Short ID entity..." style="font-size: 0.85rem; padding: 4px 8px; margin: 0; width: 220px;" required>
-        <button type="submit" class="outline" style="padding: 4px 12px; margin: 0; font-size: 0.85rem; min-height: auto; white-space: nowrap;">Přidat link</button>
+          class="flex-row" style="background: var(--background-alt); padding: 8px 12px; border-radius: 6px; border: 1px dashed var(--border);">
+        <input type="text" name="target_identifier" placeholder="Název nebo Short ID entity..." class="form-control" style="font-size: 0.85rem; width: 220px;" required>
+        <button type="submit" class="outline btn-sm" style="white-space: nowrap;">Přidat link</button>
     </form>
 </div>
 {{end}}
 
 {{define "badge_saved"}}
-<span style="color: #10b981; font-weight: bold;">✅ Saved to Inbox</span>
+<span class="tag tag-success">✅ Saved to Inbox</span>
 {{end}}
 
 {{define "badge_archived"}}
@@ -140,31 +140,27 @@
             </h4>
             <small style="color: var(--text-muted)">
                 <a href="/rss/{{.FeedID}}" style="color: inherit; text-decoration: underline; text-underline-offset: 3px;">{{.SourceName}}</a> • {{formatDate .PublishedAt}}
-                {{if .ReadAt}} <span style="color: #10b981; font-size: 0.85rem; margin-left: 8px;">✓ read</span>{{end}}
+                {{if .ReadAt}} <span class="tag tag-success" style="font-size: 0.85rem; margin-left: 8px;">✓ read</span>{{end}}
             </small>
         </div>
 
         <div class="action-row">
-            <form method="post" action="/api/rss/{{.ID}}/update" style="margin: 0" hx-post="/api/rss/{{.ID}}/update" hx-target="closest .list-item" hx-swap="outerHTML swap:0.3s">
-                <button type="submit" class="outline" title="Save to Read-it-Later" style="padding: 6px; display: flex; align-items: center">
-                    <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+            <form method="post" action="/api/rss/{{.ID}}/update" hx-post="/api/rss/{{.ID}}/update" hx-target="closest .list-item" hx-swap="outerHTML swap:0.3s">
+                <button type="submit" class="outline btn-sm" title="Save to Read-it-Later">
+                    <span class="icon-sm icon-bookmark"></span>
                 </button>
             </form>
 
             {{if not .ReadAt}}
-            <form method="post" action="/api/rss/{{.ID}}/archive" style="margin: 0" hx-post="/api/rss/{{.ID}}/archive" hx-target="closest .list-item" hx-swap="outerHTML swap:0.3s">
-                <button type="submit" class="outline" title="Archive (Mark as Read)" style="padding: 6px; display: flex; align-items: center">
-                    <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <form method="post" action="/api/rss/{{.ID}}/archive" hx-post="/api/rss/{{.ID}}/archive" hx-target="closest .list-item" hx-swap="outerHTML swap:0.3s">
+                <button type="submit" class="outline btn-sm" title="Archive (Mark as Read)">
+                    <span class="icon-sm icon-check"></span>
                 </button>
             </form>
             {{end}}
 
-            <a href="{{.Link}}" target="_blank" class="button-link outline" title="Otevřít originál" style="margin: 0; padding: 6px; display: flex; align-items: center">
-                <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                    <polyline points="15 3 21 3 21 9"></polyline>
-                    <line x1="10" y1="14" x2="21" y2="3"></line>
-                </svg>
+            <a href="{{.Link}}" target="_blank" class="button-link outline btn-sm" title="Otevřít originál">
+                <span class="icon-sm icon-external-link"></span>
             </a>
         </div>
     </div>
@@ -178,23 +174,23 @@
     <div class="inline-content" style="display: none; margin-top: 8px; padding: 15px; background: var(--background); border-radius: 6px; border: 1px solid var(--border); font-size: 0.95rem; line-height: 1.6; overflow-x: auto; width: 100%; box-sizing: border-box;">
         {{if .Content}}{{safeHTML .Content}}{{else}}{{safeHTML .Description}}{{end}}
 
-        <div style="margin-top: 25px; padding-top: 15px; border-top: 1px dashed var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-            <button type="button" class="outline" onclick="this.closest('.inline-content').style.display = 'none';" style="margin: 0; padding: 4px 12px; font-size: 0.9rem;">
+        <div class="flex-row flex-between flex-wrap mt-3" style="padding-top: 15px; border-top: 1px dashed var(--border); gap: 10px;">
+            <button type="button" class="outline btn-sm" onclick="this.closest('.inline-content').style.display = 'none';">
                 ↑ Zobrazit méně
             </button>
 
             <div class="action-row">
-                <form method="post" action="/api/rss/{{.ID}}/update" style="margin: 0" hx-post="/api/rss/{{.ID}}/update" hx-target="closest .list-item" hx-swap="outerHTML swap:0.3s">
-                    <button type="submit" class="outline" title="Save to Read-it-Later" style="padding: 4px 12px; display: flex; align-items: center; gap: 6px; font-size: 0.9rem;">
-                        <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+                <form method="post" action="/api/rss/{{.ID}}/update" hx-post="/api/rss/{{.ID}}/update" hx-target="closest .list-item" hx-swap="outerHTML swap:0.3s">
+                    <button type="submit" class="outline btn-sm" title="Save to Read-it-Later">
+                        <span class="icon-sm icon-bookmark"></span>
                         Uložit do Inboxu
                     </button>
                 </form>
 
                 {{if not .ReadAt}}
-                <form method="post" action="/api/rss/{{.ID}}/archive" style="margin: 0" hx-post="/api/rss/{{.ID}}/archive" hx-target="closest .list-item" hx-swap="outerHTML swap:0.3s">
-                    <button type="submit" class="outline" title="Archive (Mark as Read)" style="padding: 4px 12px; display: flex; align-items: center; gap: 6px; font-size: 0.9rem;">
-                        <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <form method="post" action="/api/rss/{{.ID}}/archive" hx-post="/api/rss/{{.ID}}/archive" hx-target="closest .list-item" hx-swap="outerHTML swap:0.3s">
+                    <button type="submit" class="outline btn-sm" title="Archive (Mark as Read)">
+                        <span class="icon-sm icon-check"></span>
                         Archivovat
                     </button>
                 </form>
@@ -208,13 +204,13 @@
 {{define "note-toolbar"}}
 <div class="toolbar">
     <div class="toolbar-group">
-        <button hx-get="/notes" hx-target="#main-content" hx-push-url="true" class="outline btn-sm-label" title="Note list">
-            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        <button hx-get="/notes" hx-target="#main-content" hx-push-url="true" class="outline btn-sm" title="Note list">
+            <span class="icon-sm icon-chevron-left"></span>
             Note list
         </button>
         <div class="dropdown hide-mobile" tabindex="0">
             <button type="button" class="outline btn-sm" title="Export">
-                <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                <span class="icon-sm icon-download"></span>
             </button>
             <div class="dropdown-menu">
                 <a href="/notes/{{.ID}}/export/md">⬇ Markdown</a>
@@ -227,20 +223,19 @@
             title="Click to copy Short ID">ID: {{.ShortID}}</span>
     </div>
     <div class="toolbar-group">
-        <button type="button" class="btn-sm-label" title="Edit note"
+        <button type="button" class="btn-sm" title="Edit note"
             onclick="document.getElementById('note-view').style.display='none'; document.getElementById('note-edit').style.display='block';">
-            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+            <span class="icon-sm icon-edit"></span>
             <span class="btn-label">Upravit</span>
         </button>
         <button type="button" class="outline btn-sm btn-hide-top" title="Back to top"
             onclick="document.getElementById('main-content').scrollTo({ top: 0, behavior: 'smooth' })">
-            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+            <span class="icon-sm icon-chevron-up"></span>
         </button>
-        <form method="post" action="/api/notes/{{.ID}}/delete" style="display: contents"
-            onsubmit="return confirm('Opravdu chcete tuto poznámku přesunout do koše?');">
+        <form method="post" action="/api/notes/{{.ID}}/delete" style="display: contents">
             <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
             <button type="submit" class="outline btn-sm btn-hide-top btn-danger" title="Delete note">
-                <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>
+                <span class="icon-sm icon-trash"></span>
             </button>
         </form>
     </div>
@@ -250,16 +245,16 @@
 {{define "toolbar"}}
 <div class="toolbar">
     <div class="toolbar-group">
-        <button hx-get="/read" hx-target="#main-content" hx-push-url="true" class="outline btn-sm-label" title="Article list">
-            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        <button hx-get="/read" hx-target="#main-content" hx-push-url="true" class="outline btn-sm" title="Article list">
+            <span class="icon-sm icon-chevron-left"></span>
             Article list
         </button>
-        <a href="{{.OriginalURL}}" target="_blank" rel="noopener" class="button-link outline btn-sm" title="Open original source">
-            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+        <a href="{{.OriginalURL}}" class="button-link outline btn-sm">
+            <span class="icon-sm icon-external-link"></span>
         </a>
         <div class="dropdown hide-mobile" tabindex="0">
             <button type="button" class="outline btn-sm" title="Export">
-                <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                <span class="icon-sm icon-download"></span>
             </button>
             <div class="dropdown-menu">
                 <a href="/read/{{.ID}}/export/md">⬇ Markdown</a>
@@ -269,7 +264,7 @@
         <form method="post" action="/api/articles/{{.ID}}/refetch" style="display: contents">
             <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
             <button type="submit" class="outline btn-sm" title="Refetch article">
-                <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                <span class="icon-sm icon-refresh"></span>
             </button>
         </form>
         <div class="toolbar-sep hide-mobile"></div>
@@ -280,14 +275,14 @@
     <div class="toolbar-group">
         <form method="post" action="/api/articles/{{.ID}}/archive" style="display: contents">
             <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
-            <button type="submit" class="btn-sm-label" title="Archive article">
-                <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <button type="submit" class="btn-sm btn-primary" title="Archive article">
+                <span class="icon-sm icon-check"></span>
                 Archive
             </button>
         </form>
         <button type="button" class="outline btn-sm btn-hide-top" title="Back to top"
             onclick="document.getElementById('main-content').scrollTo({ top: 0, behavior: 'smooth' })">
-            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+            <span class="icon-sm icon-chevron-up"></span>
         </button>
     </div>
 </div>
@@ -296,18 +291,16 @@
 {{define "tree_node"}}
 
     {{if .Notes}}
-    <ul style="list-style: none; padding-left: 20px; margin: 0 0 10px 0;">
+    <ul class="meta-list" style="padding-left: 20px; margin: 0 0 10px 0;">
         {{range .Notes}}
-        <li style="margin-bottom: 8px; display: flex; align-items: baseline; justify-content: space-between; gap: 15px; flex-wrap: wrap;">
+        <li class="flex-row flex-between flex-wrap" style="margin-bottom: 8px; align-items: baseline; gap: 15px;">
 
             <a href="/notes/{{.ID}}" hx-get="/notes/{{.ID}}" hx-target="#main-content" hx-push-url="true" style="font-weight: 500; display: inline-flex; align-items: center; text-decoration: none; min-width: 0;">
-                <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; margin-right: 8px; color: var(--links); flex-shrink: 0;">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line>
-                </svg>
+                <span class="icon-sm icon-note" style="color: var(--links); flex-shrink: 0; margin-right: 8px;"></span>
                 <span style="text-decoration: underline; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{.Title}}</span>
             </a>
 
-            <span style="color: var(--text-muted); font-size: 0.85rem; display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+            <span class="flex-row text-muted" style="font-size: 0.85rem; white-space: nowrap;">
                 <span>{{formatDateOnly .CreatedAt}}</span>
                 {{if .CharCount}}
                     <span>&bull;</span>
@@ -322,16 +315,13 @@
     {{range $folderName, $folderNode := .Children}}
     <details {{if lt .Level 3}}open{{end}} style="background: transparent; border: none; border-left: 1px dashed var(--border); padding: 0 0 0 10px; margin: 4px 0 4px 8px; border-radius: 0;">
         <summary style="background: transparent; padding: 4px 0; margin: 0; font-weight: 600; color: var(--text-main); border: none; cursor: pointer;">
-            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; margin-right: 4px; color: var(--text-muted); vertical-align: text-bottom;">
-                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-            </svg>
+            <span class="icon-sm icon-folder" style="color: var(--text-muted); vertical-align: text-bottom; margin-right: 4px;"></span>
             {{$folderName}}
         </summary>
 
-        <div style="margin-top: 8px;">
+        <div class="mt-1">
             {{template "tree_node" $folderNode}}
         </div>
     </details>
-    {{end}}
-
+{{end}}
 {{end}}

@@ -4,14 +4,9 @@
 
     {{template "flash_message" .}} {{template "settings_nav" "rss"}}
 
-    <div class="page-header-row" style="margin-bottom: 15px">
+    <div class="page-header-row mb-1">
         <h3>Subscribed Feeds</h3>
-        <form
-            method="post"
-            action="/api/rss/fetch"
-            style="margin: 0"
-            onsubmit="this.querySelector('button').innerText = 'Fetching...'"
-        >
+        <form method="post" action="/api/rss/fetch">
             <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
             <button class="outline" type="submit">⟳ Fetch Now</button>
         </form>
@@ -20,25 +15,24 @@
     <form
         method="post"
         action="/api/rss/add"
-        style="
-            display: flex;
-            gap: 10px;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-            align-items: flex-start;
-        "
+        class="flex-row flex-wrap mb-3"
+        style="align-items: flex-start"
     >
         <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
         <input
             type="url"
             name="url"
             placeholder="https://... (URL feedu)"
+            class="form-control"
             required
         />
-        <input type="text" name="title" placeholder="Název (volitelné)" />
-        <button type="submit" style="margin: 0; white-space: nowrap">
-            Add Feed
-        </button>
+        <input
+            type="text"
+            name="title"
+            placeholder="Název (volitelné)"
+            class="form-control"
+        />
+        <button type="submit" style="white-space: nowrap">Add Feed</button>
     </form>
 
     <table style="width: 100%; border-collapse: collapse; margin-top: 20px">

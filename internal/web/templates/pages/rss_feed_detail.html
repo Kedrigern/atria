@@ -6,13 +6,8 @@
     {{template "settings_nav" "rss"}}
     {{/* ── Feed header ── */}}
     <div
-        class="page-header-row"
-        style="
-            margin-bottom: 20px;
-            align-items: flex-start;
-            gap: 12px;
-            flex-wrap: wrap;
-        "
+        class="page-header-row flex-wrap mb-3"
+        style="align-items: flex-start; gap: 12px;"
     >
         <div>
             <h3 style="margin: 0 0 5px 0">
@@ -25,13 +20,7 @@
                 >
                 {{else}}{{.Feed.Title}}{{end}}
             </h3>
-            <small
-                style="
-                    color: var(--text-muted);
-                    font-size: 0.85rem;
-                    word-break: break-all;
-                "
-            >
+            <small style="color: var(--text-muted); font-size: 0.85rem; word-break: break-all;">
                 <a
                     href="{{.Feed.FeedURL}}"
                     target="_blank"
@@ -41,39 +30,19 @@
             </small>
         </div>
 
-        <div style="display: flex; gap: 10px; flex-wrap: wrap">
+        <div class="flex-row flex-wrap">
             <form
                 method="post"
                 action="/api/rss/{{.Feed.ID}}/fetch"
-                style="margin: 0"
                 hx-post="/api/rss/{{.Feed.ID}}/fetch"
             >
                 <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
-                <button
-                    type="submit"
-                    class="outline"
-                    style="
-                        margin: 0;
-                        padding: 4px 12px;
-                        font-size: 0.9rem;
-                        white-space: nowrap;
-                    "
-                    onclick="this.innerText = 'Fetching...'"
-                >
+                <button type="submit" class="outline btn-sm" style="white-space: nowrap;">
                     ⟳ Fetch
                 </button>
             </form>
 
-            <a
-                href="/settings/rss"
-                class="button-link outline"
-                style="
-                    margin: 0;
-                    padding: 4px 12px;
-                    font-size: 0.9rem;
-                    white-space: nowrap;
-                "
-            >
+            <a href="/settings/rss" class="button-link outline btn-sm" style="white-space: nowrap;">
                 ← Zpět
             </a>
         </div>
@@ -81,18 +50,15 @@
 
     {{/* ── Stats bar ── */}}
     <div
+        class="flex-row flex-wrap mb-3"
         style="
-            display: flex;
-            flex-wrap: wrap;
-            gap: 16px;
-            align-items: center;
             font-size: 0.9rem;
             color: var(--text-muted);
             background: var(--background-alt);
             border: 1px solid var(--border);
             border-radius: 6px;
             padding: 10px 14px;
-            margin-bottom: 18px;
+            gap: 16px;
         "
     >
         <span>📦 <strong>{{.TotalItems}}</strong> total</span>
@@ -108,66 +74,30 @@
             <strong>{{.Feed.LastFetchStatus}}</strong>{{end}}
         </span>
         {{else}}
-        <span
-            style="
-                margin-left: auto;
-                font-size: 0.85rem;
-                color: var(--text-muted);
-            "
-            >Never fetched</span
-        >
+        <span style="margin-left: auto; font-size: 0.85rem; color: var(--text-muted);">Never fetched</span>
         {{end}}
     </div>
 
     {{/* ── Fetch error ── */}} {{if .Feed.LastFetchError}}
-    <div
-        style="
-            background: rgba(239, 68, 68, 0.1);
-            border-left: 3px solid #ef4444;
-            border-radius: 4px;
-            padding: 10px 14px;
-            margin-bottom: 18px;
-            font-size: 0.9rem;
-            color: var(--text-main);
-        "
-    >
-        <strong style="color: #ef4444">⚠️ Last fetch error:</strong>
+    <div class="alert alert-danger mb-3">
+        <strong>⚠️ Last fetch error:</strong>
         {{.Feed.LastFetchError}}
     </div>
     {{end}}
     {{/* ── Controls: Show archived checkbox & Archive All ── */}}
-    <div
-        style="
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 10px;
-            font-size: 0.95rem;
-        "
-    >
-        <label
-            style="
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                cursor: pointer;
-                color: var(--text-main);
-            "
-        >
+    <div class="flex-row flex-between flex-wrap mb-3" style="font-size: 0.95rem;">
+        <label class="flex-row" style="gap: 8px; cursor: pointer; color: var(--text-main);">
             <input
                 type="checkbox"
                 name="archived"
                 value="1"
-                {{if
-                .IncludeArchived}}checked{{end}}
+                {{if .IncludeArchived}}checked{{end}}
                 hx-get="/rss/{{.Feed.ID}}"
                 hx-target="#main-content"
                 hx-push-url="true"
                 hx-include="this"
                 hx-trigger="change"
-                style="width: auto; margin: 0"
+                style="width: auto;"
             />
             Show archived items
         </label>
@@ -176,34 +106,11 @@
         <form
             method="post"
             action="/api/rss/{{.Feed.ID}}/archive-all"
-            style="margin: 0"
-            onsubmit="return confirm('Opravdu chcete označit všech {{.UnreadItems}} položek jako přečtených?');"
             hx-post="/api/rss/{{.Feed.ID}}/archive-all"
         >
             <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
-            <button
-                type="submit"
-                class="outline"
-                style="
-                    padding: 4px 12px;
-                    font-size: 0.9rem;
-                    margin: 0;
-                    display: flex;
-                    align-items: center;
-                    gap: 6px;
-                "
-            >
-                <svg
-                    class="icon-sm"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                >
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
+            <button type="submit" class="outline btn-sm">
+                <span class="icon-sm icon-check"></span>
                 Označit vše za přečtené
             </button>
         </form>
@@ -234,14 +141,12 @@
             <a
                 href="/rss/{{.Feed.ID}}?page={{.PrevPage}}{{if .IncludeArchived}}&archived=1{{end}}"
                 class="button-link outline"
-                style="margin: 0"
                 >&laquo; Previous</a
             >
             {{end}} {{if .HasNext}}
             <a
                 href="/rss/{{.Feed.ID}}?page={{.NextPage}}{{if .IncludeArchived}}&archived=1{{end}}"
                 class="button-link outline"
-                style="margin: 0"
                 >Next &raquo;</a
             >
             {{end}}
@@ -250,7 +155,6 @@
             <button
                 type="button"
                 class="button-link outline"
-                style="margin: 0"
                 onclick="
                     document
                         .getElementById('main-content')
@@ -264,3 +168,4 @@
     {{end}}
 </div>
 {{end}}
+</svg>

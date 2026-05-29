@@ -1,26 +1,18 @@
 {{define "content"}}
 <div class="centered-view" data-mobile-title="ATRIA: Search">
-    <div class="page-header-row" style="margin-bottom: 20px">
+    <div class="page-header-row mb-3">
         <h2 class="hide-mobile">Search</h2>
     </div>
 
-    <div
-        id="search-form"
-        style="
-            display: flex;
-            gap: 10px;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-            align-items: flex-start;
-        "
-    >
+    <div id="search-form" class="flex-row flex-wrap mb-3" style="align-items: flex-start;">
         <input
             id="search-input"
             type="search"
             name="q"
             value="{{.Query}}"
             placeholder="Search notes, articles, RSS…"
-            style="flex: 1 1 300px; margin: 0"
+            class="form-control"
+            style="flex: 1 1 300px;"
             autofocus
             hx-get="/search"
             hx-target="#search-results"
@@ -30,7 +22,8 @@
         <select
             id="search-filter"
             name="in"
-            style="margin: 0; flex: 0 0 auto"
+            class="form-control"
+            style="flex: 0 0 auto;"
             hx-get="/search"
             hx-target="#search-results"
             hx-trigger="change"
@@ -41,7 +34,7 @@
             <option value="articles" {{if eq .Filter "articles"}} selected{{end}}>Articles</option>
             <option value="rss"      {{if eq .Filter "rss"}}      selected{{end}}>RSS</option>
         </select>
-        <label style="display: flex; align-items: center; gap: 6px; margin: 0; flex: 0 0 auto">
+        <label class="flex-row" style="gap: 6px; flex: 0 0 auto;">
             <input type="checkbox" id="search-archived" name="archived" value="1"
                 {{if .IncludeArchived}}checked{{end}}
                 hx-get="/search"

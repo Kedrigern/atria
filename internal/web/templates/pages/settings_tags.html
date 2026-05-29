@@ -8,7 +8,7 @@
     <form
         method="post"
         action="/api/tags/create"
-        style="display: flex; gap: 10px; margin-bottom: 30px"
+        class="flex-row mb-3"
         hx-post="/api/tags/create"
     >
         <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
@@ -16,6 +16,7 @@
             type="text"
             name="name"
             placeholder="Název nového tagu..."
+            class="form-control"
             required
             maxlength="20"
         />
@@ -23,8 +24,8 @@
     </form>
 
     <details
+        class="mb-3"
         style="
-            margin-bottom: 30px;
             border: 1px solid var(--border);
             border-radius: 6px;
             padding: 15px;
@@ -41,34 +42,20 @@
         >
             <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
 
-            <div>
-                <label
-                    style="
-                        display: block;
-                        font-weight: bold;
-                        margin-bottom: 4px;
-                    "
-                    >Entita (Název, UUID, nebo Short ID)</label
-                >
+            <div class="form-group">
+                <label>Entita (Název, UUID, nebo Short ID)</label>
                 <input
                     type="text"
                     name="entity_identifier"
                     required
                     placeholder="např. Solar Setup nebo 8e6a1f..."
-                    style="width: 100%"
+                    class="form-control"
                 />
             </div>
 
-            <div>
-                <label
-                    style="
-                        display: block;
-                        font-weight: bold;
-                        margin-bottom: 4px;
-                    "
-                    >Vyberte Tag</label
-                >
-                <select name="tag_name" required style="width: 100%">
+            <div class="form-group">
+                <label>Vyberte Tag</label>
+                <select name="tag_name" required class="form-control">
                     <option value="" disabled selected>
                         Zvolte tag ze seznamu...
                     </option>
@@ -84,7 +71,7 @@
         </form>
     </details>
 
-    <div style="display: flex; flex-wrap: wrap; gap: 15px">
+    <div class="flex-row flex-wrap" style="gap: 15px;">
         {{range .Tags}}
         <div
             style="

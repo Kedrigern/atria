@@ -5,8 +5,8 @@
     {{template "flash_message" .}} {{template "settings_nav" "users "}} {{/* ──
     Create user form ── */}}
     <details
+        class="mb-3"
         style="
-            margin-bottom: 30px;
             border: 1px solid var(--border);
             border-radius: 6px;
             padding: 15px;
@@ -22,64 +22,39 @@
             style="margin-top: 15px; display: grid; gap: 12px; max-width: 480px"
         >
             <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
-            <div>
-                <label
-                    style="
-                        display: block;
-                        font-weight: bold;
-                        margin-bottom: 4px;
-                    "
-                    >Display Name</label
-                >
+            <div class="form-group">
+                <label>Display Name</label>
                 <input
                     type="text"
                     name="display_name"
                     required
                     placeholder="Jane Doe"
+                    class="form-control"
                 />
             </div>
-            <div>
-                <label
-                    style="
-                        display: block;
-                        font-weight: bold;
-                        margin-bottom: 4px;
-                    "
-                    >Email</label
-                >
+            <div class="form-group">
+                <label>Email</label>
                 <input
                     type="email"
                     name="email"
                     required
                     placeholder="jane@example.com"
+                    class="form-control"
                 />
             </div>
-            <div>
-                <label
-                    style="
-                        display: block;
-                        font-weight: bold;
-                        margin-bottom: 4px;
-                    "
-                    >Password</label
-                >
+            <div class="form-group">
+                <label>Password</label>
                 <input
                     type="password"
                     name="password"
                     required
                     placeholder="Temporary password"
+                    class="form-control"
                 />
             </div>
-            <div>
-                <label
-                    style="
-                        display: block;
-                        font-weight: bold;
-                        margin-bottom: 4px;
-                    "
-                    >Role</label
-                >
-                <select name="role">
+            <div class="form-group">
+                <label>Role</label>
+                <select name="role" class="form-control">
                     <option value="user" selected>User</option>
                     <option value="admin">Admin</option>
                 </select>
@@ -183,31 +158,9 @@
                         "
                     >
                         {{if eq .Role "admin"}}
-                        <span
-                            style="
-                                display: inline-block;
-                                padding: 2px 8px;
-                                border-radius: 4px;
-                                font-size: 0.8rem;
-                                font-weight: bold;
-                                background: var(--links);
-                                color: #fff;
-                            "
-                            >admin</span
-                        >
+                        <span class="tag tag-success">admin</span>
                         {{else}}
-                        <span
-                            style="
-                                display: inline-block;
-                                padding: 2px 8px;
-                                border-radius: 4px;
-                                font-size: 0.8rem;
-                                font-weight: bold;
-                                background: var(--border);
-                                color: var(--text-muted);
-                            "
-                            >user</span
-                        >
+                        <span class="tag">user</span>
                         {{end}}
                     </td>
                     <td
@@ -235,7 +188,7 @@
                         "
                     >
                         {{if ne .ID $.CurrentUser.ID}}
-                        <div class="action-row" style="gap: 6px">
+                        <div class="action-row">
                             {{/* Toggle role */}}
                             <form
                                 method="post"
@@ -254,11 +207,7 @@
                                 />
                                 {{if eq .Role "admin"}}
                                 <input type="hidden" name="role" value="user" />
-                                <button
-                                    type="submit"
-                                    class="outline"
-                                    style="padding: 4px 10px; font-size: 0.8rem"
-                                >
+                                <button type="submit" class="outline btn-sm">
                                     → user
                                 </button>
                                 {{else}}
@@ -267,11 +216,7 @@
                                     name="role"
                                     value="admin"
                                 />
-                                <button
-                                    type="submit"
-                                    class="outline"
-                                    style="padding: 4px 10px; font-size: 0.8rem"
-                                >
+                                <button type="submit" class="outline btn-sm">
                                     → admin
                                 </button>
                                 {{end}}
@@ -281,7 +226,6 @@
                                 method="post"
                                 action="/api/users/delete"
                                 style="margin: 0"
-                                onsubmit="return confirm('Delete user {{.Email}}? This cannot be undone.')"
                             >
                                 <input
                                     type="hidden"
@@ -293,14 +237,7 @@
                                     name="email"
                                     value="{{.Email}}"
                                 />
-                                <button
-                                    type="submit"
-                                    style="
-                                        padding: 4px 10px;
-                                        font-size: 0.8rem;
-                                        background: #ef4444;
-                                    "
-                                >
+                                <button type="submit" class="btn-sm btn-danger">
                                     Delete
                                 </button>
                             </form>

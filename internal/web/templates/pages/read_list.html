@@ -2,37 +2,33 @@
 <div class="centered-view" data-mobile-title="ATRIA: Articles">
     {{template "flash_message" .}}
 
-    <div class="page-header-row" style="margin-bottom: 15px">
+    <div class="page-header-row mb-1">
         <h2 class="hide-mobile">Read-it-Later Inbox</h2>
     </div>
 
     <form
         method="post"
         action="/api/articles/add"
-        style="
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            align-items: flex-start;
-        "
-        onsubmit="this.querySelector('button').innerText = 'Saving...'"
+        class="flex-row flex-wrap mb-3"
+        style="align-items: flex-start"
     >
         <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
         <input
             type="url"
             name="url"
             placeholder="https://... (Zadejte URL článku)"
-            style="flex: 1 1 300px; margin: 0"
+            class="form-control"
+            style="flex: 1 1 300px"
             required
         />
         <input
             type="text"
             name="user_note"
             placeholder="Poznámka k článku (volitelné)..."
-            style="flex: 1 1 200px; margin: 0"
+            class="form-control"
+            style="flex: 1 1 200px"
         />
-        <button type="submit" style="margin: 0; white-space: nowrap">
+        <button type="submit" class="btn-primary" style="white-space: nowrap">
             Save Article
         </button>
     </form>
@@ -63,22 +59,10 @@
                 <input type="hidden" name="_csrf" value="{{$.CSRFToken}}" />
                 <button
                     type="submit"
-                    class="outline"
+                    class="outline btn-sm"
                     title="Archive article"
-                    style="padding: 6px; display: flex; align-items: center"
                 >
-                    <svg
-                        class="icon-sm"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        style="pointer-events: none"
-                    >
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
+                    <span class="icon-sm icon-check"></span>
                 </button>
             </form>
         </div>
@@ -94,19 +78,11 @@
     <div class="pagination-bar">
         <div class="action-row">
             {{if gt .Page 1}}
-            <a
-                href="/read?page={{.PrevPage}}"
-                class="button-link outline"
-                style="margin: 0"
-            >
+            <a href="/read?page={{.PrevPage}}" class="button-link outline">
                 &laquo; Previous
             </a>
             {{end}} {{if .HasNext}}
-            <a
-                href="/read?page={{.NextPage}}"
-                class="button-link outline"
-                style="margin: 0"
-            >
+            <a href="/read?page={{.NextPage}}" class="button-link outline">
                 Next &raquo;
             </a>
             {{end}}

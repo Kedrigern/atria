@@ -5,17 +5,7 @@
 
     {{template "flash_message" .}}
 
-    <div
-        style="
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-            gap: 10px;
-            font-size: 1.1rem;
-        "
-    >
+    <div class="flex-row flex-between flex-wrap mb-3" style="font-size: 1.1rem;">
         <div>
             <a
                 href="/rss"
@@ -34,19 +24,12 @@
         <form
             method="post"
             action="/api/rss/fetch"
-            style="margin: 0"
             hx-post="/api/rss/fetch"
             hx-headers='{"X-CSRF-Token": "{{.CSRFToken}}"}'
             hx-on::after-request="if(event.detail.successful){location.reload()}"
         >
             <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
-            <button
-                type="submit"
-                class="outline"
-                style="padding: 6px 14px; font-size: 0.95rem"
-            >
-                ⟳ Fetch
-            </button>
+            <button type="submit" class="outline btn-sm">⟳ Fetch</button>
         </form>
     </div>
 
@@ -60,89 +43,42 @@
         {{else}}
         <div style="text-align: center; margin-top: 40px; margin-bottom: 40px">
             <h3 style="margin-bottom: 10px">🎉 Hotovo! Triáž je prázdná.</h3>
-            <p style="color: var(--text-muted); margin-bottom: 30px">
+            <p class="text-muted mb-3">
                 Prošli jste všechny nové RSS položky. Kam dál?
             </p>
 
-            <div
-                style="
-                    display: flex;
-                    gap: 15px;
-                    justify-content: center;
-                    flex-wrap: wrap;
-                "
-            >
-                <a
-                    href="/read"
-                    class="button-link outline"
-                    style="padding: 12px 20px"
-                >
-                    📄 Číst uložené články
-                </a>
-                <a
-                    href="/notes"
-                    class="button-link outline"
-                    style="padding: 12px 20px"
-                >
-                    📝 Přejít na poznámky
-                </a>
-                <a
-                    href="/"
-                    class="button-link outline"
-                    style="padding: 12px 20px"
-                >
-                    🏠 Domů
-                </a>
+            <div class="flex-row" style="gap: 15px; justify-content: center; flex-wrap: wrap;">
+                <a href="/read" class="button-link outline">📄 Číst uložené články</a>
+                <a href="/notes" class="button-link outline">📝 Přejít na poznámky</a>
+                <a href="/" class="button-link outline">🏠 Domů</a>
             </div>
         </div>
         {{end}} {{end}}
     </div>
 
     {{if or .Items (gt .Page 1)}}
-    <div
-        class="pagination-bar"
-        style="border-top: 1px solid var(--border-color)"
-    >
+    <div class="pagination-bar" style="border-top: 1px solid var(--border-color)">
         <div class="action-row">
             {{if gt .Page 1}}
-            <a
-                href="/rss?page={{.PrevPage}}"
-                class="button-link outline"
-                style="margin: 0"
-                >&laquo; Previous</a
-            >
+            <a href="/rss?page={{.PrevPage}}" class="button-link outline">&laquo; Previous</a>
             {{end}} {{if .HasNext}}
-            <a
-                href="/rss?page={{.NextPage}}"
-                class="button-link outline"
-                style="margin: 0"
-                >Next &raquo;</a
-            >
+            <a href="/rss?page={{.NextPage}}" class="button-link outline">Next &raquo;</a>
             {{end}} {{if .Items}}
             <form
                 method="post"
                 action="/api/rss/archive-batch"
-                style="margin: 0"
-                onsubmit="return confirm('Archive all items on this page?');"
             >
                 <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
                 {{range .Items}}
                 <input type="hidden" name="ids" value="{{.ID}}" />
                 {{end}}
                 <input type="hidden" name="page" value="{{.Page}}" />
-                <button
-                    type="submit"
-                    class="button-link outline"
-                    style="margin: 0"
-                >
-                    ✓ Archive page
-                </button>
+                <button type="submit" class="button-link outline">✓ Archive page</button>
             </form>
             {{end}}
             <button
                 type="button"
                 class="button-link outline"
-                style="margin: 0"
                 onclick="
                     document
                         .getElementById('main-content')

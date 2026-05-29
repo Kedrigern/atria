@@ -1,19 +1,9 @@
 {{define "content"}}
 <div class="centered-view" data-mobile-title="ATRIA: Notes">
-    <div
-        class="page-header-row"
-        style="
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-            gap: 15px;
-        "
-    >
+    <div class="page-header-row flex-between flex-wrap mb-3" style="gap: 15px">
         <h2 style="margin: 0">Knowledge Base</h2>
 
-        <div style="display: flex; align-items: center; gap: 8px">
+        <div class="flex-row">
             <button
                 type="button"
                 class="outline btn-sm"
@@ -23,20 +13,8 @@
                         .querySelectorAll('.note-tree details')
                         .forEach((d) => (d.open = true))
                 "
-                style="margin: 0; padding: 6px"
             >
-                <svg
-                    class="icon-sm"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                >
-                    <polyline points="7 13 12 18 17 13"></polyline>
-                    <polyline points="7 6 12 11 17 6"></polyline>
-                </svg>
+                <span class="icon-sm icon-expand"></span>
             </button>
 
             <button
@@ -48,37 +26,17 @@
                         .querySelectorAll('.note-tree details')
                         .forEach((d) => (d.open = false))
                 "
-                style="margin: 0; padding: 6px"
             >
-                <svg
-                    class="icon-sm"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                >
-                    <polyline points="7 11 12 6 17 11"></polyline>
-                    <polyline points="7 18 12 13 17 18"></polyline>
-                </svg>
+                <span class="icon-sm icon-collapse"></span>
             </button>
 
-            <div
-                style="
-                    width: 1px;
-                    height: 20px;
-                    background: var(--border);
-                    margin: 0 4px;
-                "
-            ></div>
+            <div class="toolbar-sep"></div>
 
             <button
                 hx-get="/notes/new"
                 hx-target="#main-content"
                 hx-push-url="true"
-                class="outline"
-                style="margin: 0; padding: 6px 15px"
+                class="btn btn-primary btn-sm"
             >
                 + New Note
             </button>
