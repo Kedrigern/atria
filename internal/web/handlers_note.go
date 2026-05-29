@@ -83,37 +83,32 @@ func (s *Server) handleNoteDetail(c *gin.Context) {
 		return
 	}
 
-	var title, path, shortID string
-	err = s.db.QueryRowContext(c.Request.Context(), "SELECT title, path, short_id FROM notes_full_view WHERE id = $1 AND owner_id = $2", id, user.ID).Scan(&title, &path, &shortID)
+	// 1. Získáme KOMPLETNÍ model poznámky (místo tahání jednotlivých sloupců)
+	note, err := notes.GetNote(c.Request.Context(), s.db, id, user.ID)
 	if err != nil {
 		s.renderError(c, http.StatusNotFound, "Note not found")
 		return
 	}
 
-	mdContent, err := notes.GetNoteContent(c.Request.Context(), s.db, id)
-	if err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Failed to load note content")
-		return
-	}
-
-	htmlStr, _, err := core.RenderMarkdown([]byte(mdContent))
+	// 2. Vyrenderujeme Markdown
+	htmlStr, _, err := core.RenderMarkdown([]byte(note.MarkdownContent))
 	if err != nil {
 		s.renderError(c, http.StatusInternalServerError, "Failed to render markdown")
 		return
 	}
-	htmlContent := template.HTML(htmlStr)
 
 	tags, _ := core.GetEntityTags(c.Request.Context(), s.db, id)
 	atts, _ := attachments.GetEntityAttachments(c.Request.Context(), s.db, id)
 	outgoingLinks, incomingLinks, _ := links.GetEntityLinks(c.Request.Context(), s.db, id)
 
 	s.render(c, "note_detail.html", gin.H{
-		"ID":            id.String(),
-		"ShortID":       shortID,
-		"Title":         title,
-		"Path":          path,
-		"RawContent":    mdContent,
-		"Content":       template.HTML(htmlContent),
+		"Note":          note,
+		"ID":            note.ID.String(),
+		"ShortID":       note.ShortID,
+		"Title":         note.Title,
+		"Path":          note.Path,
+		"RawContent":    note.MarkdownContent,
+		"Content":       template.HTML(htmlStr),
 		"Tags":          tags,
 		"Attachments":   atts,
 		"OutgoingLinks": outgoingLinks,

@@ -86,6 +86,7 @@ func DefaultPreferences() UserPreferences {
 // Entity represents the core polymorphic record in Atria.
 type Entity struct {
 	ID         uuid.UUID  `json:"id" db:"id"`
+	ShortID    string     `json:"short_id" db:"short_id"`
 	ParentID   *uuid.UUID `json:"parent_id,omitempty" db:"parent_id"` // Pointer, because it can be NULL (root)
 	OwnerID    uuid.UUID  `json:"owner_id" db:"owner_id"`
 	Type       EntityType `json:"type" db:"type"`
@@ -107,6 +108,7 @@ type Entity struct {
 // ARTICLE
 
 type Article struct {
+	Entity
 	ID          uuid.UUID `json:"id" db:"id"` // Always Entity.ID
 	OriginalURL string    `json:"original_url" db:"original_url"`
 	Domain      string    `json:"domain" db:"domain"`
@@ -174,6 +176,7 @@ type RSSItem struct {
 // NOTE
 
 type Note struct {
+	Entity
 	ID              uuid.UUID `json:"id" db:"id"`
 	Icon            *string   `json:"icon,omitempty" db:"icon"`
 	MarkdownContent string    `json:"markdown_content" db:"markdown_content"`

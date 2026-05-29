@@ -325,3 +325,21 @@
     </details>
 {{end}}
 {{end}}
+
+{{define "visibility_toggle"}}
+<div style="display: flex; align-items: center; gap: 8px;" title="Nastavení viditelnosti">
+    <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--text-muted);">
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+        <circle cx="12" cy="12" r="3"></circle>
+    </svg>
+    <select
+        name="visibility"
+        hx-put="/api/entity/{{.ID}}/visibility"
+        hx-swap="none"
+        style="padding: 4px 8px; margin: 0; background: transparent; border: 1px solid var(--border); border-radius: 4px; color: var(--text-main); font-size: 0.9rem; cursor: pointer;">
+        <option value="private" {{if eq .Visibility "private"}}selected{{end}}>Private</option>
+        <option value="users" {{if eq .Visibility "users"}}selected{{end}}>Users Only</option>
+        <option value="public" {{if eq .Visibility "public"}}selected{{end}}>Public Link</option>
+    </select>
+</div>
+{{end}}

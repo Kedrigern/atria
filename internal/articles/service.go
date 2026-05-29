@@ -173,6 +173,28 @@ func FindArticleByURL(ctx context.Context, db *sql.DB, ownerID uuid.UUID, urlStr
 	return &e, nil
 }
 
+// GetArticle načte kompletní entitu článku včetně obsahu a metadat.
+func GetArticle(ctx context.Context, db *sql.DB, id, ownerID uuid.UUID) (*core.Article, error) {
+	query := `
+		SELECT id, short_id, parent_id, owner_id, type, visibility, title, slug, path, created_at, updated_at, deleted_at,
+		       original_url, domain, is_archived, user_note, html_content, text_content
+		FROM articles_full_view
+		WHERE id = $1 AND owner_id = $2
+	`
+	var a core.Article
+	err := db.QueryRowContext(ctx, query, id, ownerID).Scan(
+		&a.ID, &a.ShortID, &a.ParentID, &a.OwnerID, &a.Type, &a.Visibility, &a.Title, &a.Slug, &a.Path, &a.CreatedAt, &a.UpdatedAt, &a.DeletedAt,
+		&a.OriginalURL, &a.Domain, &a.IsArchived, &a.UserNote, &a.HTMLContent, &a.TextContent,
+	)
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("article not found")
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch article: %w", err)
+	}
+	return &a, nil
+}
+
 // GetArticleText retrieves the plain text content of a saved article.
 func GetArticleText(ctx context.Context, db *sql.DB, articleID uuid.UUID) (string, error) {
 	var content sql.NullString

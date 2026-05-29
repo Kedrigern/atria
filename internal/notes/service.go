@@ -21,6 +21,28 @@ type NoteSummary struct {
 	CharCount int
 }
 
+// GetNote načte kompletní entitu poznámky včetně obsahu a metadat.
+func GetNote(ctx context.Context, db *sql.DB, id, ownerID uuid.UUID) (*core.Note, error) {
+	query := `
+		SELECT id, short_id, parent_id, owner_id, type, visibility, title, slug, path, created_at, updated_at, deleted_at,
+		       icon, markdown_content
+		FROM notes_full_view
+		WHERE id = $1 AND owner_id = $2
+	`
+	var n core.Note
+	err := db.QueryRowContext(ctx, query, id, ownerID).Scan(
+		&n.ID, &n.ShortID, &n.ParentID, &n.OwnerID, &n.Type, &n.Visibility, &n.Title, &n.Slug, &n.Path, &n.CreatedAt, &n.UpdatedAt, &n.DeletedAt,
+		&n.Icon, &n.MarkdownContent,
+	)
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("note not found")
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch note: %w", err)
+	}
+	return &n, nil
+}
+
 // EnsurePath traverses the virtual path (e.g., "/home/solar") and creates missing folders.
 // It returns the UUID of the final folder, or nil if the path is empty (root).
 func EnsurePath(ctx context.Context, tx *sql.Tx, ownerID uuid.UUID, path string) (*uuid.UUID, error) {

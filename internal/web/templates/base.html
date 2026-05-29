@@ -267,7 +267,10 @@
                 // 4. Dynamické vygenerování Obsahu (TOC) pro poznámky
                 const noteView = document.getElementById("note-view");
                 // Ujistíme se, že jsme na detailu poznámky a že TOC ještě neexistuje
-                if (noteView && !document.getElementById("toc-container")) {
+                if (
+                    noteView &&
+                    !document.getElementById("toc-container-mobile")
+                ) {
                     const headings = noteView.querySelectorAll("h2, h3");
 
                     if (headings.length > 0) {

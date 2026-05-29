@@ -246,6 +246,7 @@ func (s *Server) SetupRouter() *gin.Engine {
 		// Cross-Entity
 		entity := api.Group("/entity/:id")
 		{
+			entity.PUT("/visibility", s.handleUpdateVisibility)
 			entity.POST("/tags", s.handleTagAttach)
 			entity.POST("/attachments", s.handleEntityAttachmentUpload)
 			entity.POST("/links", s.handleEntityLinkAdd)

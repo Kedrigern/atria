@@ -6,13 +6,11 @@ import (
 	"atria/internal/core"
 	"atria/internal/export"
 	"atria/internal/links"
-	"database/sql"
 	"fmt"
 	"html/template"
 	"net/http"
 	"os"
 	"strconv"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"gopkg.in/yaml.v3"
@@ -67,45 +65,41 @@ func (s *Server) handleArticleDetail(c *gin.Context) {
 		return
 	}
 
-	var title, shortID, domain, originalURL string
-	var createdAt time.Time
-	var userNote sql.NullString
-	var charCount int
-
-	query := `SELECT title, domain, original_url, created_at, COALESCE(user_note, ''), short_id, COALESCE(LENGTH(text_content), 0)
-              FROM articles_full_view WHERE id = $1 AND owner_id = $2`
-	err = s.db.QueryRowContext(c.Request.Context(), query, id, user.ID).
-		Scan(&title, &domain, &originalURL, &createdAt, &userNote, &shortID, &charCount)
+	article, err := articles.GetArticle(c.Request.Context(), s.db, id, user.ID)
 	if err != nil {
 		s.renderError(c, http.StatusNotFound, "Article not found")
 		return
 	}
 
-	htmlContent, err := articles.GetArticleHTML(c.Request.Context(), s.db, id)
-	if err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Failed to load article content: "+err.Error())
-		return
-	}
-
 	tags, _ := core.GetEntityTags(c.Request.Context(), s.db, id)
-	if err != nil {
-		tags = []core.Tag{}
-	}
 	atts, _ := attachments.GetEntityAttachments(c.Request.Context(), s.db, id)
-	if err != nil {
-		atts = []core.Attachment{}
-	}
 	outgoingLinks, incomingLinks, _ := links.GetEntityLinks(c.Request.Context(), s.db, id)
 
+	var htmlContent template.HTML
+	if article.HTMLContent != nil {
+		htmlContent = template.HTML(*article.HTMLContent)
+	}
+
+	var userNote string
+	if article.UserNote != nil {
+		userNote = *article.UserNote
+	}
+
+	charCount := 0
+	if article.TextContent != nil {
+		charCount = len([]rune(*article.TextContent))
+	}
+
 	s.render(c, "read_detail.html", gin.H{
-		"ID":            id.String(),
-		"ShortID":       shortID,
-		"Title":         title,
-		"Domain":        domain,
-		"OriginalURL":   originalURL,
-		"CreatedAt":     createdAt,
-		"UserNote":      userNote.String,
-		"Content":       template.HTML(htmlContent),
+		"Article":       article,
+		"ID":            article.ID.String(),
+		"ShortID":       article.ShortID,
+		"Title":         article.Title,
+		"Domain":        article.Domain,
+		"OriginalURL":   article.OriginalURL,
+		"CreatedAt":     article.CreatedAt,
+		"UserNote":      userNote,
+		"Content":       htmlContent,
 		"Tags":          tags,
 		"Attachments":   atts,
 		"OutgoingLinks": outgoingLinks,
@@ -113,7 +107,6 @@ func (s *Server) handleArticleDetail(c *gin.Context) {
 		"CharCount":     charCount,
 	})
 }
-
 func (s *Server) handleArticleArchive(c *gin.Context) {
 	user := s.getUser(c)
 	if user == nil {
