@@ -592,6 +592,19 @@ pre {
     .toolbar-btn .btn-label {
         display: none;
     }
+    .toc-desktop {
+        display: none !important;
+    }
+    .toc-mobile {
+        display: flex !important;
+    }
+}
+
+.toc-desktop {
+    display: flex;
+}
+.toc-mobile {
+    display: none;
 }
 
 /* --- Markdown Table Alignment Fix --- */

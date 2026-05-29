@@ -224,7 +224,7 @@
             mermaid.initialize({ startOnLoad: false, theme: "neutral" });
 
             function initPlugins() {
-                // 1. Zvýraznění syntaxe kódu
+                // 1. Code highlighting
                 if (typeof hljs !== "undefined") {
                     document
                         .querySelectorAll("pre code:not(.language-mermaid)")
@@ -235,12 +235,12 @@
                         });
                 }
 
-                // 2. Vykreslení matematiky (MathJax)
+                // 2. MathJax
                 if (typeof MathJax !== "undefined" && MathJax.typesetPromise) {
                     MathJax.typesetPromise();
                 }
 
-                // 3. Vykreslení Mermaid grafů
+                // 3. Mermaid diagrams
                 const unrenderedMermaids = [];
                 document
                     .querySelectorAll("code.language-mermaid")
@@ -324,8 +324,26 @@
                         });
 
                         details.appendChild(ul);
-                        // Vložíme TOC těsně před div s poznámkou (pod H1 hlavní titulek)
-                        noteView.parentNode.insertBefore(details, noteView);
+
+                        details.removeAttribute("id");
+                        const desktopTOC = details.cloneNode(true);
+                        desktopTOC.id = "toc-container-desktop";
+                        desktopTOC.classList.add("toc-desktop");
+                        desktopTOC.open = true; // Na desktopu rovnou rozbaleno
+
+                        const mobileTOC = details.cloneNode(true);
+                        mobileTOC.id = "toc-container-mobile";
+                        mobileTOC.classList.add("toc-mobile");
+
+                        // 1. Vložíme desktopovou verzi do sidebaru (pokud cíl existuje)
+                        const sidebarTarget =
+                            document.getElementById("toc-sidebar-target");
+                        if (sidebarTarget) {
+                            sidebarTarget.appendChild(desktopTOC);
+                        }
+
+                        // 2. Vložíme mobilní verzi těsně nad obsah poznámky
+                        noteView.parentNode.insertBefore(mobileTOC, noteView);
                     }
                 }
             }
