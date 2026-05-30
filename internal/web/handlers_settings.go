@@ -29,6 +29,7 @@ func (s *Server) handleUserList(c *gin.Context) {
 	s.render(c, "settings_users.html", gin.H{
 		"Users":       usersList,
 		"CurrentUser": user,
+		"SettingsTab": "users",
 	})
 }
 

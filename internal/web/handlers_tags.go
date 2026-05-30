@@ -21,7 +21,8 @@ func (s *Server) handleTagList(c *gin.Context) {
 	}
 
 	s.render(c, "settings_tags.html", gin.H{
-		"Tags": tags,
+		"Tags":        tags,
+		"SettingsTab": "tags",
 	})
 }
 

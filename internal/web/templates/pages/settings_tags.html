@@ -1,8 +1,6 @@
 {{define "content"}}
 <div class="centered-view wide" data-mobile-title="ATRIA: Tags">
-    <h2 class="hide-mobile">Settings</h2>
-
-    {{template "flash_message" .}} {{template "settings_nav" "tags"}}
+    {{template "settings_header" .}}
     <h3>Tag Manager</h3>
 
     <form
@@ -71,7 +69,7 @@
         </form>
     </details>
 
-    <div class="flex-row flex-wrap" style="gap: 15px;">
+    <div class="flex-row flex-wrap" style="gap: 15px">
         {{range .Tags}}
         <div
             style="

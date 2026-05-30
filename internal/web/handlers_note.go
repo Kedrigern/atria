@@ -6,7 +6,6 @@ import (
 	"atria/internal/export"
 	"atria/internal/links"
 	"atria/internal/notes"
-	"database/sql"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -14,7 +13,6 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gofrs/uuid/v5"
 	"gopkg.in/yaml.v3"
 )
 
@@ -104,10 +102,6 @@ func (s *Server) handleNoteDetail(c *gin.Context) {
 	s.render(c, "note_detail.html", gin.H{
 		"Note":          note,
 		"ID":            note.ID.String(),
-		"ShortID":       note.ShortID,
-		"Title":         note.Title,
-		"Path":          note.Path,
-		"RawContent":    note.MarkdownContent,
 		"Content":       template.HTML(htmlStr),
 		"Tags":          tags,
 		"Attachments":   atts,
@@ -196,23 +190,12 @@ func (s *Server) handleEntityLinkAdd(c *gin.Context) {
 		return
 	}
 
-	var targetID uuid.UUID
-
-	if parsedID, err := core.ParseUUID(targetStr); err == nil {
-		query := `SELECT id FROM entities WHERE id = $1 AND owner_id = $2 AND deleted_at IS NULL LIMIT 1`
-		err = s.db.QueryRowContext(c.Request.Context(), query, parsedID, user.ID).Scan(&targetID)
-	} else {
-		query := `SELECT id FROM entities WHERE owner_id = $1 AND deleted_at IS NULL AND (short_id = $2 OR title = $3) LIMIT 1`
-		err = s.db.QueryRowContext(c.Request.Context(), query, user.ID, targetStr, targetStr).Scan(&targetID)
-	}
-
-	if err == sql.ErrNoRows {
+	results, err := core.FindEntities(c.Request.Context(), s.db, user.ID, "", targetStr, false)
+	if err != nil || len(results) == 0 {
 		s.renderError(c, http.StatusNotFound, "Entita nenalezena. Zkontrolujte název, Short ID nebo UUID.")
 		return
-	} else if err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Database error: "+err.Error())
-		return
 	}
+	targetID := results[0].ID
 
 	if sourceID == targetID {
 		s.renderError(c, http.StatusBadRequest, "Nemůžete prolinkovat entitu samu na sebe.")
@@ -269,16 +252,9 @@ func (s *Server) handleNoteExportMD(c *gin.Context) {
 		return
 	}
 
-	var title, slug, path string
-	err = s.db.QueryRowContext(c.Request.Context(), "SELECT title, slug, path FROM notes_full_view WHERE id = $1 AND owner_id = $2", id, user.ID).Scan(&title, &slug, &path)
+	note, err := notes.GetNote(c.Request.Context(), s.db, id, user.ID)
 	if err != nil {
 		s.renderError(c, http.StatusNotFound, "Note not found")
-		return
-	}
-
-	content, err := notes.GetNoteContent(c.Request.Context(), s.db, id)
-	if err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Failed to load note content")
 		return
 	}
 
@@ -290,8 +266,8 @@ func (s *Server) handleNoteExportMD(c *gin.Context) {
 
 	frontMatterData := map[string]interface{}{
 		"id":    id.String(),
-		"title": title,
-		"path":  path,
+		"title": note.Title,
+		"path":  note.Path,
 		"tags":  tagValues,
 	}
 	frontMatterBytes, err := yaml.Marshal(frontMatterData)
@@ -300,9 +276,9 @@ func (s *Server) handleNoteExportMD(c *gin.Context) {
 		return
 	}
 
-	finalOutput := "---\n" + string(frontMatterBytes) + "---\n\n" + content
+	finalOutput := "---\n" + string(frontMatterBytes) + "---\n\n" + note.MarkdownContent
 
-	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s.md\"", slug))
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s.md\"", note.Slug))
 	c.Data(http.StatusOK, "text/markdown", []byte(finalOutput))
 }
 
@@ -318,8 +294,7 @@ func (s *Server) handleNoteExportEPUB(c *gin.Context) {
 		return
 	}
 
-	var title, slug string
-	err = s.db.QueryRowContext(c.Request.Context(), "SELECT title, slug FROM entities WHERE id = $1 AND owner_id = $2", id, user.ID).Scan(&title, &slug)
+	note, err := notes.GetNote(c.Request.Context(), s.db, id, user.ID)
 	if err != nil {
 		s.renderError(c, http.StatusNotFound, "Note not found")
 		return
@@ -335,11 +310,11 @@ func (s *Server) handleNoteExportEPUB(c *gin.Context) {
 	tempFile.Close()
 	defer os.Remove(tempPath) // Delete after request is closed
 
-	items := []core.EntitySummary{{ID: id, Title: title, Type: core.TypeNote}}
+	items := []core.EntitySummary{{ID: id, Title: note.Title, Type: core.TypeNote}}
 	if err := export.ExportEPUB(c.Request.Context(), s.db, items, tempPath); err != nil {
 		s.renderError(c, http.StatusInternalServerError, "EPUB generation failed")
 		return
 	}
 
-	c.FileAttachment(tempPath, slug+".epub")
+	c.FileAttachment(tempPath, note.Slug+".epub")
 }

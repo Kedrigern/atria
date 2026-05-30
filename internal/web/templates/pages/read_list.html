@@ -74,20 +74,6 @@
     </p>
     {{else}}
     <p>Your Inbox is empty.</p>
-    {{end}} {{end}} {{if or .Articles (gt .Page 1)}}
-    <div class="pagination-bar">
-        <div class="action-row">
-            {{if gt .Page 1}}
-            <a href="/read?page={{.PrevPage}}" class="button-link outline">
-                &laquo; Previous
-            </a>
-            {{end}} {{if .HasNext}}
-            <a href="/read?page={{.NextPage}}" class="button-link outline">
-                Next &raquo;
-            </a>
-            {{end}}
-        </div>
-    </div>
-    {{end}}
+    {{end}} {{end}} {{template "pagination_bar" .}}
 </div>
 {{end}}

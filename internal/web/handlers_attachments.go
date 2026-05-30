@@ -40,7 +40,8 @@ func (s *Server) handleAttachments(c *gin.Context) {
 
 	s.render(c, "settings_attachments.html", gin.H{
 		"Attachments": list,
-		"TotalSize":   totalFormatted, // Předáme do šablony
+		"TotalSize":   totalFormatted,
+		"SettingsTab": "attachments",
 	})
 }
 
@@ -119,11 +120,13 @@ func (s *Server) handleProtectedAttachment(c *gin.Context) {
 	// -------------------------------------------------------------------------------
 
 	var ownerID uuid.UUID
-	var visibility string
+	var visibility core.Visibility
 	var actualFilename string
 
-	query := `SELECT owner_id, visibility, filename FROM attachments WHERE disk_path = $1 AND deleted_at IS NULL`
-	err := s.db.QueryRowContext(c.Request.Context(), query, relDiskPath).Scan(&ownerID, &visibility, &actualFilename)
+	err := s.db.QueryRowContext(c.Request.Context(),
+		`SELECT owner_id, visibility, filename FROM attachments WHERE disk_path = $1 AND deleted_at IS NULL`,
+		relDiskPath,
+	).Scan(&ownerID, &visibility, &actualFilename)
 
 	if err == sql.ErrNoRows {
 		c.String(http.StatusNotFound, "Příloha nebyla nalezena")
@@ -135,12 +138,12 @@ func (s *Server) handleProtectedAttachment(c *gin.Context) {
 
 	// Access Control Logic
 	allowed := false
-	if visibility == "public" {
+	if visibility == core.VisibilityPublic {
 		allowed = true
 	} else if user != nil {
-		if visibility == "users" {
+		if visibility == core.VisibilityUsers {
 			allowed = true
-		} else if visibility == "private" && ownerID == user.ID {
+		} else if visibility == core.VisibilityPrivate && ownerID == user.ID {
 			allowed = true
 		}
 	}

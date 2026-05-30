@@ -118,6 +118,27 @@
 {{end}}
 {{end}}
 
+{{define "pagination_bar"}}
+{{if or .HasNext (gt .Page 1)}}
+<div class="pagination-bar" style="border-top: 1px solid var(--border-color)">
+    <div class="action-row">
+        {{if gt .Page 1}}
+        <a href="{{.PaginationURL}}?page={{.PrevPage}}{{.PaginationExtra}}" class="button-link outline">&laquo; Previous</a>
+        {{end}}
+        {{if .HasNext}}
+        <a href="{{.PaginationURL}}?page={{.NextPage}}{{.PaginationExtra}}" class="button-link outline">Next &raquo;</a>
+        {{end}}
+    </div>
+</div>
+{{end}}
+{{end}}
+
+{{define "settings_header"}}
+<h2 class="hide-mobile">Settings</h2>
+{{template "flash_message" .}}
+{{template "settings_nav" .SettingsTab}}
+{{end}}
+
 {{define "settings_nav"}}
 <div class="tab-nav">
     <a href="/settings" class="{{if eq . "general"}}active{{end}}">General</a>
@@ -213,14 +234,14 @@
                 <span class="icon-sm icon-download"></span>
             </button>
             <div class="dropdown-menu">
-                <a href="/notes/{{.ID}}/export/md">⬇ Markdown</a>
-                <a href="/notes/{{.ID}}/export/epub">⬇ EPUB</a>
+                <a href="/notes/{{.Note.ID}}/export/md">⬇ Markdown</a>
+                <a href="/notes/{{.Note.ID}}/export/epub">⬇ EPUB</a>
             </div>
         </div>
         <div class="toolbar-sep hide-mobile"></div>
         <span class="tag hide-mobile" style="cursor: pointer; font-family: monospace; background: var(--background-alt); border: 1px dashed var(--border);"
-            onclick="navigator.clipboard.writeText('{{.ShortID}}'); const old = this.innerText; this.innerText='Copied!'; setTimeout(() => this.innerText=old, 2000);"
-            title="Click to copy Short ID">ID: {{.ShortID}}</span>
+            onclick="navigator.clipboard.writeText('{{.Note.ShortID}}'); const old = this.innerText; this.innerText='Copied!'; setTimeout(() => this.innerText=old, 2000);"
+            title="Click to copy Short ID">ID: {{.Note.ShortID}}</span>
     </div>
     <div class="toolbar-group">
         <button type="button" class="btn-sm" title="Edit note"
@@ -232,7 +253,7 @@
             onclick="document.getElementById('main-content').scrollTo({ top: 0, behavior: 'smooth' })">
             <span class="icon-sm icon-chevron-up"></span>
         </button>
-        <form method="post" action="/api/notes/{{.ID}}/delete" style="display: contents">
+        <form method="post" action="/api/notes/{{.Note.ID}}/delete" style="display: contents">
             <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
             <button type="submit" class="outline btn-sm btn-hide-top btn-danger" title="Delete note">
                 <span class="icon-sm icon-trash"></span>
@@ -249,7 +270,7 @@
             <span class="icon-sm icon-chevron-left"></span>
             Article list
         </button>
-        <a href="{{.OriginalURL}}" class="button-link outline btn-sm">
+        <a href="{{.Article.OriginalURL}}" class="button-link outline btn-sm">
             <span class="icon-sm icon-external-link"></span>
         </a>
         <div class="dropdown hide-mobile" tabindex="0">
@@ -257,11 +278,11 @@
                 <span class="icon-sm icon-download"></span>
             </button>
             <div class="dropdown-menu">
-                <a href="/read/{{.ID}}/export/md">⬇ Markdown</a>
-                <a href="/read/{{.ID}}/export/epub">⬇ EPUB</a>
+                <a href="/read/{{.Article.ID}}/export/md">⬇ Markdown</a>
+                <a href="/read/{{.Article.ID}}/export/epub">⬇ EPUB</a>
             </div>
         </div>
-        <form method="post" action="/api/articles/{{.ID}}/refetch" style="display: contents">
+        <form method="post" action="/api/articles/{{.Article.ID}}/refetch" style="display: contents">
             <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
             <button type="submit" class="outline btn-sm" title="Refetch article">
                 <span class="icon-sm icon-refresh"></span>
@@ -269,11 +290,11 @@
         </form>
         <div class="toolbar-sep hide-mobile"></div>
         <span class="tag hide-mobile" style="cursor: pointer; font-family: monospace; background: var(--background-alt); border: 1px dashed var(--border);"
-            onclick="navigator.clipboard.writeText('{{.ShortID}}'); const old = this.innerText; this.innerText='Copied!'; setTimeout(() => this.innerText=old, 2000);"
-            title="Click to copy Short ID">ID: {{.ShortID}}</span>
+            onclick="navigator.clipboard.writeText('{{.Article.ShortID}}'); const old = this.innerText; this.innerText='Copied!'; setTimeout(() => this.innerText=old, 2000);"
+            title="Click to copy Short ID">ID: {{.Article.ShortID}}</span>
     </div>
     <div class="toolbar-group">
-        <form method="post" action="/api/articles/{{.ID}}/archive" style="display: contents">
+        <form method="post" action="/api/articles/{{.Article.ID}}/archive" style="display: contents">
             <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
             <button type="submit" class="btn-sm btn-primary" title="Archive article">
                 <span class="icon-sm icon-check"></span>

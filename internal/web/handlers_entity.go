@@ -1,6 +1,7 @@
 package web
 
 import (
+	"atria/internal/core"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -12,17 +13,19 @@ func (s *Server) handleUpdateVisibility(c *gin.Context) {
 		return
 	}
 
-	entityID := c.Param("id")
-	newVisibility := c.PostForm("visibility")
+	entityID, err := core.ParseUUID(c.Param("id"))
+	if err != nil {
+		c.String(http.StatusBadRequest, "Invalid ID")
+		return
+	}
 
-	if newVisibility != "private" && newVisibility != "users" && newVisibility != "public" {
+	newVisibility := core.Visibility(c.PostForm("visibility"))
+	if newVisibility != core.VisibilityPrivate && newVisibility != core.VisibilityUsers && newVisibility != core.VisibilityPublic {
 		c.String(http.StatusBadRequest, "Invalid visibility")
 		return
 	}
 
-	query := `UPDATE entities SET visibility = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 AND owner_id = $3`
-	_, err := s.db.ExecContext(c.Request.Context(), query, newVisibility, entityID, user.ID)
-	if err != nil {
+	if err := core.UpdateVisibility(c.Request.Context(), s.db, user.ID, entityID, newVisibility); err != nil {
 		s.renderError(c, http.StatusInternalServerError, "Failed to update visibility")
 		return
 	}

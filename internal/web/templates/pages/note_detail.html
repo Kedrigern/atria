@@ -19,11 +19,11 @@
                     font-size: 2rem;
                 "
             >
-                {{.Title}}
+                {{.Note.Title}}
             </h1>
             <p class="flex-row text-muted mb-3" style="font-size: 0.9rem">
                 <span class="icon-sm icon-folder"></span>
-                {{.Path}}
+                {{.Note.Path}}
             </p>
 
             <div
@@ -59,7 +59,7 @@
                             margin-bottom: 15px;
                         "
                     >
-{{.RawContent}}</textarea
+{{.Note.MarkdownContent}}</textarea
                     >
                     <div class="flex-row">
                         <button type="submit">Uložit změny</button>

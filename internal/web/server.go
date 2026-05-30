@@ -519,9 +519,9 @@ func (s *Server) handleProfile(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	var noteCount, articleCount, tagCount int
-	_ = s.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM notes WHERE owner_id = $1", user.ID).Scan(&noteCount)
-	_ = s.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM articles WHERE owner_id = $1", user.ID).Scan(&articleCount)
-	_ = s.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM tags WHERE owner_id = $1", user.ID).Scan(&tagCount)
+	_ = s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM notes WHERE owner_id = $1`, user.ID).Scan(&noteCount)
+	_ = s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM articles WHERE owner_id = $1`, user.ID).Scan(&articleCount)
+	_ = s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM tags WHERE owner_id = $1`, user.ID).Scan(&tagCount)
 
 	s.render(c, "profile.html", gin.H{
 		"User":             user,

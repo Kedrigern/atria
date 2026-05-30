@@ -45,11 +45,13 @@ func (s *Server) handleArticleList(c *gin.Context) {
 	}
 
 	s.render(c, "read_list.html", gin.H{
-		"Articles": list,
-		"Page":     page,
-		"HasNext":  hasNext,
-		"NextPage": page + 1,
-		"PrevPage": page - 1,
+		"Articles":        list,
+		"Page":            page,
+		"HasNext":         hasNext,
+		"NextPage":        page + 1,
+		"PrevPage":        page - 1,
+		"PaginationURL":   "/read",
+		"PaginationExtra": "",
 	})
 }
 
@@ -93,18 +95,13 @@ func (s *Server) handleArticleDetail(c *gin.Context) {
 	s.render(c, "read_detail.html", gin.H{
 		"Article":       article,
 		"ID":            article.ID.String(),
-		"ShortID":       article.ShortID,
-		"Title":         article.Title,
-		"Domain":        article.Domain,
-		"OriginalURL":   article.OriginalURL,
-		"CreatedAt":     article.CreatedAt,
-		"UserNote":      userNote,
 		"Content":       htmlContent,
+		"UserNote":      userNote,
+		"CharCount":     charCount,
 		"Tags":          tags,
 		"Attachments":   atts,
 		"OutgoingLinks": outgoingLinks,
 		"IncomingLinks": incomingLinks,
-		"CharCount":     charCount,
 	})
 }
 func (s *Server) handleArticleArchive(c *gin.Context) {
@@ -246,8 +243,7 @@ func (s *Server) handleArticleExportMD(c *gin.Context) {
 		return
 	}
 
-	var title, slug, originalURL string
-	err = s.db.QueryRowContext(c.Request.Context(), "SELECT title, slug, original_url FROM articles_full_view WHERE id = $1 AND owner_id = $2", id, user.ID).Scan(&title, &slug, &originalURL)
+	article, err := articles.GetArticle(c.Request.Context(), s.db, id, user.ID)
 	if err != nil {
 		s.renderError(c, http.StatusNotFound, "Article not found")
 		return
@@ -261,8 +257,8 @@ func (s *Server) handleArticleExportMD(c *gin.Context) {
 
 	fm := map[string]interface{}{
 		"id":     id.String(),
-		"title":  title,
-		"source": originalURL,
+		"title":  article.Title,
+		"source": article.OriginalURL,
 	}
 	fmBytes, err := yaml.Marshal(fm)
 	if err != nil {
@@ -271,7 +267,7 @@ func (s *Server) handleArticleExportMD(c *gin.Context) {
 	}
 	finalOutput := fmt.Sprintf("---\n%s---\n\n%s", string(fmBytes), content)
 
-	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s.md\"", slug))
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s.md\"", article.Slug))
 	c.Data(http.StatusOK, "text/markdown", []byte(finalOutput))
 }
 
@@ -287,8 +283,7 @@ func (s *Server) handleArticleExportEPUB(c *gin.Context) {
 		return
 	}
 
-	var title, slug string
-	err = s.db.QueryRowContext(c.Request.Context(), "SELECT title, slug FROM entities WHERE id = $1 AND owner_id = $2", id, user.ID).Scan(&title, &slug)
+	article, err := articles.GetArticle(c.Request.Context(), s.db, id, user.ID)
 	if err != nil {
 		s.renderError(c, http.StatusNotFound, "Article not found")
 		return
@@ -303,11 +298,11 @@ func (s *Server) handleArticleExportEPUB(c *gin.Context) {
 	tempFile.Close()
 	defer os.Remove(tempPath)
 
-	items := []core.EntitySummary{{ID: id, Title: title, Type: core.TypeArticle}}
+	items := []core.EntitySummary{{ID: id, Title: article.Title, Type: core.TypeArticle}}
 	if err := export.ExportEPUB(c.Request.Context(), s.db, items, tempPath); err != nil {
 		s.renderError(c, http.StatusInternalServerError, "EPUB generation failed")
 		return
 	}
 
-	c.FileAttachment(tempPath, slug+".epub")
+	c.FileAttachment(tempPath, article.Slug+".epub")
 }

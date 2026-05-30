@@ -1,9 +1,6 @@
 {{define "content"}}
 <div class="centered-view wide" data-mobile-title="ATRIA: RSS Feed">
-    <h2 class="hide-mobile">Settings</h2>
-
-    {{template "flash_message" .}}
-    {{template "settings_nav" "rss"}}
+    {{template "settings_header" .}}
     {{/* ── Feed header ── */}}
     <div
         class="page-header-row flex-wrap mb-3"
@@ -61,11 +58,11 @@
             gap: 16px;
         "
     >
-        <span>📦 <strong>{{.TotalItems}}</strong> total</span>
+        <span>📦 <strong>{{.Feed.TotalItems}}</strong> total</span>
         <span>·</span>
         <span>📬 <strong>{{.UnreadItems}}</strong> unread</span>
         <span>·</span>
-        <span>✓ <strong>{{.ReadItems}}</strong> read</span>
+        <span>✓ <strong>{{.Feed.ReadItems}}</strong> read</span>
 
         {{if .Feed.LastFetchedAt}}
         <span style="margin-left: auto; font-size: 0.85rem">
@@ -119,7 +116,7 @@
 
     {{/* ── Items list ── */}}
     <div id="feed-items">
-        {{range .Items}} {{template "rss_list_item" .}} {{else}} {{if gt .Page
+        {{range .Feed.Items}} {{template "rss_list_item" .}} {{else}} {{if gt .Page
         1}}
         <p class="page-empty-hint">
             No items on this page. You can go back to the previous page.
@@ -134,38 +131,7 @@
     </div>
 
     {{/* ── Pagination ── */}}
-    {{if or .Items (gt .Page 1)}}
-    <div class="pagination-bar" style="border-top: 1px solid var(--border-color)">
-        <div class="action-row">
-            {{if gt .Page 1}}
-            <a
-                href="/rss/{{.Feed.ID}}?page={{.PrevPage}}{{if .IncludeArchived}}&archived=1{{end}}"
-                class="button-link outline"
-                >&laquo; Previous</a
-            >
-            {{end}} {{if .HasNext}}
-            <a
-                href="/rss/{{.Feed.ID}}?page={{.NextPage}}{{if .IncludeArchived}}&archived=1{{end}}"
-                class="button-link outline"
-                >Next &raquo;</a
-            >
-            {{end}}
-        </div>
-        <div class="action-row">
-            <button
-                type="button"
-                class="button-link outline"
-                onclick="
-                    document
-                        .getElementById('main-content')
-                        .scrollTo({ top: 0, behavior: 'smooth' })
-                "
-            >
-                ↑ Top
-            </button>
-        </div>
-    </div>
-    {{end}}
+    {{template "pagination_bar" .}}
 </div>
 {{end}}
 </svg>

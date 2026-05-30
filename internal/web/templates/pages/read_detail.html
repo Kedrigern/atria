@@ -10,23 +10,38 @@
         <div>
             {{/* ── Top toolbar ── */}}
             <div class="toolbar-top">{{template "toolbar" .}}</div>
-            <h1 style="margin-top: 0; color: var(--text-heading); font-size: 2rem;">
-                {{.Title}}
+            <h1
+                style="
+                    margin-top: 0;
+                    color: var(--text-heading);
+                    font-size: 2rem;
+                "
+            >
+                {{.Article.Title}}
             </h1>
-            <p class="text-muted mb-3" style="font-size: 0.9rem;">
-                Saved from <strong>{{.Domain}}</strong> &bull; {{formatDate
-                .CreatedAt}} {{if .CharCount}}&bull;
+            <p class="text-muted mb-3" style="font-size: 0.9rem">
+                Saved from <strong>{{.Article.Domain}}</strong> &bull;
+                {{formatDate .Article.CreatedAt}} {{if .CharCount}}&bull;
                 <span title="Normostrany (1 NS = 1800 znaků)"
                     >{{normoPages .CharCount}}</span
                 >{{end}}
             </p>
 
-            <div style="font-size: 1.1rem; line-height: 1.7; color: var(--text-main);">
+            <div
+                style="
+                    font-size: 1.1rem;
+                    line-height: 1.7;
+                    color: var(--text-main);
+                "
+            >
                 {{.Content}}
             </div>
 
             {{/* ── Bottom toolbar ── */}}
-            <div class="mt-3" style="padding-top: 20px; border-top: 1px solid var(--border);">
+            <div
+                class="mt-3"
+                style="padding-top: 20px; border-top: 1px solid var(--border)"
+            >
                 {{template "toolbar" .}}
             </div>
         </div>
@@ -36,13 +51,21 @@
             {{/* Poznámka */}}
             <div id="user-note-section" class="meta-section">
                 <div id="note-view">
-                    <div class="flex-row mb-1" style="align-items: baseline;">
-                        <strong class="meta-section-title" style="margin-bottom: 0;">Poznámka</strong>
+                    <div class="flex-row mb-1" style="align-items: baseline">
+                        <strong
+                            class="meta-section-title"
+                            style="margin-bottom: 0"
+                            >Poznámka</strong
+                        >
                         <a
                             href="#"
                             onclick="
-                                document.getElementById('note-view').style.display = 'none';
-                                document.getElementById('note-edit').style.display = 'block';
+                                document.getElementById(
+                                    'note-view',
+                                ).style.display = 'none';
+                                document.getElementById(
+                                    'note-edit',
+                                ).style.display = 'block';
                                 return false;
                             "
                             style="font-size: 0.8rem; color: var(--text-muted)"
@@ -82,7 +105,9 @@
                             class="outline btn-sm"
                             onclick="
                                 this.closest('form').style.display = 'none';
-                                document.getElementById('note-view').style.display = 'block';
+                                document.getElementById(
+                                    'note-view',
+                                ).style.display = 'block';
                             "
                         >
                             Zrušit

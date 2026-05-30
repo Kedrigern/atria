@@ -51,14 +51,21 @@ func (s *Server) handleRSSItemList(c *gin.Context) {
 		items = items[:limit]
 	}
 
+	paginationExtra := ""
+	if activeTag != "" {
+		paginationExtra = "&tag=" + activeTag
+	}
+
 	s.render(c, "rss.html", gin.H{
-		"Items":     items,
-		"Page":      page,
-		"HasNext":   hasNext,
-		"NextPage":  page + 1,
-		"PrevPage":  page - 1,
-		"Tags":      tags,
-		"ActiveTag": activeTag,
+		"Items":           items,
+		"Page":            page,
+		"HasNext":         hasNext,
+		"NextPage":        page + 1,
+		"PrevPage":        page - 1,
+		"Tags":            tags,
+		"ActiveTag":       activeTag,
+		"PaginationURL":   "/rss",
+		"PaginationExtra": paginationExtra,
 	})
 }
 
@@ -154,7 +161,8 @@ func (s *Server) handleRSSFeedList(c *gin.Context) {
 		return
 	}
 	s.render(c, "settings_rss.html", gin.H{
-		"Feeds": feeds,
+		"Feeds":       feeds,
+		"SettingsTab": "rss",
 	})
 }
 
@@ -215,19 +223,22 @@ func (s *Server) handleRSSFeedDetail(c *gin.Context) {
 		return
 	}
 
-	unreadItems := detail.TotalItems - detail.ReadItems
+	feedPaginationExtra := ""
+	if includeRead {
+		feedPaginationExtra = "&archived=1"
+	}
 
 	s.render(c, "rss_feed_detail.html", gin.H{
 		"Feed":            detail,
-		"Items":           detail.Items,
-		"TotalItems":      detail.TotalItems,
-		"ReadItems":       detail.ReadItems,
-		"UnreadItems":     unreadItems,
+		"UnreadItems":     detail.TotalItems - detail.ReadItems,
 		"IncludeArchived": includeRead,
 		"Page":            page,
-		"HasNext":         detail.HasMore,
 		"NextPage":        page + 1,
 		"PrevPage":        page - 1,
+		"HasNext":         detail.HasMore,
+		"PaginationURL":   "/rss/" + feedID.String(),
+		"PaginationExtra": feedPaginationExtra,
+		"SettingsTab":     "rss",
 	})
 }
 
@@ -295,11 +306,13 @@ func (s *Server) handleRSSItemArchiveBatch(c *gin.Context) {
 	}
 
 	s.render(c, "rss.html", gin.H{
-		"Items":    items,
-		"Page":     page,
-		"HasNext":  hasNext,
-		"NextPage": page + 1,
-		"PrevPage": page - 1,
+		"Items":           items,
+		"Page":            page,
+		"HasNext":         hasNext,
+		"NextPage":        page + 1,
+		"PrevPage":        page - 1,
+		"PaginationURL":   "/rss",
+		"PaginationExtra": "",
 	})
 }
 
@@ -342,9 +355,8 @@ func (s *Server) handleRSSFeedFetch(c *gin.Context) {
 		return
 	}
 
-	// Bezpečnostní ověření, že uživatel je vlastníkem feedu
-	var ownerID uuid.UUID
-	err = s.db.QueryRowContext(c.Request.Context(), "SELECT owner_id FROM entities WHERE id = $1 AND deleted_at IS NULL", feedID).Scan(&ownerID)
+	// Verify that the requesting user is the feed owner
+	ownerID, err := core.VerifyOwner(c.Request.Context(), s.db, feedID)
 	if err != nil || ownerID != user.ID {
 		s.renderError(c, http.StatusForbidden, "Forbidden")
 		return
