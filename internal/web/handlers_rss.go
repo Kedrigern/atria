@@ -83,7 +83,7 @@ func (s *Server) handleRSSFeedAdd(c *gin.Context) {
 		return
 	}
 	if title == "" {
-		title = urlStr // Fallback, pokud uživatel nevyplní název
+		title = urlStr // Fallback when the user leaves the title blank.
 	}
 
 	_, err := rss.CreateFeed(c.Request.Context(), s.db, user.ID, title, urlStr)
@@ -334,7 +334,7 @@ func (s *Server) handleRSSFeedArchiveAll(c *gin.Context) {
 	}
 
 	if c.GetHeader("HX-Request") == "true" {
-		c.Header("HX-Refresh", "true") // Okamžitě obnoví celou stránku
+		c.Header("HX-Refresh", "true") // Force a full page refresh immediately.
 		c.Status(http.StatusOK)
 		return
 	}

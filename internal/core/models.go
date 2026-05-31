@@ -70,13 +70,13 @@ type UserPreferences struct {
 	DefaultDashboard *uuid.UUID             `json:"default_dashboard_id,omitempty"`
 }
 
-// DefaultPreferences funguje jako váš "default.json"
+// DefaultPreferences returns the baseline user preferences.
 func DefaultPreferences() UserPreferences {
 	return UserPreferences{
-		Theme:            "system",  // Výchozí téma podle OS
-		PaginationSize:   30,        // Výchozí stránkování
-		RSSInlineDetails: true,      // Zobrazovat detaily u RSS
-		ArticleImages:    "replace", // Naše vylepšené stahování obrázků
+		Theme:            "system",  // Follow OS theme.
+		PaginationSize:   30,        // Items per page.
+		RSSInlineDetails: true,      // Show inline RSS content.
+		ArticleImages:    "replace", // Enhanced image fetching.
 		DomainOverrides:  make(map[string]DomainPrefs),
 	}
 }

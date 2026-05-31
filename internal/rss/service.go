@@ -12,7 +12,7 @@ import (
 	"github.com/gofrs/uuid/v5"
 )
 
-// FeedToFetch obsahuje data potřebná pro zahájení stahování
+// FeedToFetch holds the data required to initiate a feed fetch.
 type FeedToFetch struct {
 	ID           uuid.UUID
 	FeedURL      string
@@ -23,14 +23,14 @@ type FeedToFetch struct {
 	AuthToken    *string
 }
 
-// UpdateFetchStatus uloží výsledek pokusu o stažení (úspěch i chybu)
+// UpdateFetchStatus persists the result of a fetch attempt (success or error).
 func UpdateFetchStatus(ctx context.Context, db *sql.DB, id uuid.UUID, status int, fetchErr error) error {
 	errMsg := ""
 	if fetchErr != nil {
 		errMsg = fetchErr.Error()
 	}
 
-	// Příští stažení naplánujeme za 1 hodinu (v budoucnu může být dynamické)
+	// Schedule the next fetch in 1 hour (may become dynamic in the future).
 	nextFetch := time.Now().Add(1 * time.Hour)
 
 	query := `
@@ -373,7 +373,7 @@ func GetFeedDetail(ctx context.Context, db *sql.DB, ownerID, feedID uuid.UUID, i
 	return &fd, nil
 }
 
-// MarkFeedAsRead označní všechny nepřečtené položky daného zdroje za přečtené.
+// MarkFeedAsRead marks all unread items in the given feed as read.
 func MarkFeedAsRead(ctx context.Context, db *sql.DB, ownerID, feedID uuid.UUID) error {
 	query := `
 		UPDATE rss_items

@@ -92,7 +92,7 @@ func (s *Server) handleProtectedAttachment(c *gin.Context) {
 
 	relDiskPath := filepath.Join(year, month, filename)
 
-	// --- RUČNÍ EXTRAKCE UŽIVATELE (kvůli podpoře public sdílení mimo auth group) ---
+	// --- MANUAL USER EXTRACTION (needed to support public sharing outside the auth group) ---
 	var user *core.User
 	headerName := os.Getenv("PROXY_AUTH_HEADER")
 	if headerName == "" {
@@ -102,7 +102,7 @@ func (s *Server) handleProtectedAttachment(c *gin.Context) {
 	var email string
 	proxyEmail := c.GetHeader(headerName)
 
-	// Ověříme proxy auth nebo session cookie stejně jako v middleware
+	// Verify proxy auth or session cookie, same logic as in middleware.
 	if proxyEmail != "" && isProxyAllowed(c) {
 		email = proxyEmail
 	} else {
@@ -179,7 +179,7 @@ func (s *Server) handleAttachmentRename(c *gin.Context) {
 		return
 	}
 
-	// HTMX hx-prompt posílá hodnotu v této hlavičce
+	// HTMX sends the hx-prompt value in this header.
 	newName := c.GetHeader("HX-Prompt")
 	if newName != "" {
 		err = attachments.RenameAttachment(c.Request.Context(), s.db, user.ID, attID, newName)

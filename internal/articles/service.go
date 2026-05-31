@@ -173,7 +173,7 @@ func FindArticleByURL(ctx context.Context, db *sql.DB, ownerID uuid.UUID, urlStr
 	return &e, nil
 }
 
-// GetArticle načte kompletní entitu článku včetně obsahu a metadat.
+// GetArticle loads the full article entity including content and metadata.
 func GetArticle(ctx context.Context, db *sql.DB, id, ownerID uuid.UUID) (*core.Article, error) {
 	query := `
 		SELECT id, short_id, parent_id, owner_id, type, visibility, title, slug, path, created_at, updated_at, deleted_at,
@@ -289,7 +289,7 @@ func ArchiveArticle(ctx context.Context, db *sql.DB, ownerID, articleID uuid.UUI
 	return nil
 }
 
-// RefetchArticle znovu stáhne obsah článku z jeho původní URL a aktualizuje data v DB.
+// RefetchArticle re-fetches the article content from its original URL and updates the database.
 func RefetchArticle(ctx context.Context, db *sql.DB, ownerID, articleID uuid.UUID) error {
 	var originalURL string
 	err := db.QueryRowContext(ctx, "SELECT original_url FROM articles WHERE id = $1", articleID).Scan(&originalURL)

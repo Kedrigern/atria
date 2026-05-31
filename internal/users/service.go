@@ -67,7 +67,7 @@ func ListUsers(ctx context.Context, db *sql.DB) ([]*core.User, error) {
 
 		user.Preferences = core.DefaultPreferences()
 		if len(prefsBytes) > 0 && string(prefsBytes) != "{}" {
-			_ = json.Unmarshal(prefsBytes, &user.Preferences) // Ignorujeme err pro stručnost u listu
+			_ = json.Unmarshal(prefsBytes, &user.Preferences) // Ignore error for brevity in list context.
 		}
 
 		usersList = append(usersList, &user)
@@ -115,7 +115,7 @@ func UpdatePreferences(ctx context.Context, db *sql.DB, userID uuid.UUID, prefs 
 		return fmt.Errorf("failed to marshal user preferences: %w", err)
 	}
 
-	// Předpokládáme sloupec `preferences` v tabulce users
+	// Assumes a `preferences` JSON column in the users table.
 	query := `UPDATE users SET preferences = $1 WHERE id = $2`
 
 	_, err = db.ExecContext(ctx, query, string(prefsJSON), userID)

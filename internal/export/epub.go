@@ -52,7 +52,7 @@ func ExportEPUB(ctx context.Context, db *sql.DB, items []core.EntitySummary, out
 		escapedTitle := html.EscapeString(item.Title)
 		sectionHTML := fmt.Sprintf("<h1>%s</h1>\n<div>%s</div>", escapedTitle, htmlBody)
 
-		// Přidáme sekci (kapitolu) do knihy
+		// Add the section (chapter) to the book.
 		_, err := e.AddSection(sectionHTML, item.Title, "", "")
 		if err != nil {
 			fmt.Printf("⚠️ Failed to process section '%s': %v\n", item.Title, err)

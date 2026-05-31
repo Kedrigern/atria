@@ -123,14 +123,14 @@ func AddAttachment(ctx context.Context, db *sql.DB, ownerID uuid.UUID, localPath
 	return attachment, nil
 }
 
-// LinkAttachment propojí existující přílohu s entitou (článek, poznámka).
+// LinkAttachment associates an existing attachment with an entity (article, note).
 func LinkAttachment(ctx context.Context, db *sql.DB, entityID, attachmentID uuid.UUID) error {
 	query := `INSERT INTO rel_entity_attachments (entity_id, attachment_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`
 	_, err := db.ExecContext(ctx, query, entityID, attachmentID)
 	return err
 }
 
-// ListAttachments vrací seznam všech příloh uživatele.
+// ListAttachments returns all attachments belonging to the given user.
 func ListAttachments(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]core.Attachment, error) {
 	query := `
 		SELECT a.id, a.filename, a.mime_type, a.size_bytes, a.disk_path, a.created_at,
@@ -212,19 +212,19 @@ func FindAttachments(ctx context.Context, db *sql.DB, ownerID uuid.UUID, identif
 	return results, nil
 }
 
-// RenameAttachment změní název přílohy v DB
+// RenameAttachment updates the filename of an attachment in the database.
 func RenameAttachment(ctx context.Context, db *sql.DB, ownerID, attachmentID uuid.UUID, newName string) error {
 	query := `UPDATE attachments SET filename = $1, updated_at = NOW() WHERE id = $2 AND owner_id = $3`
 	_, err := db.ExecContext(ctx, query, newName, attachmentID, ownerID)
 	return err
 }
 
-// DeleteAttachment bezpečně odstraní sirotka z DB i z disku
+// DeleteAttachment removes an orphaned attachment from both the database and disk.
 func DeleteAttachment(ctx context.Context, db *sql.DB, ownerID, attachmentID uuid.UUID) error {
 	var diskPath string
 	var linkCount int
 
-	// Ověříme, že soubor existuje a spočítáme jeho linky
+	// Verify the attachment exists and count how many entities reference it.
 	queryCheck := `
 		SELECT disk_path, (SELECT COUNT(*) FROM rel_entity_attachments WHERE attachment_id = a.id)
 		FROM attachments a WHERE id = $1 AND owner_id = $2
@@ -235,23 +235,23 @@ func DeleteAttachment(ctx context.Context, db *sql.DB, ownerID, attachmentID uui
 	}
 
 	if linkCount > 0 {
-		return fmt.Errorf("přílohu nelze smazat, protože je stále propojena s %d entitami", linkCount)
+		return fmt.Errorf("attachment cannot be deleted: still linked to %d entities", linkCount)
 	}
 
-	// 1. Smazání z databáze
+	// 1. Delete from database.
 	_, err = db.ExecContext(ctx, `DELETE FROM attachments WHERE id = $1 AND owner_id = $2`, attachmentID, ownerID)
 	if err != nil {
 		return err
 	}
 
-	// 2. Fyzické smazání z disku
+	// 2. Delete from disk.
 	storagePath := os.Getenv("STORAGE_PATH")
 	if storagePath == "" {
 		storagePath = "./data/attachments"
 	}
 	absPath := filepath.Join(storagePath, diskPath)
 
-	// Fyzické smazání může selhat (soubor už tam třeba není), ale to nevadí, ignorujeme to
+	// Physical removal may fail (e.g. file already gone); ignore the error.
 	_ = os.Remove(absPath)
 
 	return nil

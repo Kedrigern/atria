@@ -21,7 +21,7 @@ type NoteSummary struct {
 	CharCount int
 }
 
-// GetNote načte kompletní entitu poznámky včetně obsahu a metadat.
+// GetNote loads the full note entity including content and metadata.
 func GetNote(ctx context.Context, db *sql.DB, id, ownerID uuid.UUID) (*core.Note, error) {
 	query := `
 		SELECT id, short_id, parent_id, owner_id, type, visibility, title, slug, path, created_at, updated_at, deleted_at,
@@ -217,7 +217,7 @@ func DeleteEntity(ctx context.Context, db *sql.DB, ownerID uuid.UUID, entityID u
 	var entityType string
 	var deletedAt sql.NullTime
 
-	// Odstraněn filtr na 'deleted_at IS NULL', abychom viděli i do koše
+	// No deleted_at IS NULL filter — we need to see trashed entities too.
 	queryType := `SELECT type, deleted_at FROM entities WHERE id = $1 AND owner_id = $2`
 	err := db.QueryRowContext(ctx, queryType, entityID, ownerID).Scan(&entityType, &deletedAt)
 	if err == sql.ErrNoRows {

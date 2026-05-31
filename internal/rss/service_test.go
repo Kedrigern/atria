@@ -140,7 +140,7 @@ func TestE2EWorkflow(t *testing.T) {
 
 	t.Run("UpdateUserPreferences", func(t *testing.T) {
 		prefs := core.DefaultPreferences()
-		prefs.PaginationSize = 2 // Omezíme limit schválně na 2
+		prefs.PaginationSize = 2 // Intentionally small limit for pagination tests.
 
 		prefsJSON, err := json.Marshal(prefs)
 		if err != nil {
@@ -188,13 +188,13 @@ func TestE2EWorkflow(t *testing.T) {
 			t.Skip("Skipping because previous test failed")
 		}
 
-		// OPRAVA: Použití standardního ParseUUID s chycením chyby
+		// FIX: Use standard ParseUUID with proper error handling.
 		parsedItemID, err := core.ParseUUID(firstItemID)
 		if err != nil {
 			t.Fatalf("Failed to parse first item ID: %v", err)
 		}
 
-		// Konverze RSS na Article (uloží HTML)
+		// Convert RSS item to Article (saves HTML).
 		article, err := rss.SaveItemAsArticle(ctx, db, user.ID, parsedItemID)
 		if err != nil {
 			t.Fatalf("SaveItemAsArticle failed: %v", err)
@@ -206,12 +206,12 @@ func TestE2EWorkflow(t *testing.T) {
 			t.Fatalf("Failed to fetch article HTML: %v", err)
 		}
 
-		// 1. Ověříme, že Readability funguje
+		// 1. Verify that Readability stripping works.
 		if strings.Contains(htmlContent, "Ignore this nav") {
 			t.Errorf("Readability failed: Navigation was not stripped")
 		}
 
-		// 2. Ověříme náš Regex fix pro obrázky
+		// 2. Verify the lazy-load image regex fix.
 		if strings.Contains(htmlContent, "data:image/svg+xml") {
 			t.Errorf("Lazy loading fix failed: Base64 dummy image is still present")
 		}

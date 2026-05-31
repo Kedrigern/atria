@@ -22,19 +22,19 @@ This is content.`)
 		t.Fatalf("RenderMarkdown failed: %v", err)
 	}
 
-	// 1. Metadata musí být vyparsována
+	// 1. Front matter must be parsed.
 	if meta["title"] != "Test Note" {
 		t.Errorf("Expected title 'Test Note', got %v", meta["title"])
 	}
 
-	// 2. YAML blok nesmí být součástí vyrenderovaného HTML
+	// 2. The YAML block must not appear in the rendered HTML.
 	if strings.Contains(html, "title: \"Test Note\"") {
 		t.Errorf("HTML output should not contain raw front matter. Got: %s", html)
 	}
 }
 
 func TestRenderMarkdown_HeadingShifter(t *testing.T) {
-	// Scénář A: Dokument MÁ H1 -> všechny nadpisy se posunou
+	// Scenario A: Document HAS an H1 — all headings should be shifted down.
 	t.Run("With H1", func(t *testing.T) {
 		input := []byte("# Main Title\n## Subtitle\n### Sub-subtitle")
 		html, _, err := core.RenderMarkdown(input)
@@ -50,7 +50,7 @@ func TestRenderMarkdown_HeadingShifter(t *testing.T) {
 		}
 	})
 
-	// Scénář B: Dokument NEMÁ H1 -> nadpisy zůstanou zachovány
+	// Scenario B: Document has NO H1 — headings should remain unchanged.
 	t.Run("Without H1", func(t *testing.T) {
 		input := []byte("## Subtitle\n### Sub-subtitle")
 		html, _, err := core.RenderMarkdown(input)
@@ -106,7 +106,7 @@ func TestRenderMarkdown_Callouts(t *testing.T) {
 				t.Errorf("Expected output to contain '%s', got:\n%s", tc.expected, html)
 			}
 
-			// Taky ověříme, že ten syrový text už ve výstupu není
+			// Also verify the raw callout marker is no longer present in the output.
 			if strings.Contains(html, "[!") {
 				t.Errorf("Raw callout tag '[!TYPE]' should be removed from output, got:\n%s", html)
 			}

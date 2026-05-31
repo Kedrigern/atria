@@ -341,7 +341,7 @@ func (s *Server) getTemplateFuncs() template.FuncMap {
 			return template.HTML(s)
 		},
 		"normoPages": func(charCount int) string {
-			// 1 normostrана = 1800 znaků (česká norma ČSN)
+			// 1 normopage = 1800 characters (Czech standard ČSN).
 			if charCount <= 0 {
 				return ""
 			}

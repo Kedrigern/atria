@@ -87,19 +87,19 @@ var attachmentLinkCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		attIdentifier, entityIdentifier := args[0], args[1]
 
-		// 1. Vyhledání přílohy (nově s podporou krátkého UUID nebo jména souboru)
+		// 1. Resolve the attachment (supports short UUID or filename).
 		targetAtt, err := resolveAttachment(app.Ctx, app.DB, app.Owner.ID, attIdentifier)
 		if err != nil {
 			return err
 		}
 
-		// 2. Vyhledání cílové entity
+		// 2. Resolve the target entity.
 		targetEntity, err := resolveEntity(app.Ctx, app.DB, app.Owner.ID, "", entityIdentifier, false)
 		if err != nil {
 			return err
 		}
 
-		// 3. Propojení v databázi
+		// 3. Create the link in the database.
 		err = attachments.LinkAttachment(app.Ctx, app.DB, targetEntity.ID, targetAtt.ID)
 		if err != nil {
 			return fmt.Errorf("failed to link attachment: %w", err)

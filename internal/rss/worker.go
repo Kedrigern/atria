@@ -134,7 +134,7 @@ func FetchFeed(ctx context.Context, db *sql.DB, feedID uuid.UUID) error {
 	}
 	defer resp.Body.Close()
 
-	// Bezpečnostní pojistka 5 MB
+	// Safety cap: limit response body to 5 MB.
 	limitedXMLReader := io.LimitReader(resp.Body, 5*1024*1024)
 	feed, err := fp.Parse(limitedXMLReader)
 	if err != nil {

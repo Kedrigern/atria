@@ -81,7 +81,7 @@ func (s *Server) handleNoteDetail(c *gin.Context) {
 		return
 	}
 
-	// 1. Získáme KOMPLETNÍ model poznámky (místo tahání jednotlivých sloupců)
+	// Load the full note model (includes all fields).
 	note, err := notes.GetNote(c.Request.Context(), s.db, id, user.ID)
 	if err != nil {
 		s.renderError(c, http.StatusNotFound, "Note not found")
