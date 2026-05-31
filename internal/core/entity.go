@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"github.com/gofrs/uuid/v5"
 )
@@ -39,4 +40,26 @@ func VerifyOwner(ctx context.Context, db *sql.DB, entityID uuid.UUID) (uuid.UUID
 		return uuid.Nil, fmt.Errorf("failed to verify owner: %w", err)
 	}
 	return ownerID, nil
+}
+
+// RenameEntity updates the title (and recalculates slug) for any entity.
+func RenameEntity(ctx context.Context, db *sql.DB, ownerID, entityID uuid.UUID, newTitle string) error {
+	// Simple slug generation
+	slug := strings.ToLower(strings.ReplaceAll(newTitle, " ", "-"))
+	slug = strings.ReplaceAll(slug, "/", "-")
+	slug = strings.ReplaceAll(slug, "\\", "-")
+	if len(slug) > 100 {
+		slug = slug[:100]
+	}
+
+	query := `
+		UPDATE entities
+		SET title = $1, slug = $2, updated_at = CURRENT_TIMESTAMP
+		WHERE id = $3 AND owner_id = $4
+	`
+	_, err := db.ExecContext(ctx, query, newTitle, slug, entityID, ownerID)
+	if err != nil {
+		return fmt.Errorf("failed to rename entity: %w", err)
+	}
+	return nil
 }

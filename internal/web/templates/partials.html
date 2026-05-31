@@ -225,25 +225,17 @@
 {{define "note-toolbar"}}
 <div class="toolbar">
     <div class="toolbar-group">
-        <button hx-get="/notes" hx-target="#main-content" hx-push-url="true" class="outline btn-sm" title="Note list">
-            <span class="icon-sm icon-chevron-left"></span>
-            Note list
-        </button>
-        <div class="dropdown hide-mobile" tabindex="0">
-            <button type="button" class="outline btn-sm" title="Export">
-                <span class="icon-sm icon-download"></span>
-            </button>
-            <div class="dropdown-menu">
-                <a href="/notes/{{.Note.ID}}/export/md">⬇ Markdown</a>
-                <a href="/notes/{{.Note.ID}}/export/epub">⬇ EPUB</a>
-            </div>
         </div>
-        <div class="toolbar-sep hide-mobile"></div>
-        <span class="tag hide-mobile" style="cursor: pointer; font-family: monospace; background: var(--background-alt); border: 1px dashed var(--border);"
-            onclick="navigator.clipboard.writeText('{{.Note.ShortID}}'); const old = this.innerText; this.innerText='Copied!'; setTimeout(() => this.innerText=old, 2000);"
-            title="Click to copy Short ID">ID: {{.Note.ShortID}}</span>
-    </div>
     <div class="toolbar-group">
+
+        <button type="button"
+                hx-post="/api/entity/{{.Note.ID}}/rename"
+                hx-prompt="Zadejte nový název poznámky:"
+                class="outline btn-sm"
+                title="Přejmenovat poznámku">
+            ✏️ Přejmenovat
+        </button>
+
         <button type="button" class="outline btn-sm btn-primary" title="Edit note"
             onclick="document.getElementById('note-view').style.display='none'; document.getElementById('note-edit').style.display='block';">
             <span class="icon-sm icon-edit"></span>
@@ -270,7 +262,7 @@
             <span class="icon-sm icon-chevron-left"></span>
             Article list
         </button>
-        <a href="{{.Article.OriginalURL}}" target="_blank" ="button-link outline btn-sm">
+        <a href="{{.Article.OriginalURL}}" target="_blank" class="button-link outline btn-sm">
             <span class="icon-sm icon-external-link"></span>
         </a>
         <div class="dropdown hide-mobile" tabindex="0">
@@ -282,6 +274,15 @@
                 <a href="/read/{{.Article.ID}}/export/epub">⬇ EPUB</a>
             </div>
         </div>
+
+        <button type="button"
+                hx-post="/api/entity/{{.Article.ID}}/rename"
+                hx-prompt="Zadejte nový název článku:"
+                class="outline btn-sm"
+                title="Přejmenovat článek">
+            ✏️
+        </button>
+
         <form method="post" action="/api/articles/{{.Article.ID}}/refetch" style="display: contents">
             <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
             <button type="submit" class="outline btn-sm" title="Refetch article">
@@ -289,24 +290,9 @@
             </button>
         </form>
         <div class="toolbar-sep hide-mobile"></div>
-        <span class="tag hide-mobile" style="cursor: pointer; font-family: monospace; background: var(--background-alt); border: 1px dashed var(--border);"
-            onclick="navigator.clipboard.writeText('{{.Article.ShortID}}'); const old = this.innerText; this.innerText='Copied!'; setTimeout(() => this.innerText=old, 2000);"
-            title="Click to copy Short ID">ID: {{.Article.ShortID}}</span>
+        <span class="tag hide-mobile" style="..." onclick="..." title="...">ID: {{.Article.ShortID}}</span>
     </div>
-    <div class="toolbar-group">
-        <form method="post" action="/api/articles/{{.Article.ID}}/archive" style="display: contents">
-            <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
-            <button type="submit" class="btn-sm btn-primary" title="Archive article">
-                <span class="icon-sm icon-check"></span>
-                Archive
-            </button>
-        </form>
-        <button type="button" class="outline btn-sm btn-hide-top" title="Back to top"
-            onclick="document.getElementById('main-content').scrollTo({ top: 0, behavior: 'smooth' })">
-            <span class="icon-sm icon-chevron-up"></span>
-        </button>
     </div>
-</div>
 {{end}}
 
 {{define "tree_node"}}
