@@ -63,7 +63,10 @@ func FetchAllActiveFeeds(ctx context.Context, db *sql.DB) error {
 
 			log.Printf("RSS Worker: Fetching %s", feedInfo.FeedURL)
 
-			feed, err := fp.ParseURLWithContext(feedInfo.FeedURL, ctx)
+			fetchCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+			defer cancel()
+
+			feed, err := fp.ParseURLWithContext(feedInfo.FeedURL, fetchCtx)
 			if err != nil {
 				log.Printf("RSS Worker: fetch failed for %s: %v", feedInfo.FeedURL, err)
 				_ = UpdateFetchStatus(ctx, db, feedInfo.ID, 0, err)
@@ -121,7 +124,10 @@ func FetchFeed(ctx context.Context, db *sql.DB, feedID uuid.UUID) error {
 
 	log.Printf("RSS Worker: Vynucené stažení zdroje %s", f.FeedURL)
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, f.FeedURL, nil)
+	fetchCtx, cancel := context.WithTimeout(ctx, 40*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(fetchCtx, http.MethodGet, f.FeedURL, nil)
 	if err != nil {
 		_ = UpdateFetchStatus(ctx, db, f.ID, 0, err)
 		return err
