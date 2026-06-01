@@ -63,6 +63,15 @@
                 >
                     Last Fetch
                 </th>
+                <th
+                    style="
+                        border-bottom: 1px solid var(--border-color);
+                        padding: 10px;
+                        text-align: right;
+                    "
+                >
+                    Actions
+                </th>
             </tr>
         </thead>
         <tbody>
@@ -99,24 +108,68 @@
                         font-size: 0.9rem;
                     "
                 >
-                    {{if .LastFetchedAt}} {{formatDate .LastFetchedAt}} {{else}}
-                    Never {{end}}
+                    {{if .LastFetchedAt}}{{formatDate
+                    .LastFetchedAt}}{{else}}Never{{end}}
                 </td>
-            </tr>
-            {{else}}
-            <tr>
                 <td
-                    colspan="3"
                     style="
-                        padding: 20px;
-                        text-align: center;
-                        color: var(--text-muted);
+                        border-bottom: 1px solid var(--border-color);
+                        padding: 10px;
+                        text-align: right;
                     "
                 >
-                    No feeds subscribed yet.
+                    <div class="action-row" style="justify-content: flex-end">
+                        <button
+                            type="button"
+                            hx-post="/api/entity/{{.ID}}/rename"
+                            hx-prompt="Zadejte nový název pro tento RSS Feed:"
+                            class="outline btn-sm"
+                            title="Přejmenovat zdroj"
+                        >
+                            ✏️
+                        </button>
+
+                        <form
+                            method="post"
+                            action="/api/rss/{{.ID}}/fetch"
+                            style="margin: 0; display: inline"
+                        >
+                            <input
+                                type="hidden"
+                                name="_csrf"
+                                value="{{$.CSRFToken}}"
+                            />
+                            <button
+                                type="submit"
+                                class="outline btn-sm"
+                                title="Synchronizovat tento feed"
+                            >
+                                <span class="icon-sm icon-refresh"></span>
+                            </button>
+                        </form>
+
+                        <form
+                            method="post"
+                            action="/api/rss/{{.ID}}/delete"
+                            style="margin: 0; display: inline"
+                        >
+                            <input
+                                type="hidden"
+                                name="_csrf"
+                                value="{{$.CSRFToken}}"
+                            />
+                            <button
+                                type="submit"
+                                class="outline btn-sm btn-danger"
+                                title="Smazat feed"
+                            >
+                                <span class="icon-sm icon-trash"></span>
+                            </button>
+                        </form>
+                    </div>
                 </td>
             </tr>
-            {{end}}
+            {{else}} {{end}}
         </tbody>
     </table>
 </div>

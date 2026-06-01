@@ -250,6 +250,7 @@ func (s *Server) SetupRouter() *gin.Engine {
 			entity.POST("/tags", s.handleTagAttach)
 			entity.POST("/attachments", s.handleEntityAttachmentUpload)
 			entity.POST("/links", s.handleEntityLinkAdd)
+			entity.POST("/rename", s.handleEntityRename)
 		}
 
 		// API: RSS
@@ -259,6 +260,7 @@ func (s *Server) SetupRouter() *gin.Engine {
 			apiRSS.POST("/fetch", s.handleRSSFetchAll)
 			apiRSS.POST("/:id/fetch", s.handleRSSFeedFetch)
 			apiRSS.POST("/:id/update", s.handleRSSFeedUpdate)
+			apiRSS.POST("/:id/delete", s.handleRSSFeedDelete)
 			apiRSS.POST("/:id/archive", s.handleRSSItemArchive)
 			apiRSS.POST("/:id/archive-all", s.handleRSSFeedArchiveAll)
 			apiRSS.POST("/archive-batch", s.handleRSSItemArchiveBatch)
