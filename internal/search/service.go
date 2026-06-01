@@ -29,48 +29,70 @@ SELECT
     'note'                                                    AS type,
     e.title,
     ts_headline('english', n.markdown_content, q, '` + tsHeadlineOpts + `') AS headline,
-    ts_rank(n.search_vector, q)                               AS rank,
+    ts_rank(
+        n.search_vector ||
+        setweight(to_tsvector('english', COALESCE((SELECT string_agg(replace(t.name, '-', ' '), ' ') FROM tags t JOIN rel_entity_tags ret ON t.id = ret.tag_id WHERE ret.entity_id = e.id), '')), 'A') ||
+        setweight(to_tsvector('english', COALESCE((SELECT string_agg(att.filename, ' ') FROM attachments att JOIN rel_entity_attachments rea ON att.id = rea.attachment_id WHERE rea.entity_id = e.id), '')), 'B'),
+        q
+    ) AS rank,
     e.owner_id
 FROM notes n
 JOIN entities e ON e.id = n.id
 , websearch_to_tsquery('english', $1) q
-WHERE n.search_vector @@ q
+WHERE (n.search_vector @@ q
+   OR e.id IN (SELECT ret.entity_id FROM rel_entity_tags ret JOIN tags t ON ret.tag_id = t.id WHERE to_tsvector('english', replace(t.name, '-', ' ')) @@ q)
+   OR e.id IN (SELECT rea.entity_id FROM rel_entity_attachments rea JOIN attachments att ON rea.attachment_id = att.id WHERE to_tsvector('english', att.filename) @@ q)
+)
   AND e.deleted_at IS NULL
   AND (e.owner_id = $2 OR e.visibility IN ('users', 'public'))`
 
 // articlesSubqueryBase is the articles sub-SELECT without an archived filter.
 // $1 = search query string, $2 = ownerID.
 const articlesSubqueryBase = `
-SELECT
-    e.id,
-    'article'                                                                              AS type,
-    e.title,
-    ts_headline('english', COALESCE(a.text_content, a.user_note, ''), q, '` + tsHeadlineOpts + `') AS headline,
-    ts_rank(a.search_vector, q)                                                            AS rank,
-    e.owner_id
-FROM articles a
-JOIN entities e ON e.id = a.id
-, websearch_to_tsquery('english', $1) q
-WHERE a.search_vector @@ q
-  AND e.deleted_at IS NULL
-  AND (e.owner_id = $2 OR e.visibility IN ('users', 'public'))`
+  SELECT
+      e.id,
+      'article'                                                                              AS type,
+      e.title,
+      ts_headline('english', COALESCE(a.text_content, a.user_note, ''), q, '` + tsHeadlineOpts + `') AS headline,
+      ts_rank(
+          a.search_vector ||
+          setweight(to_tsvector('english', COALESCE((SELECT string_agg(replace(t.name, '-', ' '), ' ') FROM tags t JOIN rel_entity_tags ret ON t.id = ret.tag_id WHERE ret.entity_id = e.id), '')), 'A') ||
+          setweight(to_tsvector('english', COALESCE((SELECT string_agg(att.filename, ' ') FROM attachments att JOIN rel_entity_attachments rea ON att.id = rea.attachment_id WHERE rea.entity_id = e.id), '')), 'B'),
+          q
+      ) AS rank,
+      e.owner_id
+  FROM articles a
+  JOIN entities e ON e.id = a.id
+  , websearch_to_tsquery('english', $1) q
+  WHERE (a.search_vector @@ q
+     OR e.id IN (SELECT ret.entity_id FROM rel_entity_tags ret JOIN tags t ON ret.tag_id = t.id WHERE to_tsvector('english', replace(t.name, '-', ' ')) @@ q)
+     OR e.id IN (SELECT rea.entity_id FROM rel_entity_attachments rea JOIN attachments att ON rea.attachment_id = att.id WHERE to_tsvector('english', att.filename) @@ q)
+  )
+    AND e.deleted_at IS NULL
+    AND (e.owner_id = $2 OR e.visibility IN ('users', 'public'))`
 
 // rssItemsSubqueryBase is the RSS items sub-SELECT without a read_at filter.
 // $1 = search query string, $2 = ownerID.
 const rssItemsSubqueryBase = `
-SELECT
-    ri.id,
-    'rss_item'                                                                           AS type,
-    ri.title,
-    ts_headline('english', COALESCE(ri.content, ri.description, ''), q, '` + tsHeadlineOpts + `') AS headline,
-    ts_rank(ri.search_vector, q)                                                         AS rank,
-    f_entity.owner_id
-FROM rss_items ri
-JOIN rss_feeds rf ON rf.id = ri.feed_id
-JOIN entities f_entity ON f_entity.id = rf.id
-, websearch_to_tsquery('english', $1) q
-WHERE ri.search_vector @@ q
-  AND f_entity.owner_id = $2`
+    SELECT
+        ri.id,
+        'rss_item'                                                                           AS type,
+        ri.title,
+        ts_headline('english', COALESCE(ri.content, ri.description, ''), q, '` + tsHeadlineOpts + `') AS headline,
+        ts_rank(
+            ri.search_vector ||
+            setweight(to_tsvector('english', COALESCE((SELECT string_agg(replace(t.name, '-', ' '), ' ') FROM tags t JOIN rel_entity_tags ret ON t.id = ret.tag_id WHERE ret.entity_id = f_entity.id), '')), 'A'),
+            q
+        ) AS rank,
+        f_entity.owner_id
+    FROM rss_items ri
+    JOIN rss_feeds rf ON rf.id = ri.feed_id
+    JOIN entities f_entity ON f_entity.id = rf.id
+    , websearch_to_tsquery('english', $1) q
+    WHERE (ri.search_vector @@ q
+       OR f_entity.id IN (SELECT ret.entity_id FROM rel_entity_tags ret JOIN tags t ON ret.tag_id = t.id WHERE to_tsvector('english', replace(t.name, '-', ' ')) @@ q)
+    )
+      AND f_entity.owner_id = $2`
 
 // Search performs a full-text search across notes, articles, and/or rss_items.
 //
