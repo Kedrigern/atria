@@ -288,6 +288,7 @@ func (s *Server) SetupRouter() *gin.Engine {
 		{
 			apiTags.POST("/create", s.handleTagCreate)
 			apiTags.POST("/attach", s.handleTagAttachUniversal)
+			apiTags.GET("/options", s.handleTagOptions)
 		}
 
 		// API: Attachments
