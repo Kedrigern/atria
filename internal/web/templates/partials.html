@@ -350,3 +350,32 @@
     </select>
 </div>
 {{end}}
+
+{{define "add_article_form"}}
+<form
+    method="post"
+    action="/api/articles/add"
+    class="flex-row flex-wrap mb-3"
+    style="align-items: flex-start"
+>
+    <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
+    <input
+        type="url"
+        name="url"
+        placeholder="https://... (Zadejte URL článku)"
+        class="form-control"
+        style="flex: 1 1 300px"
+        required
+    />
+    <input
+        type="text"
+        name="user_note"
+        placeholder="Poznámka k článku (volitelné)..."
+        class="form-control"
+        style="flex: 1 1 200px"
+    />
+    <button type="submit" class="btn-primary" style="white-space: nowrap">
+        Save Article
+    </button>
+</form>
+{{end}}
