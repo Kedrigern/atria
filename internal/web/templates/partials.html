@@ -13,10 +13,11 @@
               hx-swap="beforeend"
               class="flex-row"
               hx-on::after-request="if(event.detail.successful) this.reset()">
-            <input type="text" name="tag_name" placeholder="+ přidat tag"
+            <input type="text" name="tag_name" list="tag-suggestions" placeholder="+ přidat tag"
                    class="form-control" style="width: 110px; font-size: 0.85rem;" required>
             <button type="submit" class="outline btn-sm">+</button>
         </form>
+        <datalist id="tag-suggestions" hx-get="/api/tags/options" hx-trigger="load"></datalist>
     </div>
 </div>
 {{end}}

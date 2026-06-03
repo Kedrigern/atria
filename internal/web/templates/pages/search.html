@@ -8,6 +8,7 @@
         <input
             id="search-input"
             type="search"
+            list="tag-suggestions"
             name="q"
             value="{{.Query}}"
             placeholder="Search notes, articles, RSS…"
@@ -45,6 +46,20 @@
             Include archived
         </label>
     </div>
+
+    <details class="mb-3" style="border: 1px solid var(--border); border-radius: 6px; padding: 10px 15px; background: var(--background-alt);">
+        <summary style="cursor: pointer; font-weight: 600; color: var(--text-muted); background: transparent; padding: 0; margin: 0; border: none;">
+            💡 Tipy pro pokročilé vyhledávání
+        </summary>
+        <ul style="margin-top: 12px; margin-bottom: 0; padding-left: 20px; line-height: 1.6; font-size: 0.9rem; color: var(--text-main);">
+            <li><kbd>"přesná fráze"</kbd> – najde přesnou shodu slov v daném pořadí.</li>
+            <li><kbd>-slovo</kbd> – vyloučí z výsledků entity, které obsahují toto slovo (např. <code>jablko -hruška</code>).</li>
+            <li><kbd>OR</kbd> – najde entity obsahující alespoň jedno ze slov (např. <code>kočka OR pes</code>).</li>
+            <li><strong>Tagy a přílohy:</strong> Pokud napíšeš existující tag nebo název nahrané přílohy, entita automaticky vyskočí nahoru.</li>
+        </ul>
+    </details>
+
+    <datalist id="tag-suggestions" hx-get="/api/tags/options" hx-trigger="load"></datalist>
 
     <div id="search-results">
         <p style="color: var(--text-muted)">Enter a search term above to get started.</p>

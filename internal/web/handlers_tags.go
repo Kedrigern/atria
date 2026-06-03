@@ -146,3 +146,20 @@ func (s *Server) handleTagAttachUniversal(c *gin.Context) {
 	s.setFlash(c, "success", "Tag #"+tagName+" byl úspěšně připojen k: "+targetEntity.Title)
 	c.Redirect(http.StatusSeeOther, "/settings/tags")
 }
+
+func (s *Server) handleTagOptions(c *gin.Context) {
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+
+	tags, err := core.ListTags(c.Request.Context(), s.db, user.ID)
+	if err != nil {
+		c.String(http.StatusOK, "")
+		return
+	}
+
+	for _, t := range tags {
+		c.Writer.Write([]byte(`<option value="` + t.Name + `">`))
+	}
+}
