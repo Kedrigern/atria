@@ -208,6 +208,24 @@ a.button-link.btn-primary:hover,
     filter: brightness(1.15);
 }
 
+/* Dropzone / Upload */
+.btn-dashed {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px dashed var(--border) !important;
+    color: var(--text-muted) !important;
+    justify-content: center;
+    margin: 0;
+    cursor: pointer;
+    background: transparent;
+}
+
+/* Hover efect for better feedback */
+.btn-dashed:hover {
+    border-color: var(--links) !important;
+    color: var(--links) !important;
+}
+
 /* ==========================================================================
    3. Atria Specific Components
    ========================================================================== */
@@ -749,29 +767,42 @@ html[data-theme="dark"] a.dashboard-card:hover {
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
 }
 
+/* --- Sidebar Metadata Sections --- */
 .meta-section {
-    margin-bottom: 25px;
+    margin-bottom: 20px;
+    background: var(--background-alt);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
 }
 .meta-section-title {
-    color: var(--text-main);
-    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
     text-transform: uppercase;
     display: block;
     margin-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
 }
 .meta-list {
     list-style: none;
     padding: 0;
-    margin: 0 0 15px 0;
+    margin: 0 0 12px 0;
 }
 .meta-list-item {
     display: flex;
     align-items: center;
-    gap: 10px;
-    background: var(--background-alt);
-    padding: 8px 12px;
-    border-radius: 6px;
-    margin-bottom: 8px;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px dashed var(--border);
+    font-size: 0.9rem;
+}
+.meta-list-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
 }
 
 button.htmx-request,

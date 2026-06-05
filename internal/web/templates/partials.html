@@ -1,91 +1,92 @@
 {{define "tags_section"}}
 <div id="tag-container-{{.ID}}" class="meta-section">
     <strong class="meta-section-title">Tagy</strong>
-
-    <div class="flex-row flex-wrap">
-        <div id="tag-list-{{.ID}}" class="flex-row flex-wrap">
-            {{range .Tags}}
-            <a href="/settings/tags/{{.Name}}" class="tag">#{{.Name}}</a>
-            {{end}}
-        </div>
-        <form hx-post="/api/entity/{{.ID}}/tags"
-              hx-target="#tag-list-{{.ID}}"
-              hx-swap="beforeend"
-              class="flex-row"
-              hx-on::after-request="if(event.detail.successful) this.reset()">
-            <input type="text" name="tag_name" list="tag-suggestions" placeholder="+ přidat tag"
-                   class="form-control" style="width: 110px; font-size: 0.85rem;" required>
-            <button type="submit" class="outline btn-sm">+</button>
-        </form>
-        <datalist id="tag-suggestions" hx-get="/api/tags/options" hx-trigger="load"></datalist>
+    <div id="tag-list-{{.ID}}" class="flex-row flex-wrap mb-1">
+        {{range .Tags}}
+        <a href="/settings/tags/{{.Name}}" class="tag">#{{.Name}}</a>
+        {{else}}
+        <em style="color: var(--text-muted); font-size: 0.85rem;">Žádné tagy...</em>
+        {{end}}
     </div>
+    <form hx-post="/api/entity/{{.ID}}/tags"
+          hx-target="#tag-container-{{.ID}}"
+          hx-swap="outerHTML"
+          class="flex-row mt-1" style="margin-bottom: 0;">
+        <input type="text" name="tag_name" list="tag-suggestions" placeholder="Přidat tag..."
+               class="form-control" style="font-size: 0.85rem; padding: 6px 10px; margin: 0; flex: 1;" required>
+        <button type="submit" class="outline btn-sm" style="margin: 0; padding: 6px 10px;">+</button>
+    </form>
 </div>
 {{end}}
 
 {{define "attachments_section"}}
 <div class="meta-section">
     <strong class="meta-section-title">Přílohy</strong>
-
+    {{if .Attachments}}
     <ul id="attachment-list-{{.ID}}" class="meta-list">
         {{range .Attachments}}
-        <li class="meta-list-item">
-            <span class="icon-sm icon-file"></span>
-            <a href="/data/attachments/{{.DiskPath}}" target="_blank" style="font-weight: 500;">{{.Filename}}</a>
-            <small style="color: var(--text-muted);">({{divide .SizeBytes 1024}} KB)</small>
-
-            <input type="text" readonly value="{{if isImage .MimeType}}!{{end}}[{{.Filename}}](/data/attachments/{{.DiskPath}})"
-                   onclick="this.select(); navigator.clipboard.writeText(this.value); this.style.borderColor='var(--links)';"
-                   class="form-control" style="width: 220px; font-size: 0.75rem; background: transparent; cursor: copy; margin-left: auto;"
-                   title="Klikni pro zkopírování Markdown odkazu">
+        <li class="meta-list-item flex-between">
+            <div class="flex-row" style="gap: 6px; overflow: hidden;">
+                <span class="icon-sm icon-file text-muted"></span>
+                <a href="/data/attachments/{{.DiskPath}}" target="_blank" style="font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{.Filename}}">{{.Filename}}</a>
+            </div>
+            <small style="color: var(--text-muted); flex-shrink: 0;">{{divide .SizeBytes 1024}} KB</small>
         </li>
         {{end}}
     </ul>
+    {{else}}
+    <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0;">Žádné přílohy...</p>
+    {{end}}
 
-    <form hx-post="/api/entity/{{.ID}}/attachments"
-          hx-encoding="multipart/form-data"
-          hx-target="#main-content"
-          class="flex-row flex-wrap">
-        <input type="file" name="file" class="form-control" style="border: none; background: none; width: auto; flex: 1; min-width: 0; font-size: 0.85rem;" required>
-        <button type="submit" class="outline btn-sm" style="white-space: nowrap;">Nahrát soubor</button>
+    <form hx-post="/api/entity/{{.ID}}/attachments" hx-encoding="multipart/form-data" hx-target="#main-content" style="margin: 0;">
+        <label class="button outline btn-sm flex-row btn-dashed">
+            <span class="icon-sm icon-file"></span> Nahrát soubor
+            <input type="file" name="file" style="display: none;" required onchange="this.form.dispatchEvent(new Event('submit', {cancelable: true, bubbles: true}));">
+        </label>
     </form>
 </div>
 {{end}}
+
 {{define "links_section"}}
 <div class="meta-section">
-    <strong class="meta-section-title">Propojení a Zmínky</strong>
+    <strong class="meta-section-title">Propojení</strong>
 
     {{if or .OutgoingLinks .IncomingLinks}}
-    <div class="flex-row flex-wrap mb-3" style="gap: 40px;">
-        {{if .OutgoingLinks}}
-        <div>
-            <span class="text-muted" style="font-size: 0.85rem; display: block; margin-bottom: 4px;">Odkazuje na:</span>
-            <ul class="meta-list">
-                {{range .OutgoingLinks}}
-                <li class="meta-list-item">🔗 <a href="/{{if eq .Type "note"}}notes{{else}}read{{end}}/{{.ID}}">{{.Title}}</a></li>
-                {{end}}
-            </ul>
-        </div>
-        {{end}}
-
-        {{if .IncomingLinks}}
-        <div>
-            <span class="text-muted" style="font-size: 0.85rem; display: block; margin-bottom: 4px;">Backlinky (Zmiňováno v):</span>
-            <ul class="meta-list">
-                {{range .IncomingLinks}}
-                <li class="meta-list-item">⬅️ <a href="/{{if eq .Type "note"}}notes{{else}}read{{end}}/{{.ID}}">{{.Title}}</a></li>
-                {{end}}
-            </ul>
-        </div>
-        {{end}}
-    </div>
+        <ul class="meta-list">
+            {{range .OutgoingLinks}}
+            <li class="meta-list-item">🔗 <a href="/{{if eq .Type "note"}}notes{{else}}read{{end}}/{{.ID}}" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{.Title}}</a></li>
+            {{end}}
+            {{range .IncomingLinks}}
+            <li class="meta-list-item text-muted">⬅️ <a href="/{{if eq .Type "note"}}notes{{else}}read{{end}}/{{.ID}}" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-muted);">{{.Title}}</a></li>
+            {{end}}
+        </ul>
+    {{else}}
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0;">Žádná propojení...</p>
     {{end}}
 
-    <form hx-post="/api/entity/{{.ID}}/links"
-          hx-target="#main-content"
-          class="flex-row" style="background: var(--background-alt); padding: 8px 12px; border-radius: 6px; border: 1px dashed var(--border);">
-        <input type="text" name="target_identifier" placeholder="Název nebo Short ID entity..." class="form-control" style="font-size: 0.85rem; width: 220px;" required>
-        <button type="submit" class="outline btn-sm" style="white-space: nowrap;">Přidat link</button>
+    <form hx-post="/api/entity/{{.ID}}/links" hx-target="#main-content" class="flex-row mt-1" style="margin-bottom: 0;">
+        <input type="text" name="target_identifier" placeholder="Název n. ID entity..." class="form-control" style="font-size: 0.85rem; padding: 6px 10px; margin: 0; flex: 1;" required>
+        <button type="submit" class="outline btn-sm" style="margin: 0; padding: 6px 10px;">🔗</button>
     </form>
+</div>
+{{end}}
+
+{{define "visibility_toggle"}}
+<div class="meta-section" style="padding: 10px 16px;">
+    <div class="flex-row flex-between">
+        <div class="flex-row text-muted" style="font-size: 0.85rem; font-weight: 600;">
+            <span class="icon-sm icon-user"></span> Viditelnost
+        </div>
+        <select
+            name="visibility"
+            hx-put="/api/entity/{{.ID}}/visibility"
+            hx-swap="none"
+            style="padding: 2px 6px; margin: 0; background: transparent; border: none; color: var(--text-main); font-size: 0.85rem; cursor: pointer; text-align: right; width: auto;">
+            <option value="private" {{if eq .Visibility "private"}}selected{{end}}>Private</option>
+            <option value="users" {{if eq .Visibility "users"}}selected{{end}}>Users Only</option>
+            <option value="public" {{if eq .Visibility "public"}}selected{{end}}>Public Link</option>
+        </select>
+    </div>
 </div>
 {{end}}
 
@@ -223,47 +224,14 @@
 </div>
 {{end}}
 
-{{define "note-toolbar"}}
-<div class="toolbar">
-    <div class="toolbar-group">
-        </div>
-    <div class="toolbar-group">
-
-        <button type="button"
-                hx-post="/api/entity/{{.Note.ID}}/rename"
-                hx-prompt="Zadejte nový název poznámky:"
-                class="outline btn-sm"
-                title="Přejmenovat poznámku">
-            ✏️ Přejmenovat
-        </button>
-
-        <button type="button" class="outline btn-sm btn-primary" title="Edit note"
-            onclick="document.getElementById('note-view').style.display='none'; document.getElementById('note-edit').style.display='block';">
-            <span class="icon-sm icon-edit"></span>
-            <span class="btn-label">Upravit</span>
-        </button>
-        <button type="button" class="outline btn-sm btn-hide-top" title="Back to top"
-            onclick="document.getElementById('main-content').scrollTo({ top: 0, behavior: 'smooth' })">
-            <span class="icon-sm icon-chevron-up"></span>
-        </button>
-        <form method="post" action="/api/notes/{{.Note.ID}}/delete" style="display: contents">
-            <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
-            <button type="submit" class="outline btn-sm btn-hide-top btn-danger" title="Delete note">
-                <span class="icon-sm icon-trash"></span>
-            </button>
-        </form>
-    </div>
-</div>
-{{end}}
-
 {{define "toolbar"}}
-<div class="toolbar">
+<div class="toolbar" style="border-bottom: none; padding-bottom: 0;">
     <div class="toolbar-group">
-        <button hx-get="/read" hx-target="#main-content" hx-push-url="true" class="outline btn-sm" title="Article list">
-            <span class="icon-sm icon-chevron-left"></span>
-            Article list
-        </button>
-        <a href="{{.Article.OriginalURL}}" target="_blank" class="button-link outline btn-sm">
+        <a href="/read" class="button-link outline btn-sm" style="border: none; padding-left: 0; color: var(--text-muted);">
+            <span class="icon-sm icon-chevron-left"></span> Zpět
+        </a>
+        <div class="toolbar-sep hide-mobile"></div>
+        <a href="{{.Article.OriginalURL}}" target="_blank" class="button-link outline btn-sm" title="Přejít na originál">
             <span class="icon-sm icon-external-link"></span>
         </a>
         <div class="dropdown hide-mobile" tabindex="0">
@@ -275,25 +243,63 @@
                 <a href="/read/{{.Article.ID}}/export/epub">⬇ EPUB</a>
             </div>
         </div>
-
-        <button type="button"
-                hx-post="/api/entity/{{.Article.ID}}/rename"
-                hx-prompt="Zadejte nový název článku:"
-                class="outline btn-sm"
-                title="Přejmenovat článek">
-            ✏️
+        <button type="button" hx-post="/api/entity/{{.Article.ID}}/rename" hx-prompt="Zadejte nový název článku:" class="outline btn-sm" title="Přejmenovat článek">
+            <span class="icon-sm icon-edit"></span>
         </button>
-
         <form method="post" action="/api/articles/{{.Article.ID}}/refetch" style="display: contents">
             <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
-            <button type="submit" class="outline btn-sm" title="Refetch article">
+            <button type="submit" class="outline btn-sm" title="Znovu stáhnout obsah">
                 <span class="icon-sm icon-refresh"></span>
             </button>
         </form>
+    </div>
+    <div class="toolbar-group">
+        <span class="tag hide-mobile" style="cursor: copy; font-family: monospace; font-size: 0.75rem;" onclick="navigator.clipboard.writeText('{{.Article.ShortID}}');" title="Zkopírovat ID">#{{.Article.ShortID}}</span>
+        <form method="post" action="/api/articles/{{.Article.ID}}/archive" style="display: contents">
+            <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
+            <button type="submit" class="btn-sm btn-primary" title="Archivovat">
+                <span class="icon-sm icon-check"></span> Archivovat
+            </button>
+        </form>
+    </div>
+</div>
+{{end}}
+
+{{define "note-toolbar"}}
+<div class="toolbar" style="border-bottom: none; padding-bottom: 0;">
+    <div class="toolbar-group">
+        <a href="/notes" class="button-link outline btn-sm" style="border: none; padding-left: 0; color: var(--text-muted);">
+            <span class="icon-sm icon-chevron-left"></span> Zpět
+        </a>
         <div class="toolbar-sep hide-mobile"></div>
-        <span class="tag hide-mobile" style="..." onclick="..." title="...">ID: {{.Article.ShortID}}</span>
+        <div class="dropdown hide-mobile" tabindex="0">
+            <button type="button" class="outline btn-sm" title="Export">
+                <span class="icon-sm icon-download"></span>
+            </button>
+            <div class="dropdown-menu">
+                <a href="/notes/{{.Note.ID}}/export/md">⬇ Markdown</a>
+                <a href="/notes/{{.Note.ID}}/export/epub">⬇ EPUB</a>
+            </div>
+        </div>
+
+        <button type="button" hx-post="/api/entity/{{.Note.ID}}/rename" hx-prompt="Zadejte nový název poznámky:" class="outline btn-sm" title="Přejmenovat poznámku">
+            <span class="icon-sm icon-edit"></span>
+        </button>
+        <form method="post" action="/api/notes/{{.Note.ID}}/delete" style="display: contents">
+            <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
+            <button type="submit" class="outline btn-sm btn-danger" title="Smazat poznámku">
+                <span class="icon-sm icon-trash"></span>
+            </button>
+        </form>
     </div>
+    <div class="toolbar-group">
+        <span class="tag hide-mobile" style="cursor: copy; font-family: monospace; font-size: 0.75rem;" onclick="navigator.clipboard.writeText('{{.Note.ShortID}}');" title="Zkopírovat ID">#{{.Note.ShortID}}</span>
+        <button type="button" class="outline btn-sm btn-primary" title="Upravit poznámku"
+            onclick="document.getElementById('note-view').style.display='none'; document.getElementById('note-edit').style.display='block';">
+            <span class="icon-sm icon-edit"></span> Upravit
+        </button>
     </div>
+</div>
 {{end}}
 
 {{define "tree_node"}}
@@ -332,24 +338,6 @@
         </div>
     </details>
 {{end}}
-{{end}}
-
-{{define "visibility_toggle"}}
-<div style="display: flex; align-items: center; gap: 8px;" title="Nastavení viditelnosti">
-    <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--text-muted);">
-        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-        <circle cx="12" cy="12" r="3"></circle>
-    </svg>
-    <select
-        name="visibility"
-        hx-put="/api/entity/{{.ID}}/visibility"
-        hx-swap="none"
-        style="padding: 4px 8px; margin: 0; background: transparent; border: 1px solid var(--border); border-radius: 4px; color: var(--text-main); font-size: 0.9rem; cursor: pointer;">
-        <option value="private" {{if eq .Visibility "private"}}selected{{end}}>Private</option>
-        <option value="users" {{if eq .Visibility "users"}}selected{{end}}>Users Only</option>
-        <option value="public" {{if eq .Visibility "public"}}selected{{end}}>Public Link</option>
-    </select>
-</div>
 {{end}}
 
 {{define "add_article_form"}}
