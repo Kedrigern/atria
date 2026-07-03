@@ -40,8 +40,10 @@ type Server struct {
 }
 
 type FlashMessage struct {
-	Type    string
-	Message string
+	Type     string
+	Message  string
+	LinkURL  string
+	LinkText string
 }
 
 func isSecureContext() bool {
@@ -428,10 +430,16 @@ func (s *Server) render(c *gin.Context, tmplName string, data gin.H) {
 }
 
 func (s *Server) setFlash(c *gin.Context, flashType, message string) {
-	escapedMessage := url.QueryEscape(message)
+	s.setFlashLink(c, flashType, message, "", "")
+}
+
+// setFlashLink stores a flash message along with an optional link (e.g. to
+// point the user at an existing entity that caused a conflict).
+func (s *Server) setFlashLink(c *gin.Context, flashType, message, linkURL, linkText string) {
+	value := flashType + "|" + url.QueryEscape(message) + "|" + url.QueryEscape(linkURL) + "|" + url.QueryEscape(linkText)
 	http.SetCookie(c.Writer, &http.Cookie{
 		Name:     "atria_flash",
-		Value:    flashType + "|" + escapedMessage,
+		Value:    value,
 		Path:     "/",
 		HttpOnly: true,
 		MaxAge:   10,
@@ -452,8 +460,8 @@ func (s *Server) getFlash(c *gin.Context) *FlashMessage {
 		MaxAge:   -1,
 	})
 
-	parts := regexp.MustCompile(`\|`).Split(cookie.Value, 2)
-	if len(parts) != 2 {
+	parts := strings.SplitN(cookie.Value, "|", 4)
+	if len(parts) < 2 {
 		return nil
 	}
 
@@ -462,10 +470,21 @@ func (s *Server) getFlash(c *gin.Context) *FlashMessage {
 		message = parts[1]
 	}
 
-	return &FlashMessage{
+	flash := &FlashMessage{
 		Type:    parts[0],
 		Message: message,
 	}
+
+	if len(parts) == 4 {
+		if linkURL, err := url.QueryUnescape(parts[2]); err == nil {
+			flash.LinkURL = linkURL
+		}
+		if linkText, err := url.QueryUnescape(parts[3]); err == nil {
+			flash.LinkText = linkText
+		}
+	}
+
+	return flash
 }
 
 func (s *Server) renderError(c *gin.Context, status int, message string) {

@@ -106,7 +106,12 @@
 {{if .Flash}}
 <div class="flash-message {{.Flash.Type}}">
     <div class="action-row" style="justify-content: space-between">
-        <span>{{.Flash.Message}}</span>
+        <span>
+            {{.Flash.Message}}
+            {{if .Flash.LinkURL}}
+            <a href="{{.Flash.LinkURL}}">{{.Flash.LinkText}}</a>
+            {{end}}
+        </span>
         <button
             type="button"
             class="outline"

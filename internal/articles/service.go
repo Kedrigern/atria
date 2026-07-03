@@ -3,6 +3,7 @@ package articles
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -18,7 +19,21 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/go-shiori/go-readability"
 	"github.com/gofrs/uuid/v5"
+	"github.com/lib/pq"
 )
+
+// DuplicateArticleError is returned when saving an article would violate the
+// unique (owner, type, title, parent) constraint on entities - typically
+// because the source page's title could not be parsed correctly and
+// collided with an already-saved entity of the same title.
+type DuplicateArticleError struct {
+	ExistingID    uuid.UUID
+	ExistingTitle string
+}
+
+func (e *DuplicateArticleError) Error() string {
+	return fmt.Sprintf("an entity titled %q already exists", e.ExistingTitle)
+}
 
 // ArticleSummary is a lightweight struct for listing articles.
 type ArticleSummary struct {
@@ -121,6 +136,12 @@ func CreateArticle(ctx context.Context, db *sql.DB, ownerID uuid.UUID, urlStr st
 		entityID, ownerID, core.TypeArticle, core.VisibilityPrivate, title, slug, now, now,
 	)
 	if err != nil {
+		var pqErr *pq.Error
+		if errors.As(err, &pqErr) && pqErr.Code == "23505" && pqErr.Constraint == "idx_unique_active_entity" {
+			if existingID, findErr := findActiveEntityByTitle(ctx, db, ownerID, core.TypeArticle, title); findErr == nil {
+				return nil, &DuplicateArticleError{ExistingID: existingID, ExistingTitle: title}
+			}
+		}
 		return nil, fmt.Errorf("failed to insert entity: %w", err)
 	}
 
@@ -147,6 +168,19 @@ func CreateArticle(ctx context.Context, db *sql.DB, ownerID uuid.UUID, urlStr st
 		Slug:      slug,
 		CreatedAt: now,
 	}, nil
+}
+
+// findActiveEntityByTitle looks up the still-active entity that collides with
+// the given owner/type/title/parent combination.
+func findActiveEntityByTitle(ctx context.Context, db *sql.DB, ownerID uuid.UUID, entityType core.EntityType, title string) (uuid.UUID, error) {
+	var id uuid.UUID
+	query := `
+		SELECT id FROM entities
+		WHERE owner_id = $1 AND type = $2 AND title = $3 AND parent_id IS NULL AND deleted_at IS NULL
+		LIMIT 1
+	`
+	err := db.QueryRowContext(ctx, query, ownerID, entityType, title).Scan(&id)
+	return id, err
 }
 
 // FindArticleByURL returns the entity for an existing article saved from the given URL.

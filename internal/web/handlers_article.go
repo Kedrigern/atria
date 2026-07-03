@@ -6,6 +6,7 @@ import (
 	"atria/internal/core"
 	"atria/internal/export"
 	"atria/internal/links"
+	"errors"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -166,6 +167,22 @@ func (s *Server) handleArticleAdd(c *gin.Context) {
 
 	_, err := articles.CreateArticle(c.Request.Context(), s.db, user.ID, urlStr, userNote)
 	if err != nil {
+		var dupErr *articles.DuplicateArticleError
+		if errors.As(err, &dupErr) {
+			existingURL := "/read/" + dupErr.ExistingID.String()
+			msg := fmt.Sprintf("Could not save article: an entity titled %q already exists (the page title may not have been parsed correctly).", dupErr.ExistingTitle)
+			s.setFlashLink(c, "error", msg, existingURL, "View existing article")
+
+			if c.GetHeader("HX-Request") == "true" {
+				c.Header("HX-Redirect", "/read")
+				c.Status(http.StatusOK)
+				return
+			}
+
+			c.Redirect(http.StatusSeeOther, "/read")
+			return
+		}
+
 		s.renderError(c, http.StatusInternalServerError, "Failed to save article: "+err.Error())
 		return
 	}
