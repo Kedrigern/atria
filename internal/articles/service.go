@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 	"time"
 	"unicode"
@@ -45,13 +46,46 @@ type ArticleSummary struct {
 	CharCount  int
 }
 
-// commentSectionKeywords match id/class attribute fragments (case-insensitive)
-// of elements that typically wrap reader comments/discussion threads (e.g.
-// Czech "diskuze"/"diskuse", Disqus embeds, WordPress-style #comments). These
+// commentSectionTokens are exact id/class-name tokens (case-insensitive,
+// after splitting on non-alphanumeric characters like "-"/"_") that
+// identify elements wrapping reader comments/discussion threads (e.g. Czech
+// "diskuze"/"diskuse", Disqus embeds, WordPress-style #comments). These
 // elements are stripped before running readability, since a long discussion
 // thread can otherwise out-score the actual article body and get extracted
 // instead of it.
-var commentSectionKeywords = []string{"diskuz", "diskuse", "disqus", "comment"}
+//
+// Matching is done on whole tokens rather than substrings so that unrelated
+// words merely containing one of these as a fragment (e.g. a "commentary"
+// class for an opinion-piece article) aren't accidentally swept away too.
+var commentSectionTokens = map[string]bool{
+	"diskuze":  true,
+	"diskuse":  true,
+	"diskuzni": true,
+	"diskusni": true,
+	"disqus":   true,
+	"comment":  true,
+	"comments": true,
+	"respond":  true, // WordPress' reply form, always adjacent to its comments
+}
+
+// tokenSplitter splits id/class attribute values into individual words,
+// e.g. "clanky_diskuse" -> ["clanky", "diskuse"] or "js-comments" ->
+// ["js", "comments"].
+var tokenSplitter = regexp.MustCompile(`[^\p{L}\p{N}]+`)
+
+// commentSectionHeadingLabels are common label texts for a lone heading
+// element (e.g. <h2>Diskuze:</h2> or <div><h2>Comments</h2></div>) that
+// typically introduces a comment/discussion container. When found
+// immediately before an element removed by stripCommentSections, they're
+// removed too, so a dangling "Diskuze:" label doesn't leak into the
+// extracted article body.
+var commentSectionHeadingLabels = map[string]bool{
+	"diskuze":    true,
+	"diskuse":    true,
+	"komentare":  true,
+	"comments":   true,
+	"discussion": true,
+}
 
 // stripCommentSections removes elements that look like comment/discussion
 // containers from the document, in place.
@@ -60,8 +94,15 @@ func stripCommentSections(doc *goquery.Document) {
 		id, _ := s.Attr("id")
 		class, _ := s.Attr("class")
 		combined := strings.ToLower(id + " " + class)
-		for _, kw := range commentSectionKeywords {
-			if strings.Contains(combined, kw) {
+		for _, token := range tokenSplitter.Split(combined, -1) {
+			if commentSectionTokens[token] {
+				if prev := s.Prev(); prev.Length() > 0 {
+					label := strings.ToLower(strings.TrimSpace(prev.Text()))
+					label = strings.TrimRight(label, ": \t\n")
+					if commentSectionHeadingLabels[label] {
+						prev.Remove()
+					}
+				}
 				s.Remove()
 				return
 			}
