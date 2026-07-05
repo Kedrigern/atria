@@ -591,7 +591,7 @@ pre {
         transform: translateX(0);
     }
     .centered-view {
-        padding: 20px;
+        padding: 20px 20px calc(20px + env(safe-area-inset-bottom, 0px) + 60px);
     }
     .page-header-row {
         align-items: center;
