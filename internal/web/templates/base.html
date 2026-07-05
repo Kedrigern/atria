@@ -71,6 +71,8 @@
             </button>
         </div>
 
+        <div id="sidebar-backdrop"></div>
+
         <aside id="sidebar">
             <nav style="display: flex; flex-direction: column; width: 100%">
                 <a
@@ -153,11 +155,22 @@
 
         <script>
             const sidebar = document.getElementById("sidebar");
+            const sidebarBackdrop = document.getElementById("sidebar-backdrop");
+
+            function toggleSidebar() {
+                sidebar.classList.toggle("open");
+                sidebarBackdrop.classList.toggle("open");
+            }
+
+            function closeSidebar() {
+                sidebar.classList.remove("open");
+                sidebarBackdrop.classList.remove("open");
+            }
+
             document
                 .getElementById("menu-toggle")
-                .addEventListener("click", () =>
-                    sidebar.classList.toggle("open"),
-                );
+                .addEventListener("click", toggleSidebar);
+            sidebarBackdrop.addEventListener("click", closeSidebar);
 
             document.body.addEventListener("htmx:afterSettle", function () {
                 const currentPath = window.location.pathname;
@@ -174,7 +187,7 @@
                     }
                 });
 
-                if (window.innerWidth <= 768) sidebar.classList.remove("open");
+                if (window.innerWidth <= 1024) closeSidebar();
             });
 
             document.body.dispatchEvent(new Event("htmx:afterSettle"));
