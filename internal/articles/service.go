@@ -8,9 +8,9 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"regexp"
 	"strings"
 	"time"
+	"unicode"
 
 	"atria/internal/core"
 	"atria/internal/netutil"
@@ -45,40 +45,108 @@ type ArticleSummary struct {
 	CharCount  int
 }
 
-// CreateArticle fetches the URL, extracts content using readability, and saves it to the database.
-func CreateArticle(ctx context.Context, db *sql.DB, ownerID uuid.UUID, urlStr string, userNote string) (*core.Entity, error) {
-	// 1. Extract domain from URL (for clean display and filtering)
+// commentSectionKeywords match id/class attribute fragments (case-insensitive)
+// of elements that typically wrap reader comments/discussion threads (e.g.
+// Czech "diskuze"/"diskuse", Disqus embeds, WordPress-style #comments). These
+// elements are stripped before running readability, since a long discussion
+// thread can otherwise out-score the actual article body and get extracted
+// instead of it.
+var commentSectionKeywords = []string{"diskuz", "diskuse", "disqus", "comment"}
+
+// stripCommentSections removes elements that look like comment/discussion
+// containers from the document, in place.
+func stripCommentSections(doc *goquery.Document) {
+	doc.Find("*").Each(func(i int, s *goquery.Selection) {
+		id, _ := s.Attr("id")
+		class, _ := s.Attr("class")
+		combined := strings.ToLower(id + " " + class)
+		for _, kw := range commentSectionKeywords {
+			if strings.Contains(combined, kw) {
+				s.Remove()
+				return
+			}
+		}
+	})
+}
+
+// normalizeForCompare lowercases s and strips everything but letters/digits,
+// so titles like "OSEL.CZ" and domains like "osel.cz" can be compared
+// regardless of punctuation and casing.
+func normalizeForCompare(s string) string {
+	var b strings.Builder
+	for _, r := range strings.ToLower(s) {
+		if unicode.IsLetter(r) || unicode.IsDigit(r) {
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
+}
+
+// looksLikeSiteName reports whether title is empty or effectively just the
+// site's domain/name (e.g. readability falling back to "OSEL.CZ" because the
+// page's <title> tag has no recognizable headline segment). Such titles are
+// unhelpful and prone to collide across different articles from the same
+// domain, triggering the duplicate-title constraint.
+func looksLikeSiteName(title, domain string) bool {
+	nt := normalizeForCompare(title)
+	if nt == "" {
+		return true
+	}
+	if nt == normalizeForCompare(domain) {
+		return true
+	}
+	if label := strings.SplitN(domain, ".", 2)[0]; nt == normalizeForCompare(label) {
+		return true
+	}
+	return false
+}
+
+// fetchAndParseArticle fetches urlStr, strips known lazy-loaded image and
+// comment-section markup, then extracts the article with readability. If
+// readability's title looks like just the site name (a common failure mode
+// on pages whose <title> tag is "SiteName - Headline" but lack a matching
+// <h1>), it falls back to the page's Open Graph / Twitter Card title.
+func fetchAndParseArticle(ctx context.Context, urlStr string) (*readability.Article, string, error) {
 	parsedURL, err := url.Parse(urlStr)
 	if err != nil {
-		return nil, fmt.Errorf("invalid URL: %w", err)
+		return nil, "", fmt.Errorf("invalid URL: %w", err)
 	}
-	domain := parsedURL.Host
-	domain = strings.TrimPrefix(domain, "www.")
-
-	// 2. Fetch and parse the article
-	fmt.Printf("Fetching and parsing: %s\n", urlStr)
 
 	client := netutil.SafeHTTPClient()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, urlStr, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
+		return nil, "", fmt.Errorf("failed to create request: %w", err)
 	}
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch URL: %w", err)
+		return nil, "", fmt.Errorf("failed to fetch URL: %w", err)
 	}
 	defer resp.Body.Close()
 
 	limitReader := io.LimitReader(resp.Body, 6*1024*1024) // 6MB limit
 	bodyBytes, err := io.ReadAll(limitReader)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %w", err)
+		return nil, "", fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	htmlStr := string(bodyBytes)
+	return processArticleHTML(string(bodyBytes), parsedURL)
+}
 
+// processArticleHTML strips known lazy-loaded image and comment-section
+// markup from htmlStr, then extracts the article with readability. If
+// readability's title looks like just the site name (a common failure mode
+// on pages whose <title> tag is "SiteName - Headline" but lack a matching
+// <h1>), it falls back to the page's Open Graph / Twitter Card title.
+//
+// It's split out from fetchAndParseArticle so the parsing logic can be
+// exercised directly in tests against saved HTML fixtures, without needing
+// a live HTTP fetch.
+func processArticleHTML(htmlStr string, parsedURL *url.URL) (*readability.Article, string, error) {
+	domain := strings.TrimPrefix(parsedURL.Host, "www.")
+
+	var ogTitle, twitterTitle string
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(htmlStr))
 	if err == nil {
 		doc.Find("img[src^='data:image/']").Each(func(i int, s *goquery.Selection) {
@@ -93,6 +161,11 @@ func CreateArticle(ctx context.Context, db *sql.DB, ownerID uuid.UUID, urlStr st
 			}
 		})
 
+		stripCommentSections(doc)
+
+		ogTitle, _ = doc.Find(`meta[property="og:title"]`).First().Attr("content")
+		twitterTitle, _ = doc.Find(`meta[name="twitter:title"]`).First().Attr("content")
+
 		if fixedHTML, err := doc.Html(); err == nil {
 			htmlStr = fixedHTML
 		}
@@ -100,14 +173,43 @@ func CreateArticle(ctx context.Context, db *sql.DB, ownerID uuid.UUID, urlStr st
 
 	parsedArticle, err := readability.FromReader(strings.NewReader(htmlStr), parsedURL)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse article: %w", err)
+		return nil, "", fmt.Errorf("failed to parse article: %w", err)
 	}
 
-	// 3. Prepare data for the Entity table
 	title := parsedArticle.Title
+	if looksLikeSiteName(title, domain) {
+		if ogTitle = strings.TrimSpace(ogTitle); ogTitle != "" && !looksLikeSiteName(ogTitle, domain) {
+			title = ogTitle
+		} else if twitterTitle = strings.TrimSpace(twitterTitle); twitterTitle != "" && !looksLikeSiteName(twitterTitle, domain) {
+			title = twitterTitle
+		}
+	}
 	if title == "" {
 		title = "Untitled Article"
 	}
+
+	return &parsedArticle, title, nil
+}
+
+// CreateArticle fetches the URL, extracts content using readability, and saves it to the database.
+func CreateArticle(ctx context.Context, db *sql.DB, ownerID uuid.UUID, urlStr string, userNote string) (*core.Entity, error) {
+	// 1. Extract domain from URL (for clean display and filtering)
+	parsedURL, err := url.Parse(urlStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid URL: %w", err)
+	}
+	domain := parsedURL.Host
+	domain = strings.TrimPrefix(domain, "www.")
+
+	// 2. Fetch and parse the article
+	fmt.Printf("Fetching and parsing: %s\n", urlStr)
+
+	parsedArticle, title, err := fetchAndParseArticle(ctx, urlStr)
+	if err != nil {
+		return nil, err
+	}
+
+	// 3. Prepare data for the Entity table
 
 	// Sanitize title for a safe slug
 	slug := strings.ToLower(strings.ReplaceAll(title, " ", "-"))
@@ -331,26 +433,7 @@ func RefetchArticle(ctx context.Context, db *sql.DB, ownerID, articleID uuid.UUI
 		return fmt.Errorf("failed to find original URL: %w", err)
 	}
 
-	parsedURL, _ := url.Parse(originalURL)
-	client := netutil.SafeHTTPClient()
-	resp, err := client.Get(originalURL)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	bodyBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("failed to read response body: %w", err)
-	}
-	htmlStr := string(bodyBytes)
-
-	reFakeSrc := regexp.MustCompile(`(?i)\s+src=["']data:image/[^"']+["']`)
-	htmlStr = reFakeSrc.ReplaceAllString(htmlStr, "")
-	reDataSrc := regexp.MustCompile(`(?i)\s+data-(?:lazy-)?src=(["'][^"']+["'])`)
-	htmlStr = reDataSrc.ReplaceAllString(htmlStr, ` src=$1`)
-
-	parsedArticle, err := readability.FromReader(strings.NewReader(htmlStr), parsedURL)
+	parsedArticle, title, err := fetchAndParseArticle(ctx, originalURL)
 	if err != nil {
 		return err
 	}
@@ -361,7 +444,7 @@ func RefetchArticle(ctx context.Context, db *sql.DB, ownerID, articleID uuid.UUI
 	}
 	defer tx.Rollback()
 
-	_, err = tx.ExecContext(ctx, "UPDATE entities SET title = $1, updated_at = NOW() WHERE id = $2", parsedArticle.Title, articleID)
+	_, err = tx.ExecContext(ctx, "UPDATE entities SET title = $1, updated_at = NOW() WHERE id = $2", title, articleID)
 	if err != nil {
 		return err
 	}
