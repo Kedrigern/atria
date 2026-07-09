@@ -14,7 +14,7 @@
                 style="
                     margin-top: 0;
                     color: var(--text-heading);
-                    font-size: 2rem;
+                    font-size: calc(2rem * {{.ContentFontScale}});
                 "
             >
                 {{.Article.Title}}
@@ -29,7 +29,7 @@
 
             <div
                 style="
-                    font-size: 1.1rem;
+                    font-size: calc(1.1rem * {{.ContentFontScale}});
                     line-height: 1.7;
                     color: var(--text-main);
                 "

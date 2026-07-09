@@ -66,6 +66,7 @@ type UserPreferences struct {
 	PaginationSize   int                    `json:"pagination_size"`
 	RSSInlineDetails bool                   `json:"rss_inline_details"`
 	ArticleImages    string                 `json:"article_images"`
+	FontSize         int                    `json:"font_size"` // Percentage scale applied to html root font-size (e.g. 100 = default, 130 = 30% larger).
 	DomainOverrides  map[string]DomainPrefs `json:"domain_overrides"`
 	DefaultDashboard *uuid.UUID             `json:"default_dashboard_id,omitempty"`
 }
@@ -77,6 +78,7 @@ func DefaultPreferences() UserPreferences {
 		PaginationSize:   30,        // Items per page.
 		RSSInlineDetails: true,      // Show inline RSS content.
 		ArticleImages:    "replace", // Enhanced image fetching.
+		FontSize:         100,       // 100% = browser default size.
 		DomainOverrides:  make(map[string]DomainPrefs),
 	}
 }

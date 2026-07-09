@@ -42,6 +42,23 @@
                         <input type="number" name="pagination_size" min="10" max="100" step="10" value="{{.User.Preferences.PaginationSize}}" class="form-control">
                     </div>
 
+                    <div class="form-group">
+                        <label>Velikost písma:</label>
+                        <select name="font_size" class="form-control">
+                            {{$fontSize := .User.Preferences.FontSize}}
+                            {{if not $fontSize}}{{$fontSize = 100}}{{end}}
+                            <option value="80" {{if eq $fontSize 80}}selected{{end}}>80% (menší)</option>
+                            <option value="90" {{if eq $fontSize 90}}selected{{end}}>90%</option>
+                            <option value="100" {{if eq $fontSize 100}}selected{{end}}>100% (výchozí)</option>
+                            <option value="110" {{if eq $fontSize 110}}selected{{end}}>110%</option>
+                            <option value="120" {{if eq $fontSize 120}}selected{{end}}>120%</option>
+                            <option value="130" {{if eq $fontSize 130}}selected{{end}}>130%</option>
+                            <option value="140" {{if eq $fontSize 140}}selected{{end}}>140%</option>
+                            <option value="150" {{if eq $fontSize 150}}selected{{end}}>150%</option>
+                            <option value="160" {{if eq $fontSize 160}}selected{{end}}>160% (větší, e-book)</option>
+                        </select>
+                    </div>
+
                 </div>
 
                 <div class="mb-3">

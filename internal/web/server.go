@@ -310,6 +310,7 @@ func (s *Server) SetupRouter() *gin.Engine {
 
 		// API: Profile
 		api.POST("/profile/preferences", s.handleProfilePreferencesUpdate)
+		api.POST("/profile/font-size", s.handleFontSizeAdjust)
 	}
 
 	return r
@@ -403,6 +404,16 @@ func (s *Server) render(c *gin.Context, tmplName string, data gin.H) {
 	if user != nil {
 		data["User"] = user
 		data["Theme"] = user.Preferences.Theme
+
+		fontSize := user.Preferences.FontSize
+		if fontSize == 0 {
+			fontSize = 100
+		}
+		data["FontSize"] = fontSize
+		// ContentFontScale is a multiplier (e.g. "1.30") applied via CSS calc()
+		// only to the article/note title and body, so the rest of the UI
+		// (toolbar, sidebar, nav) keeps its fixed sizing.
+		data["ContentFontScale"] = strconv.FormatFloat(float64(fontSize)/100, 'f', 2, 64)
 	}
 
 	data["Flash"] = s.getFlash(c)
@@ -579,6 +590,12 @@ func (s *Server) handleProfilePreferencesUpdate(c *gin.Context) {
 		}
 	}
 
+	if fontSizeStr := c.PostForm("font_size"); fontSizeStr != "" {
+		if fontSize, err := strconv.Atoi(fontSizeStr); err == nil && fontSize >= 80 && fontSize <= 160 {
+			prefs.FontSize = fontSize
+		}
+	}
+
 	prefs.RSSInlineDetails = c.PostForm("rss_inline_details") == "on"
 
 	err := users.UpdatePreferences(c.Request.Context(), s.db, user.ID, prefs)
@@ -589,6 +606,44 @@ func (s *Server) handleProfilePreferencesUpdate(c *gin.Context) {
 	}
 
 	c.Redirect(http.StatusFound, "/profile")
+}
+
+// handleFontSizeAdjust nudges the user's font-size preference up or down by
+// one step (10%), clamped to the 80-160 range, and redirects back to the
+// page the request came from. Intended for the quick +/- toolbar buttons.
+func (s *Server) handleFontSizeAdjust(c *gin.Context) {
+	user := s.getUser(c)
+	if user == nil {
+		c.String(http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	prefs := user.Preferences
+
+	fontSize := prefs.FontSize
+	if fontSize == 0 {
+		fontSize = 100
+	}
+
+	delta, _ := strconv.Atoi(c.PostForm("delta"))
+	fontSize += delta * 10
+	if fontSize < 80 {
+		fontSize = 80
+	}
+	if fontSize > 160 {
+		fontSize = 160
+	}
+	prefs.FontSize = fontSize
+
+	if err := users.UpdatePreferences(c.Request.Context(), s.db, user.ID, prefs); err != nil {
+		s.setFlash(c, "error", "Nepodařilo se uložit velikost písma.")
+	}
+
+	redirectTo := c.Request.Referer()
+	if redirectTo == "" {
+		redirectTo = "/"
+	}
+	c.Redirect(http.StatusFound, redirectTo)
 }
 
 func (s *Server) makeHandler(tmplName string, data gin.H) gin.HandlerFunc {

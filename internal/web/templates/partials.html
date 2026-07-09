@@ -229,6 +229,19 @@
 </div>
 {{end}}
 
+{{define "font_size_controls"}}
+<form method="post" action="/api/profile/font-size" style="display: contents">
+    <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
+    <input type="hidden" name="delta" value="-1" />
+    <button type="submit" class="outline btn-sm" title="Zmenšit písmo">A-</button>
+</form>
+<form method="post" action="/api/profile/font-size" style="display: contents">
+    <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
+    <input type="hidden" name="delta" value="1" />
+    <button type="submit" class="outline btn-sm" title="Zvětšit písmo">A+</button>
+</form>
+{{end}}
+
 {{define "toolbar"}}
 <div class="toolbar" style="border-bottom: none; padding-bottom: 0;">
     <div class="toolbar-group">
@@ -259,6 +272,7 @@
         </form>
     </div>
     <div class="toolbar-group">
+        {{template "font_size_controls" .}}
         <span class="tag hide-mobile" style="cursor: copy; font-family: monospace; font-size: 0.75rem;" onclick="navigator.clipboard.writeText('{{.Article.ShortID}}');" title="Zkopírovat ID">#{{.Article.ShortID}}</span>
         <form method="post" action="/api/articles/{{.Article.ID}}/archive" style="display: contents">
             <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
@@ -298,6 +312,7 @@
         </form>
     </div>
     <div class="toolbar-group">
+        {{template "font_size_controls" .}}
         <span class="tag hide-mobile" style="cursor: copy; font-family: monospace; font-size: 0.75rem;" onclick="navigator.clipboard.writeText('{{.Note.ShortID}}');" title="Zkopírovat ID">#{{.Note.ShortID}}</span>
         <button type="button" class="outline btn-sm btn-primary" title="Upravit poznámku"
             onclick="document.getElementById('note-view').style.display='none'; document.getElementById('note-edit').style.display='block';">

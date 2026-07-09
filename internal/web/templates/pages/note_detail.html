@@ -16,7 +16,7 @@
                 style="
                     margin: 0 0 8px 0;
                     color: var(--text-heading);
-                    font-size: 2rem;
+                    font-size: calc(2rem * {{.ContentFontScale}});
                 "
             >
                 {{.Note.Title}}
@@ -29,7 +29,7 @@
             <div
                 id="note-view"
                 style="
-                    font-size: 1.1rem;
+                    font-size: calc(1.1rem * {{.ContentFontScale}});
                     line-height: 1.7;
                     color: var(--text-main);
                 "
@@ -37,7 +37,7 @@
                 <style>
                     #note-view > h1:first-child {
                         margin-top: 0;
-                        font-size: 1.4rem;
+                        font-size: calc(1.4rem * {{.ContentFontScale}});
                         color: var(--text-muted);
                         border-bottom: none;
                         padding-bottom: 0;
