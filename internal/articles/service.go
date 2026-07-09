@@ -110,6 +110,45 @@ func stripCommentSections(doc *goquery.Document) {
 	})
 }
 
+// flattenCodeBlocks fixes syntax-highlighted code blocks whose markup wraps
+// every source line in its own block-level element (e.g. <pre><code><div>
+// <p>...</p></div><div><p>...</p></div></code></pre>) instead of separating
+// lines with a literal newline character. Some sites' syntax highlighters
+// (and/or readability's own DOM cleanup) produce this shape. Left as-is, it
+// loses all line breaks both in the plain-text extraction used for
+// full-text search, and when the reader re-highlights the block client-side
+// via `.textContent` (which, per spec, inserts no whitespace at block-
+// element boundaries) - the whole snippet then collapses onto a single,
+// unreadable line. Detected blocks are rewritten as plain text with real
+// newlines between the original lines, which is exactly what a
+// re-highlighting library expects anyway.
+//
+// Ordinary code blocks (plain text, or inline <span> tokens with no
+// block-level line wrapping) have no <div>/<p> children and are left
+// untouched, so this only ever affects the specific pattern it targets.
+func flattenCodeBlocks(doc *goquery.Document) {
+	doc.Find("pre").Each(func(i int, pre *goquery.Selection) {
+		target := pre
+		if code := pre.ChildrenFiltered("code"); code.Length() > 0 {
+			target = code.First()
+		}
+
+		lines := target.ChildrenFiltered("div, p")
+		if lines.Length() == 0 {
+			return
+		}
+
+		var b strings.Builder
+		lines.Each(func(j int, line *goquery.Selection) {
+			if j > 0 {
+				b.WriteString("\n")
+			}
+			b.WriteString(line.Text())
+		})
+		target.SetText(b.String())
+	})
+}
+
 // normalizeForCompare lowercases s and strips everything but letters/digits,
 // so titles like "OSEL.CZ" and domains like "osel.cz" can be compared
 // regardless of punctuation and casing.
@@ -203,6 +242,7 @@ func processArticleHTML(htmlStr string, parsedURL *url.URL) (*readability.Articl
 		})
 
 		stripCommentSections(doc)
+		flattenCodeBlocks(doc)
 
 		ogTitle, _ = doc.Find(`meta[property="og:title"]`).First().Attr("content")
 		twitterTitle, _ = doc.Find(`meta[name="twitter:title"]`).First().Attr("content")
