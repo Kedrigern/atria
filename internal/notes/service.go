@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gofrs/uuid/v5"
+	"github.com/lib/pq"
 
 	"atria/internal/core"
 )
@@ -19,6 +20,7 @@ type NoteSummary struct {
 	Path      string
 	CreatedAt time.Time
 	CharCount int
+	Tags      []string
 }
 
 // GetNote loads the full note entity including content and metadata.
@@ -186,8 +188,8 @@ func FindNotes(ctx context.Context, db *sql.DB, ownerID uuid.UUID, identifier st
 // ListNotes retrieves notes for the authenticated user, optimized for tree view display.
 func ListNotes(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]NoteSummary, error) {
 	query := `
-		SELECT id, title, path, created_at, COALESCE(LENGTH(markdown_content), 0) as char_count
-		FROM notes_full_view
+		SELECT id, title, path, created_at, char_count, tags
+		FROM notes_tree_view
 		WHERE owner_id = $1
 		ORDER BY path ASC, title ASC
 	`
@@ -200,7 +202,7 @@ func ListNotes(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]NoteSummar
 	var list []NoteSummary
 	for rows.Next() {
 		var n NoteSummary
-		if err := rows.Scan(&n.ID, &n.Title, &n.Path, &n.CreatedAt, &n.CharCount); err != nil {
+		if err := rows.Scan(&n.ID, &n.Title, &n.Path, &n.CreatedAt, &n.CharCount, pq.Array(&n.Tags)); err != nil {
 			return nil, fmt.Errorf("failed to scan note row for tree: %w", err)
 		}
 		list = append(list, n)

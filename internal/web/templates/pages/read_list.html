@@ -22,6 +22,13 @@
                 >{{.Domain}} • Saved {{formatDate .CreatedAt}}{{if .CharCount}}
                 • {{normoPages .CharCount}}{{end}}</small
             >
+            {{if .Tags}}
+            <div class="article-list-tags">
+                {{range .Tags}}
+                {{template "tag_link" .}}
+                {{end}}
+            </div>
+            {{end}}
         </div>
         <div class="action-row">
             <form

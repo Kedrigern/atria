@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/spf13/cobra"
@@ -105,13 +106,14 @@ var articleListCmd = &cobra.Command{
 			return fmt.Errorf("failed to list articles: %w", err)
 		}
 
-		headers := []string{"ID", "DOMAIN", "TITLE", "SAVED"}
+		headers := []string{"ID", "DOMAIN", "TITLE", "TAGS", "SAVED"}
 		var rows [][]string
 		for _, a := range articleList {
 			rows = append(rows, []string{
 				FormatID(a.ID, showLong),
 				a.Domain,
 				a.Title,
+				strings.Join(a.Tags, ", "),
 				a.CreatedAt.Format("2006-01-02 15:04"),
 			})
 		}

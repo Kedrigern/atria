@@ -327,28 +327,34 @@
     {{if .Notes}}
     <ul class="meta-list" style="padding-left: 20px; margin: 0 0 10px 0;">
         {{range .Notes}}
-        <li class="flex-row flex-between flex-wrap" style="margin-bottom: 8px; align-items: baseline; gap: 15px;">
-
-            <a href="/notes/{{.ID}}" hx-get="/notes/{{.ID}}" hx-target="#main-content" hx-push-url="true" style="font-weight: 500; display: inline-flex; align-items: center; text-decoration: none; min-width: 0;">
-                <span class="icon-sm icon-note" style="color: var(--links); flex-shrink: 0; margin-right: 8px;"></span>
-                <span style="text-decoration: underline; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{.Title}}</span>
+        <li class="note-tree-item">
+            <a href="/notes/{{.ID}}" hx-get="/notes/{{.ID}}" hx-target="#main-content" hx-push-url="true" class="note-tree-item-title">
+                <span class="icon-sm icon-note"></span>
+                <span class="note-tree-item-title-text">{{.Title}}</span>
             </a>
 
-            <span class="flex-row text-muted" style="font-size: 0.85rem; white-space: nowrap;">
-                <span>{{formatDateOnly .CreatedAt}}</span>
+            <div class="note-tree-item-metadata">
+                <span class="note-tree-item-date">{{formatDateOnly .CreatedAt}}</span>
                 {{if .CharCount}}
-                    <span>&bull;</span>
-                    <span title="Délka (1 NS = 1800 znaků)">{{normoPages .CharCount}}</span>
+                <span>&bull;</span>
+                <span title="Délka (1 NS = 1800 znaků)">{{normoPages .CharCount}}</span>
                 {{end}}
-            </span>
+                {{if .Tags}}
+                <div class="note-list-tags">
+                    {{range .Tags}}
+                    {{template "tag_link" .}}
+                    {{end}}
+                </div>
+                {{end}}
+            </div>
         </li>
         {{end}}
     </ul>
     {{end}}
 
     {{range $folderName, $folderNode := .Children}}
-    <details {{if lt .Level 3}}open{{end}} style="background: transparent; border: none; border-left: 1px dashed var(--border); padding: 0 0 0 10px; margin: 4px 0 4px 8px; border-radius: 0;">
-        <summary style="background: transparent; padding: 4px 0; margin: 0; font-weight: 600; color: var(--text-main); border: none; cursor: pointer;">
+    <details {{if lt .Level 3}}open{{end}} class="note-tree-folder" style="background: transparent; border: none; border-left: 1px dashed var(--border); padding: 0 0 0 10px; margin: 4px 0 4px 8px; border-radius: 0;">
+        <summary class="note-tree-folder-summary{{if eq .Level 1}} note-tree-folder-root-summary{{end}}">
             <span class="icon-sm icon-folder" style="color: var(--text-muted); vertical-align: text-bottom; margin-right: 4px;"></span>
             {{$folderName}}
         </summary>

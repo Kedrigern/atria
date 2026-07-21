@@ -74,13 +74,14 @@ var noteListCmd = &cobra.Command{
 			return fmt.Errorf("failed to list notes: %w", err)
 		}
 
-		headers := []string{"ID", "PATH", "TITLE", "CREATED"}
+		headers := []string{"ID", "PATH", "TITLE", "TAGS", "CREATED"}
 		var rows [][]string
 		for _, n := range noteList {
 			rows = append(rows, []string{
 				FormatID(n.ID, showLong),
 				n.Path,
 				n.Title,
+				strings.Join(n.Tags, ", "),
 				n.CreatedAt.Format("2006-01-02 15:04"),
 			})
 		}

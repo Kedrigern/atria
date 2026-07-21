@@ -38,12 +38,12 @@ func (e *DuplicateArticleError) Error() string {
 
 // ArticleSummary is a lightweight struct for listing articles.
 type ArticleSummary struct {
-	ID         uuid.UUID
-	Title      string
-	Domain     string
-	CreatedAt  time.Time
-	IsArchived bool
-	CharCount  int
+	ID        uuid.UUID
+	Title     string
+	Domain    string
+	CreatedAt time.Time
+	CharCount int
+	Tags      []string
 }
 
 // commentSectionTokens are exact id/class-name tokens (case-insensitive,
@@ -464,11 +464,11 @@ func GetArticleMarkdown(ctx context.Context, db *sql.DB, articleID uuid.UUID) (s
 // ListArticles retrieves paginated, unarchived articles for the inbox.
 func ListArticles(ctx context.Context, db *sql.DB, ownerID uuid.UUID, limit, offset int) ([]ArticleSummary, error) {
 	query := `
-			SELECT id, title, domain, created_at, is_archived, COALESCE(LENGTH(text_content), 0)
-				FROM articles_full_view
-				WHERE owner_id = $1 AND is_archived = FALSE
-				ORDER BY created_at DESC
-				LIMIT $2 OFFSET $3
+			SELECT id, title, domain, created_at, char_count, tags
+			FROM articles_inbox_view
+			WHERE owner_id = $1
+			ORDER BY created_at DESC
+			LIMIT $2 OFFSET $3
 		`
 
 	rows, err := db.QueryContext(ctx, query, ownerID, limit, offset)
@@ -480,7 +480,7 @@ func ListArticles(ctx context.Context, db *sql.DB, ownerID uuid.UUID, limit, off
 	var articlesList []ArticleSummary
 	for rows.Next() {
 		var a ArticleSummary
-		if err := rows.Scan(&a.ID, &a.Title, &a.Domain, &a.CreatedAt, &a.IsArchived, &a.CharCount); err != nil {
+		if err := rows.Scan(&a.ID, &a.Title, &a.Domain, &a.CreatedAt, &a.CharCount, pq.Array(&a.Tags)); err != nil {
 			return nil, fmt.Errorf("failed to scan article: %w", err)
 		}
 		articlesList = append(articlesList, a)

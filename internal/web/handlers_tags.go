@@ -93,7 +93,16 @@ func (s *Server) handleTagAttach(c *gin.Context) {
 	}
 
 	if c.GetHeader("HX-Request") == "true" {
-		s.renderSnippet(c, "tag_link", tagName)
+		tags, err := core.GetEntityTags(c.Request.Context(), s.db, entityID)
+		if err != nil {
+			s.renderError(c, http.StatusInternalServerError, "Nepodařilo se načíst tagy: "+err.Error())
+			return
+		}
+
+		s.renderSnippet(c, "tags_section", gin.H{
+			"ID":   entityID,
+			"Tags": tags,
+		})
 		return
 	}
 

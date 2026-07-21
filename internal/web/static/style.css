@@ -385,6 +385,65 @@ a.button-link.btn-primary:hover,
 .list-item h4 {
     margin: 0 0 5px 0;
 }
+.article-list-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 6px;
+}
+.article-list-tags .tag {
+    margin-right: 0;
+}
+.note-tree-folder-summary {
+    margin: 0;
+    padding: 4px 0;
+    border: none;
+    background: transparent;
+    color: var(--text-main);
+    cursor: pointer;
+    font-weight: 600;
+}
+.note-tree-folder-root-summary {
+    padding: 6px 0;
+    font-size: 1.05rem;
+}
+.note-tree-item {
+    margin-bottom: 12px;
+}
+.note-tree-item-title {
+    display: inline-flex;
+    align-items: center;
+    min-width: 0;
+    color: var(--links);
+    font-weight: 500;
+    text-decoration: none;
+}
+.note-tree-item-title .icon-note {
+    flex-shrink: 0;
+    margin-right: 8px;
+}
+.note-tree-item-title-text {
+    overflow: hidden;
+    text-decoration: underline;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.note-tree-item-metadata,
+.note-list-tags {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+.note-tree-item-metadata {
+    margin: 4px 0 0 28px;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    gap: 8px;
+}
+.note-list-tags .tag {
+    margin-right: 0;
+}
 
 .tag {
     background: rgba(59, 130, 246, 0.1);
