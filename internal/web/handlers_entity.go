@@ -46,7 +46,10 @@ func (s *Server) handleEntityRename(c *gin.Context) {
 		return
 	}
 
-	newTitle := c.GetHeader("HX-Prompt")
+	newTitle := c.PostForm("title")
+	if newTitle == "" {
+		newTitle = c.GetHeader("HX-Prompt")
+	}
 	newTitle = strings.TrimSpace(newTitle)
 
 	if newTitle == "" {

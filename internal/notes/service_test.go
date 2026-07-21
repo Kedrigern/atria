@@ -49,8 +49,24 @@ func TestNoteLifecycle(t *testing.T) {
 		t.Errorf("Expected path %s, got %s", path, list[0].Path)
 	}
 
-	// --- 4. Find Note (By Exact Title) ---
-	found, err := notes.FindNotes(ctx, db, user.ID, title, false)
+	// --- 4. Update Title, Path, and Content ---
+	updatedTitle := "Konfigurace čerpadla"
+	updatedPath := "/home/energy"
+	updatedContent := "# Čerpadlo\nVýkon: 5 kW"
+	if err := notes.UpdateNote(ctx, db, user.ID, noteEntity.ID, updatedTitle, updatedPath, updatedContent); err != nil {
+		t.Fatalf("Failed to update note: %v", err)
+	}
+
+	updatedNote, err := notes.GetNote(ctx, db, noteEntity.ID, user.ID)
+	if err != nil {
+		t.Fatalf("Failed to retrieve updated note: %v", err)
+	}
+	if updatedNote.Title != updatedTitle || updatedNote.Path != updatedPath || updatedNote.MarkdownContent != updatedContent {
+		t.Errorf("Updated note metadata or content did not persist")
+	}
+
+	// --- 5. Find Note (By Exact Title) ---
+	found, err := notes.FindNotes(ctx, db, user.ID, updatedTitle, false)
 	if err != nil {
 		t.Fatalf("Failed to find note: %v", err)
 	}
@@ -58,7 +74,7 @@ func TestNoteLifecycle(t *testing.T) {
 		t.Errorf("Expected to find note by title, got %d results", len(found))
 	}
 
-	// --- 5. Soft Delete ---
+	// --- 6. Soft Delete ---
 	err = notes.DeleteEntity(ctx, db, user.ID, noteEntity.ID, false, false)
 	if err != nil {
 		t.Fatalf("Failed to soft delete note: %v", err)
@@ -76,7 +92,7 @@ func TestNoteLifecycle(t *testing.T) {
 		t.Errorf("Expected to find note in trash, got %d results", len(trashList))
 	}
 
-	// --- 6. Hard Delete ---
+	// --- 7. Hard Delete ---
 	err = notes.DeleteEntity(ctx, db, user.ID, noteEntity.ID, false, true)
 	if err != nil {
 		t.Fatalf("Failed to hard delete note: %v", err)

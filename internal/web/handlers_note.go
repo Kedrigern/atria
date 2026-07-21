@@ -122,9 +122,17 @@ func (s *Server) handleNoteUpdate(c *gin.Context) {
 		return
 	}
 
-	newContent := c.PostForm("markdown_content")
-	err = notes.UpdateNoteContent(c.Request.Context(), s.db, user.ID, id, newContent)
-	if err != nil {
+	title := strings.TrimSpace(c.PostForm("title"))
+	if title == "" {
+		s.renderError(c, http.StatusBadRequest, "Title is required")
+		return
+	}
+	path := strings.TrimSpace(c.PostForm("path"))
+	if path == "" {
+		path = "/"
+	}
+	content := c.PostForm("markdown_content")
+	if err := notes.UpdateNote(c.Request.Context(), s.db, user.ID, id, title, path, content); err != nil {
 		s.renderError(c, http.StatusInternalServerError, "Failed to save note: "+err.Error())
 		return
 	}

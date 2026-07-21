@@ -103,7 +103,7 @@ func CreateNote(ctx context.Context, db *sql.DB, ownerID uuid.UUID, title, path,
 
 	// 2. Create the Entity record
 	entityID := core.NewUUID()
-	slug := strings.ToLower(strings.ReplaceAll(title, " ", "-"))
+	slug := noteSlug(title)
 	now := time.Now().UTC()
 
 	entity := &core.Entity{
@@ -275,18 +275,52 @@ func GetNoteContent(ctx context.Context, db *sql.DB, noteID uuid.UUID) (string, 
 	return content, nil
 }
 
-// UpdateNoteContent overwrites the markdown content of an existing note
-func UpdateNoteContent(ctx context.Context, db *sql.DB, ownerID, noteID uuid.UUID, content string) error {
-	query := `
-		UPDATE notes
-		SET markdown_content = $1
-		WHERE id IN (SELECT id FROM entities WHERE id = $2 AND owner_id = $3 AND type = $4)
-	`
-	_, err := db.ExecContext(ctx, query, content, noteID, ownerID, core.TypeNote)
+// UpdateNote updates a note's title, folder path, and Markdown content atomically.
+func UpdateNote(ctx context.Context, db *sql.DB, ownerID, noteID uuid.UUID, title, path, content string) error {
+	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
+		return fmt.Errorf("failed to begin note update transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	parentID, err := EnsurePath(ctx, tx, ownerID, path)
+	if err != nil {
+		return err
+	}
+
+	result, err := tx.ExecContext(ctx, `
+		UPDATE entities
+		SET title = $1, slug = $2, path = $3, parent_id = $4, updated_at = CURRENT_TIMESTAMP
+		WHERE id = $5 AND owner_id = $6 AND type = $7 AND deleted_at IS NULL
+	`, title, noteSlug(title), path, parentID, noteID, ownerID, core.TypeNote)
+	if err != nil {
+		return fmt.Errorf("failed to update note metadata: %w", err)
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to verify note update: %w", err)
+	}
+	if rowsAffected == 0 {
+		return fmt.Errorf("note not found")
+	}
+
+	if _, err := tx.ExecContext(ctx, `UPDATE notes SET markdown_content = $1 WHERE id = $2`, content, noteID); err != nil {
 		return fmt.Errorf("failed to update note content: %w", err)
 	}
 
-	_, err = db.ExecContext(ctx, `UPDATE entities SET updated_at = NOW() WHERE id = $1`, noteID)
-	return err
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit note update: %w", err)
+	}
+	return nil
+}
+
+func noteSlug(title string) string {
+	slug := strings.ToLower(strings.ReplaceAll(title, " ", "-"))
+	slug = strings.ReplaceAll(slug, "/", "-")
+	slug = strings.ReplaceAll(slug, "\\", "-")
+	chars := []rune(slug)
+	if len(chars) > 100 {
+		return string(chars[:100])
+	}
+	return slug
 }

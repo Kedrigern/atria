@@ -394,6 +394,10 @@ a.button-link.btn-primary:hover,
 .article-list-tags .tag {
     margin-right: 0;
 }
+#note-detail.is-editing .note-toolbar-context {
+    display: none;
+}
+
 .note-tree-folder-summary {
     margin: 0;
     padding: 4px 0;
@@ -509,6 +513,43 @@ a.button-link.btn-primary:hover,
 }
 .toolbar-top .btn-hide-top {
     display: none;
+}
+.rename-control {
+    position: relative;
+}
+.rename-control > summary {
+    display: flex;
+    align-items: center;
+    padding: 4px 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-main);
+    cursor: pointer;
+    line-height: 1;
+    list-style: none;
+}
+.rename-control > summary::-webkit-details-marker {
+    display: none;
+}
+.rename-control-form {
+    position: absolute;
+    z-index: 60;
+    top: calc(100% + 6px);
+    left: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: max-content;
+    margin: 0;
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--background-alt);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+.rename-control-form input {
+    width: 16rem;
+    margin: 0;
 }
 
 /* Toolbar button sizes — použít společně s button/button.outline/a.button-link */
