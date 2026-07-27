@@ -242,18 +242,7 @@
 </form>
 {{end}}
 
-{{define "entity_rename_control"}}
-<details class="rename-control">
-    <summary class="outline btn-sm" title="Přejmenovat">
-        <span class="icon-sm icon-edit"></span>
-    </summary>
-    <form method="post" action="/api/entity/{{if .Article}}{{.Article.ID}}{{else}}{{.Note.ID}}{{end}}/rename" hx-post="/api/entity/{{if .Article}}{{.Article.ID}}{{else}}{{.Note.ID}}{{end}}/rename" class="rename-control-form">
-        <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
-        <input type="text" name="title" value="{{if .Article}}{{.Article.Title}}{{else}}{{.Note.Title}}{{end}}" aria-label="Nový název" required />
-        <button type="submit" class="btn-primary btn-sm">Uložit</button>
-    </form>
-</details>
-{{end}}
+
 
 {{define "toolbar"}}
 <div class="toolbar" style="border-bottom: none; padding-bottom: 0;">
@@ -274,7 +263,9 @@
                 <a href="/read/{{.Article.ID}}/export/epub">⬇ EPUB</a>
             </div>
         </div>
-        {{template "entity_rename_control" .}}
+        <button type="button" hx-post="/api/entity/{{.Article.ID}}/rename" hx-prompt="Zadejte nový název článku:" class="outline btn-sm" title="Přejmenovat článek">
+            <span class="icon-sm icon-edit"></span>
+        </button>
         <form method="post" action="/api/articles/{{.Article.ID}}/refetch" style="display: contents">
             <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
             <button type="submit" class="outline btn-sm" title="Znovu stáhnout obsah">

@@ -3,6 +3,7 @@ package web
 import (
 	"atria/internal/core"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -34,6 +35,14 @@ func (s *Server) handleUpdateVisibility(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
+func decodePromptTitle(title string) string {
+	decodedTitle, err := url.QueryUnescape(title)
+	if err == nil {
+		title = decodedTitle
+	}
+	return strings.TrimSpace(title)
+}
+
 func (s *Server) handleEntityRename(c *gin.Context) {
 	user := s.getUser(c)
 	if user == nil {
@@ -46,11 +55,7 @@ func (s *Server) handleEntityRename(c *gin.Context) {
 		return
 	}
 
-	newTitle := c.PostForm("title")
-	if newTitle == "" {
-		newTitle = c.GetHeader("HX-Prompt")
-	}
-	newTitle = strings.TrimSpace(newTitle)
+	newTitle := decodePromptTitle(c.GetHeader("HX-Prompt"))
 
 	if newTitle == "" {
 		c.Status(http.StatusOK)

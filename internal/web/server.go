@@ -346,6 +346,7 @@ func (s *Server) getTemplateFuncs() template.FuncMap {
 		"safeHTML": func(s string) template.HTML {
 			return template.HTML(s)
 		},
+
 		"normoPages": func(charCount int) string {
 			// 1 normopage = 1800 characters (Czech standard ČSN).
 			if charCount <= 0 {
