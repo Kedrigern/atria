@@ -1,4 +1,11 @@
 /* Layout Utilities */
+:root {
+    --list-title-size: 1.15rem;
+    --list-preview-size: 1rem;
+    --note-list-title-size: 1.1rem;
+    --note-root-title-size: 1.15rem;
+}
+
 .flex-row {
     display: flex;
     align-items: center;
@@ -387,11 +394,11 @@ a.button-link.btn-primary:hover,
 }
 .article-list-item h4,
 .rss-list-item h4 {
-    font-size: 1.15rem;
+    font-size: var(--list-title-size);
     line-height: 1.35;
 }
 .rss-list-item-description {
-    font-size: 1rem;
+    font-size: var(--list-preview-size);
 }
 .article-list-tags {
     display: flex;
@@ -409,7 +416,7 @@ a.button-link.btn-primary:hover,
 .note-tree-folder-summary {
     margin: 0;
     padding: 4px 0;
-    font-size: 1.1rem;
+    font-size: var(--note-list-title-size);
     border: none;
     background: transparent;
     color: var(--text-main);
@@ -418,7 +425,7 @@ a.button-link.btn-primary:hover,
 }
 .note-tree-folder-root-summary {
     padding: 6px 0;
-    font-size: 1.15rem;
+    font-size: var(--note-root-title-size);
 }
 .note-tree-item {
     margin-bottom: 12px;
@@ -426,7 +433,7 @@ a.button-link.btn-primary:hover,
 .note-tree-item-title {
     display: inline-flex;
     align-items: center;
-    font-size: 1.1rem;
+    font-size: var(--note-list-title-size);
     min-width: 0;
     color: var(--links);
     font-weight: 500;
@@ -524,7 +531,27 @@ a.button-link.btn-primary:hover,
 .toolbar-top .btn-hide-top {
     display: none;
 }
-
+.toolbar-compact {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+.toolbar-back-link {
+    border: none;
+    padding-left: 0;
+    color: var(--text-muted);
+}
+.inline-action-form {
+    display: contents;
+}
+.entity-short-id {
+    cursor: copy;
+    font-family: monospace;
+    font-size: 0.75rem;
+}
+.detail-bottom-toolbar {
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+}
 
 /* Toolbar button sizes — použít společně s button/button.outline/a.button-link */
 .btn-sm,
