@@ -393,6 +393,28 @@ func FindArticleByURL(ctx context.Context, db *sql.DB, ownerID uuid.UUID, urlStr
 	return &e, nil
 }
 
+// GetPublicArticle loads an active article that is available through a public link.
+func GetPublicArticle(ctx context.Context, db *sql.DB, id uuid.UUID) (*core.Article, error) {
+	query := `
+		SELECT id, short_id, parent_id, owner_id, type, visibility, title, slug, path, created_at, updated_at, deleted_at,
+		       original_url, domain, is_archived, user_note, html_content, text_content
+		FROM articles_full_view
+		WHERE id = $1 AND visibility = $2
+	`
+	var a core.Article
+	err := db.QueryRowContext(ctx, query, id, core.VisibilityPublic).Scan(
+		&a.ID, &a.ShortID, &a.ParentID, &a.OwnerID, &a.Type, &a.Visibility, &a.Title, &a.Slug, &a.Path, &a.CreatedAt, &a.UpdatedAt, &a.DeletedAt,
+		&a.OriginalURL, &a.Domain, &a.IsArchived, &a.UserNote, &a.HTMLContent, &a.TextContent,
+	)
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("public article not found")
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch public article: %w", err)
+	}
+	return &a, nil
+}
+
 // GetArticle loads the full article entity including content and metadata.
 func GetArticle(ctx context.Context, db *sql.DB, id, ownerID uuid.UUID) (*core.Article, error) {
 	query := `

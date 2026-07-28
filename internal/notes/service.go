@@ -23,6 +23,28 @@ type NoteSummary struct {
 	Tags      []string
 }
 
+// GetPublicNote loads an active note that is available through a public link.
+func GetPublicNote(ctx context.Context, db *sql.DB, id uuid.UUID) (*core.Note, error) {
+	query := `
+		SELECT id, short_id, parent_id, owner_id, type, visibility, title, slug, path, created_at, updated_at, deleted_at,
+		       icon, markdown_content
+		FROM notes_full_view
+		WHERE id = $1 AND visibility = $2
+	`
+	var n core.Note
+	err := db.QueryRowContext(ctx, query, id, core.VisibilityPublic).Scan(
+		&n.ID, &n.ShortID, &n.ParentID, &n.OwnerID, &n.Type, &n.Visibility, &n.Title, &n.Slug, &n.Path, &n.CreatedAt, &n.UpdatedAt, &n.DeletedAt,
+		&n.Icon, &n.MarkdownContent,
+	)
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("public note not found")
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch public note: %w", err)
+	}
+	return &n, nil
+}
+
 // GetNote loads the full note entity including content and metadata.
 func GetNote(ctx context.Context, db *sql.DB, id, ownerID uuid.UUID) (*core.Note, error) {
 	query := `

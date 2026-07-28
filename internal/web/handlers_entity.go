@@ -32,6 +32,9 @@ func (s *Server) handleUpdateVisibility(c *gin.Context) {
 		return
 	}
 
+	if c.GetHeader("HX-Request") == "true" {
+		c.Header("HX-Refresh", "true")
+	}
 	c.Status(http.StatusOK)
 }
 

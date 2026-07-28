@@ -86,6 +86,9 @@
             <option value="users" {{if eq .Visibility "users"}}selected{{end}}>Users Only</option>
             <option value="public" {{if eq .Visibility "public"}}selected{{end}}>Public Link</option>
         </select>
+        {{if eq .Visibility "public"}}
+        <button type="button" class="outline btn-sm" title="Kopírovat veřejný odkaz" onclick="navigator.clipboard.writeText(window.location.origin + '/public/{{if eq .Type "note"}}notes{{else}}articles{{end}}/{{.ID}}')">Kopírovat odkaz</button>
+        {{end}}
     </div>
 </div>
 {{end}}

@@ -158,19 +158,20 @@
             const sidebarBackdrop = document.getElementById("sidebar-backdrop");
 
             function toggleSidebar() {
+                if (!sidebar || !sidebarBackdrop) return;
                 sidebar.classList.toggle("open");
                 sidebarBackdrop.classList.toggle("open");
             }
 
             function closeSidebar() {
+                if (!sidebar || !sidebarBackdrop) return;
                 sidebar.classList.remove("open");
                 sidebarBackdrop.classList.remove("open");
             }
 
-            document
-                .getElementById("menu-toggle")
-                .addEventListener("click", toggleSidebar);
-            sidebarBackdrop.addEventListener("click", closeSidebar);
+            const menuToggle = document.getElementById("menu-toggle");
+            if (menuToggle) menuToggle.addEventListener("click", toggleSidebar);
+            if (sidebarBackdrop) sidebarBackdrop.addEventListener("click", closeSidebar);
 
             document.body.addEventListener("htmx:afterSettle", function () {
                 const currentPath = window.location.pathname;

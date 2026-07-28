@@ -181,6 +181,8 @@ func (s *Server) SetupRouter() *gin.Engine {
 	r.StaticFS("/static", http.FS(subFS))
 
 	r.GET("/data/attachments/:year/:month/:filename", s.handleProtectedAttachment)
+	r.GET("/public/articles/:id", s.handlePublicArticle)
+	r.GET("/public/notes/:id", s.handlePublicNote)
 
 	auth := r.Group("/")
 	auth.Use(s.AuthMiddleware())
@@ -399,7 +401,7 @@ func (s *Server) render(c *gin.Context, tmplName string, data gin.H) {
 	}
 
 	user := s.getUser(c)
-	if user == nil && tmplName != "login.html" {
+	if user == nil && tmplName != "login.html" && tmplName != "public_detail.html" {
 		return
 	}
 
