@@ -276,6 +276,12 @@
     <div class="toolbar-group">
         {{template "font_size_controls" .}}
         <span class="tag hide-mobile" style="cursor: copy; font-family: monospace; font-size: 0.75rem;" onclick="navigator.clipboard.writeText('{{.Article.ShortID}}');" title="Zkopírovat ID">#{{.Article.ShortID}}</span>
+        <form method="post" action="/api/articles/{{.Article.ID}}/delete" style="display: contents" onsubmit="return confirm('Opravdu smazat tento článek?')">
+            <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
+            <button type="submit" class="outline btn-sm btn-danger" title="Smazat článek">
+                <span class="icon-sm icon-trash"></span>
+            </button>
+        </form>
         <form method="post" action="/api/articles/{{.Article.ID}}/archive" style="display: contents">
             <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
             <button type="submit" class="btn-sm btn-primary" title="Archivovat">

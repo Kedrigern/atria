@@ -273,6 +273,7 @@ func (s *Server) SetupRouter() *gin.Engine {
 		{
 			apiArticles.POST("/add", s.handleArticleAdd)
 			apiArticles.POST("/:id/archive", s.handleArticleArchive)
+			apiArticles.POST("/:id/delete", s.handleArticleDelete)
 			apiArticles.POST("/:id/refetch", s.handleArticleRefetch)
 			apiArticles.POST("/:id/note", s.handleArticleNoteUpdate)
 		}

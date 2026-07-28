@@ -105,6 +105,35 @@ func (s *Server) handleArticleDetail(c *gin.Context) {
 		"IncomingLinks": incomingLinks,
 	})
 }
+func (s *Server) handleArticleDelete(c *gin.Context) {
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+
+	id, err := core.ParseUUID(c.Param("id"))
+	if err != nil {
+		s.renderError(c, http.StatusBadRequest, "Invalid ID")
+		return
+	}
+
+	if err := articles.DeleteArticle(c.Request.Context(), s.db, user.ID, id); err != nil {
+		if errors.Is(err, articles.ErrArticleNotFound) {
+			s.renderError(c, http.StatusNotFound, "Article not found")
+			return
+		}
+		s.renderError(c, http.StatusInternalServerError, "Failed to delete article: "+err.Error())
+		return
+	}
+
+	if c.GetHeader("HX-Request") == "true" {
+		c.Header("HX-Redirect", "/read")
+		c.Status(http.StatusOK)
+		return
+	}
+	c.Redirect(http.StatusSeeOther, "/read")
+}
+
 func (s *Server) handleArticleArchive(c *gin.Context) {
 	user := s.getUser(c)
 	if user == nil {

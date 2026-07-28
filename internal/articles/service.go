@@ -32,6 +32,9 @@ type DuplicateArticleError struct {
 	ExistingTitle string
 }
 
+// ErrArticleNotFound is returned when an active article is not owned by the requested user.
+var ErrArticleNotFound = errors.New("article not found")
+
 func (e *DuplicateArticleError) Error() string {
 	return fmt.Sprintf("an entity titled %q already exists", e.ExistingTitle)
 }
@@ -486,6 +489,26 @@ func ListArticles(ctx context.Context, db *sql.DB, ownerID uuid.UUID, limit, off
 		articlesList = append(articlesList, a)
 	}
 	return articlesList, nil
+}
+
+// DeleteArticle marks an active article as deleted without removing it from the database.
+func DeleteArticle(ctx context.Context, db *sql.DB, ownerID, articleID uuid.UUID) error {
+	result, err := db.ExecContext(ctx, `
+		UPDATE entities
+		SET deleted_at = CURRENT_TIMESTAMP
+		WHERE id = $1 AND owner_id = $2 AND type = $3 AND deleted_at IS NULL
+	`, articleID, ownerID, core.TypeArticle)
+	if err != nil {
+		return fmt.Errorf("failed to delete article: %w", err)
+	}
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to confirm article deletion: %w", err)
+	}
+	if rows == 0 {
+		return ErrArticleNotFound
+	}
+	return nil
 }
 
 // ArchiveArticle marks an article as archived.
