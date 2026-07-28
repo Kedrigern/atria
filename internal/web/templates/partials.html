@@ -160,7 +160,7 @@
 {{end}}
 
 {{define "rss_list_item"}}
-<div class="list-item" style="flex-direction: column; align-items: flex-start; gap: 8px">
+<div class="list-item rss-list-item" style="flex-direction: column; align-items: flex-start; gap: 8px">
     <div class="page-header-row" style="width: 100%">
         <div>
             <h4 style="margin: 0 0 5px 0">
@@ -197,7 +197,7 @@
     </div>
 
     {{if .Description}}
-    <div style="font-size: 0.95rem; color: var(--text-main); opacity: 0.85; line-height: 1.5;">
+    <div class="rss-list-item-description" style="color: var(--text-main); opacity: 0.85; line-height: 1.5;">
         {{truncate (stripHTML .Description) 220}}
     </div>
     {{end}}
