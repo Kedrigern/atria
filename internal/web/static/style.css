@@ -397,8 +397,17 @@ a.button-link.btn-primary:hover,
     font-size: var(--list-title-size);
     line-height: 1.35;
 }
+.rss-list-item h4 a {
+    color: var(--text-bright);
+    font-weight: 600;
+}
+.rss-list-item-meta,
+.rss-list-item-description {
+    color: var(--text-main);
+}
 .rss-list-item-description {
     font-size: var(--list-preview-size);
+    line-height: 1.5;
 }
 .article-list-tags {
     display: flex;

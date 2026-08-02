@@ -169,7 +169,7 @@
                     {{.Title}}
                 </a>
             </h4>
-            <small style="color: var(--text-muted)">
+            <small class="rss-list-item-meta">
                 <a href="/rss/{{.FeedID}}" style="color: inherit; text-decoration: underline; text-underline-offset: 3px;">{{.SourceName}}</a> • {{formatDate .PublishedAt}}
                 {{if .ReadAt}} <span class="tag tag-success" style="font-size: 0.85rem; margin-left: 8px;">✓ read</span>{{end}}
             </small>
@@ -197,7 +197,7 @@
     </div>
 
     {{if .Description}}
-    <div class="rss-list-item-description" style="color: var(--text-main); opacity: 0.85; line-height: 1.5;">
+    <div class="rss-list-item-description">
         {{truncate (stripHTML .Description) 220}}
     </div>
     {{end}}
