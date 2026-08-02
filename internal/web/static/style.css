@@ -745,6 +745,15 @@ pre {
     }
 }
 
+@media (max-width: 640px) {
+    .article-toolbar-mobile-hidden {
+        display: none;
+    }
+    .article-toolbar-mobile-label {
+        display: none;
+    }
+}
+
 .toc-desktop {
     display: flex;
 }

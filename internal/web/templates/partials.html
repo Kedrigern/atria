@@ -251,7 +251,7 @@
 <div class="toolbar toolbar-compact">
     <div class="toolbar-group">
         <a href="/read" class="button-link outline btn-sm toolbar-back-link">
-            <span class="icon-sm icon-chevron-left"></span> Zpět
+            <span class="icon-sm icon-chevron-left"></span><span class="article-toolbar-mobile-label"> Zpět</span>
         </a>
         <div class="toolbar-sep hide-mobile"></div>
         <a href="{{.Article.OriginalURL}}" target="_blank" class="button-link outline btn-sm" title="Přejít na originál">
@@ -266,10 +266,10 @@
                 <a href="/read/{{.Article.ID}}/export/epub">⬇ EPUB</a>
             </div>
         </div>
-        <button type="button" hx-post="/api/entity/{{.Article.ID}}/rename" hx-prompt="Zadejte nový název článku:" class="outline btn-sm" title="Přejmenovat článek">
+        <button type="button" hx-post="/api/entity/{{.Article.ID}}/rename" hx-prompt="Zadejte nový název článku:" class="outline btn-sm article-toolbar-mobile-hidden" title="Přejmenovat článek">
             <span class="icon-sm icon-edit"></span>
         </button>
-        <form method="post" action="/api/articles/{{.Article.ID}}/refetch" class="inline-action-form">
+        <form method="post" action="/api/articles/{{.Article.ID}}/refetch" class="inline-action-form article-toolbar-mobile-hidden">
             <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
             <button type="submit" class="outline btn-sm" title="Znovu stáhnout obsah">
                 <span class="icon-sm icon-refresh"></span>
@@ -279,7 +279,7 @@
     <div class="toolbar-group">
         {{template "font_size_controls" .}}
         <span class="tag hide-mobile entity-short-id" onclick="navigator.clipboard.writeText('{{.Article.ShortID}}');" title="Zkopírovat ID">#{{.Article.ShortID}}</span>
-        <form method="post" action="/api/articles/{{.Article.ID}}/delete" class="inline-action-form" onsubmit="return confirm('Opravdu smazat tento článek?')">
+        <form method="post" action="/api/articles/{{.Article.ID}}/delete" class="inline-action-form article-toolbar-mobile-hidden" onsubmit="return confirm('Opravdu smazat tento článek?')">
             <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
             <button type="submit" class="outline btn-sm btn-danger" title="Smazat článek">
                 <span class="icon-sm icon-trash"></span>
@@ -288,7 +288,7 @@
         <form method="post" action="/api/articles/{{.Article.ID}}/archive" class="inline-action-form">
             <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
             <button type="submit" class="btn-sm btn-primary" title="Archivovat">
-                <span class="icon-sm icon-check"></span> Archivovat
+                <span class="icon-sm icon-check"></span><span class="article-toolbar-mobile-label"> Archivovat</span>
             </button>
         </form>
     </div>
