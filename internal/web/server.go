@@ -179,6 +179,8 @@ func (s *Server) SetupRouter() *gin.Engine {
 		panic(err)
 	}
 	r.StaticFS("/static", http.FS(subFS))
+	r.GET("/manifest.webmanifest", s.handleWebAppManifest)
+	r.GET("/sw.js", s.handleServiceWorker)
 
 	r.GET("/data/attachments/:year/:month/:filename", s.handleProtectedAttachment)
 	r.GET("/public/articles/:id", s.handlePublicArticle)

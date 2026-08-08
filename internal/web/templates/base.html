@@ -6,10 +6,18 @@
         <title>Atria - Personal Mind Palace</title>
         <link rel="stylesheet" href="/static/water.css" />
         <link rel="stylesheet" href="/static/style.css" />
-        <link rel="icon" type="image/x-icon" href="/static/atria.png" />
+        <link rel="icon" type="image/png" href="/static/atria.png" />
+        <link rel="manifest" href="/manifest.webmanifest" />
+        <meta name="theme-color" content="#0d1117" />
         <script src="/static/htmx.min.js"></script>
         <meta name="csrf-token" content="{{.CSRFToken}}" />
         <script>
+            if ("serviceWorker" in navigator) {
+                window.addEventListener("load", function () {
+                    navigator.serviceWorker.register("/sw.js");
+                });
+            }
+
             document.addEventListener("DOMContentLoaded", function () {
                 document.body.addEventListener(
                     "htmx:configRequest",

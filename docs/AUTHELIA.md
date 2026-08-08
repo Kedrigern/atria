@@ -23,6 +23,17 @@ location ^~ /static/ {
     proxy_pass http://localhost:8089;
 }
 
+# PWA manifest and root-scoped service worker.
+location = /manifest.webmanifest {
+    auth_request off;
+    proxy_pass http://localhost:8089;
+}
+
+location = /sw.js {
+    auth_request off;
+    proxy_pass http://localhost:8089;
+}
+
 location / {
     proxy_pass http://localhost:8089;
     # Authelia remains enabled here.
