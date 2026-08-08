@@ -192,6 +192,7 @@ type Tag struct {
 	Color       *string   `json:"color,omitempty" db:"color"`
 	Icon        *string   `json:"icon,omitempty" db:"icon"`
 	IsSystem    bool      `json:"is_system" db:"is_system"`
+	UsageCount  int       `json:"usage_count" db:"usage_count"`
 }
 
 type Attachment struct {

@@ -61,6 +61,20 @@
 
     <datalist id="tag-suggestions" hx-get="/api/tags/options" hx-trigger="load"></datalist>
 
+    {{if .Tags}}
+    <section class="tag-browser mb-3" aria-labelledby="tag-browser-title">
+        <h3 id="tag-browser-title">Tags</h3>
+        <div class="tag-browser-list">
+            {{range .Tags}}
+            <a class="tag-browser-item" href="/tags/{{.Name}}">
+                <span>#{{.Name}}</span>
+                <span class="tag-browser-count">{{.UsageCount}}</span>
+            </a>
+            {{end}}
+        </div>
+    </section>
+    {{end}}
+
     <div id="search-results">
         <p style="color: var(--text-muted)">Enter a search term above to get started.</p>
     </div>

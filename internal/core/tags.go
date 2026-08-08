@@ -112,10 +112,14 @@ func AttachTagByTitle(ctx context.Context, db *sql.DB, ownerID uuid.UUID, entity
 // ListTags retrieves all tags owned by a specific user.
 func ListTags(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]Tag, error) {
 	query := `
-		SELECT id, owner_id, name, description, color, icon, is_system
-		FROM tags
-		WHERE owner_id = $1
-		ORDER BY is_system DESC, name ASC
+		SELECT t.id, t.owner_id, t.name, t.description, t.color, t.icon, t.is_system,
+		       COUNT(e.id) AS usage_count
+		FROM tags t
+		LEFT JOIN rel_entity_tags rel ON rel.tag_id = t.id
+		LEFT JOIN entities e ON e.id = rel.entity_id AND e.owner_id = t.owner_id AND e.deleted_at IS NULL
+		WHERE t.owner_id = $1
+		GROUP BY t.id, t.owner_id, t.name, t.description, t.color, t.icon, t.is_system
+		ORDER BY t.is_system DESC, t.name ASC
 	`
 	rows, err := db.QueryContext(ctx, query, ownerID)
 	if err != nil {
@@ -126,11 +130,14 @@ func ListTags(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]Tag, error)
 	var tags []Tag
 	for rows.Next() {
 		var t Tag
-		err := rows.Scan(&t.ID, &t.OwnerID, &t.Name, &t.Description, &t.Color, &t.Icon, &t.IsSystem)
+		err := rows.Scan(&t.ID, &t.OwnerID, &t.Name, &t.Description, &t.Color, &t.Icon, &t.IsSystem, &t.UsageCount)
 		if err != nil {
 			return nil, err
 		}
 		tags = append(tags, t)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("failed to iterate tags: %w", err)
 	}
 	return tags, nil
 }

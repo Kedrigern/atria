@@ -82,11 +82,12 @@
             "
         >
             <a
-                href="/settings/tags/{{.Name}}"
+                href="/tags/{{.Name}}"
                 style="font-weight: bold; font-size: 1.1rem"
                 >#{{.Name}}</a
             >
-            {{if .IsSystem}}<br /><small style="color: var(--text-muted)"
+            <br /><small class="text-muted">{{.UsageCount}} uses</small>
+            {{if .IsSystem}}<br /><small class="text-muted"
                 >System</small
             >{{end}}
         </div>

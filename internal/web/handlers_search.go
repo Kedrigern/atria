@@ -1,6 +1,7 @@
 package web
 
 import (
+	"atria/internal/core"
 	"atria/internal/search"
 	"net/http"
 
@@ -41,6 +42,13 @@ func (s *Server) handleSearch(c *gin.Context) {
 		s.render(c, "search_results.html", data)
 		return
 	}
+
+	tags, err := core.ListTags(c.Request.Context(), s.db, user.ID)
+	if err != nil {
+		s.renderError(c, http.StatusInternalServerError, "Failed to load tags: "+err.Error())
+		return
+	}
+	data["Tags"] = tags
 
 	s.render(c, "search.html", data)
 }

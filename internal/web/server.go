@@ -237,11 +237,16 @@ func (s *Server) SetupRouter() *gin.Engine {
 		notes.GET("/:id/export/epub", s.handleNoteExportEPUB)
 	}
 
-	// Tags
+	// Tag details are content navigation, not settings.
+	auth.GET("/tags/:name", s.handleTagDetail)
+
+	// Tag management settings.
 	tags := auth.Group("/settings/tags")
 	{
 		tags.GET("", s.handleTagList)
-		tags.GET("/:name", s.handleTagDetail)
+		tags.GET("/:name", func(c *gin.Context) {
+			c.Redirect(http.StatusPermanentRedirect, "/tags/"+c.Param("name"))
+		})
 	}
 
 	// ==========================================
