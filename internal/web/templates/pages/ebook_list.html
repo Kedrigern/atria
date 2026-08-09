@@ -4,23 +4,32 @@
     <div class="page-header-row mb-3">
         <h2 class="hide-mobile">E-books</h2>
         <div class="action-row">
+            <div class="view-switch" role="group" aria-label="E-book view">
+                <button type="button" class="outline btn-sm" onclick="document.querySelector('[data-ebook-library]').dataset.view='list'; localStorage.setItem('atria-ebook-view', 'list')"></button>List</button>
+                <button type="button" class="outline btn-sm" onclick="document.querySelector('[data-ebook-library]').dataset.view='tiles'; localStorage.setItem('atria-ebook-view', 'tiles')"></button>Tiles</button>
+            </div>
             <a href="/ebooks/import" hx-get="/ebooks/import" hx-target="#main-content" hx-push-url="true" class="button-link outline btn-sm">Import EPUB</a>
             <a href="/ebooks/new" hx-get="/ebooks/new" hx-target="#main-content" hx-push-url="true" class="button-link btn-primary btn-sm">+ Create e-book</a>
         </div>
     </div>
 
-    {{range .Ebooks}}
-    <div class="list-item">
-        {{if .CoverDiskPath}}<img src="/data/attachments/{{.CoverDiskPath}}" alt="Cover of {{.Title}}" style="width: 42px; max-height: 60px; object-fit: cover; flex-shrink: 0" />{{end}}
-        <div></div>
-            <h4><a href="/ebooks/{{.ID}}" hx-get="/ebooks/{{.ID}}" hx-target="#main-content" hx-push-url="true">{{.Title}}</a></h4>
-            <small class="text-muted">{{.Filename}} · {{.SourceCount}} chapters · {{formatDate .GeneratedAt}}</small>
-            {{if .Author}}<div class="text-muted" style="font-size: 0.9rem">{{.Author}}{{if .Language}} · {{.Language}}{{end}}</div>{{end}}
-        </div>
-        <a href="/ebooks/{{.ID}}/download" class="button-link outline btn-sm" title="Download EPUB"><span class="icon-sm icon-download"></span></a>
+    <div class="ebook-library" data-ebook-library data-view="list">
+        {{range .Ebooks}}
+        <article class="ebook-card">
+            <div class="ebook-cover">
+                {{if .CoverDiskPath}}<img src="/data/attachments/{{.CoverDiskPath}}" alt="Cover of {{.Title}}" />{{else}}<div class="ebook-cover-placeholder"><strong>{{.Title}}</strong>{{if .Author}}<span>{{.Author}}</span>{{end}}</div>{{end}}
+            </div>
+            <div class="ebook-card-body">
+                <h4><a href="/ebooks/{{.ID}}" hx-get="/ebooks/{{.ID}}" hx-target="#main-content" hx-push-url="true">{{.Title}}</a>{{if .Description}} <button type="button" class="ebook-description-button" aria-label="Show description for {{.Title}}" onclick="document.getElementById('ebook-description-{{.ID}}').showModal()">i</button>{{end}}</h4>
+                <div class="text-muted">{{if .Author}}{{.Author}}{{else}}Unknown author{{end}}{{if .Language}} · {{.Language}}{{end}}</div>
+
+            </div>
+            <a href="/ebooks/{{.ID}}/download" class="button-link outline btn-sm ebook-download" title="Download EPUB"><span class="icon-sm icon-download"></span></a>
+            {{if .Description}}<dialog id="ebook-description-{{.ID}}"><h3>{{.Title}}</h3><p>{{.Description}}</p><form method="dialog"><button class="outline">Close</button></form></dialog>{{end}}
+        </article>
+        {{else}}
+        <p class="page-empty-hint">No e-books yet. Create one from articles and notes.</p>
+        {{end}}
     </div>
-    {{else}}
-    <p class="page-empty-hint">No e-books yet. Create one from articles and notes.</p>
-    {{end}}
 </div>
 {{end}}

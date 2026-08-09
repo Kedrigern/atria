@@ -67,6 +67,7 @@ type Detail struct {
 type Summary struct {
 	ID            uuid.UUID
 	Title         string
+	Description   *string
 	Author        *string
 	Language      *string
 	Filename      string
@@ -103,7 +104,7 @@ func GetDownload(ctx context.Context, db *sql.DB, ownerID, ebookID uuid.UUID) (*
 // List returns active e-books owned by a user, newest first.
 func List(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]Summary, error) {
 	query := `
-		SELECT e.id, e.title, eb.author, eb.language, a.filename, cover.disk_path, eb.generated_at,
+		SELECT e.id, e.title, eb.description, eb.author, eb.language, a.filename, cover.disk_path, eb.generated_at,
 		       COUNT(l.target_id) AS source_count
 		FROM entities e
 		JOIN ebooks eb ON eb.id = e.id
@@ -111,7 +112,7 @@ func List(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]Summary, error)
 		LEFT JOIN attachments cover ON cover.id = eb.cover_attachment_id
 		LEFT JOIN rel_entity_links l ON l.source_id = e.id AND l.context = 'ebook-source'
 		WHERE e.owner_id = $1 AND e.type = $2 AND e.deleted_at IS NULL
-		GROUP BY e.id, e.title, eb.author, eb.language, a.filename, cover.disk_path, eb.generated_at
+		GROUP BY e.id, e.title, eb.description, eb.author, eb.language, a.filename, cover.disk_path, eb.generated_at
 		ORDER BY eb.generated_at DESC
 	`
 	rows, err := db.QueryContext(ctx, query, ownerID, core.TypeEbook)
@@ -123,7 +124,7 @@ func List(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]Summary, error)
 	var ebooks []Summary
 	for rows.Next() {
 		var ebook Summary
-		if err := rows.Scan(&ebook.ID, &ebook.Title, &ebook.Author, &ebook.Language, &ebook.Filename, &ebook.CoverDiskPath, &ebook.GeneratedAt, &ebook.SourceCount); err != nil {
+		if err := rows.Scan(&ebook.ID, &ebook.Title, &ebook.Description, &ebook.Author, &ebook.Language, &ebook.Filename, &ebook.CoverDiskPath, &ebook.GeneratedAt, &ebook.SourceCount); err != nil {
 			return nil, fmt.Errorf("scan e-book: %w", err)
 		}
 		ebooks = append(ebooks, ebook)
