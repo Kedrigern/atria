@@ -52,25 +52,27 @@ type ImportInput struct {
 
 // Detail contains an e-book and the source entities recorded for it.
 type Detail struct {
-	ID          uuid.UUID
-	Title       string
-	Description *string
-	Author      *string
-	Language    *string
-	Filename    string
-	GeneratedAt time.Time
-	Sources     []core.EntitySummary
+	ID            uuid.UUID
+	Title         string
+	Description   *string
+	Author        *string
+	Language      *string
+	Filename      string
+	CoverDiskPath *string
+	GeneratedAt   time.Time
+	Sources       []core.EntitySummary
 }
 
 // Summary contains the fields displayed by the e-book library and CLI list command.
 type Summary struct {
-	ID          uuid.UUID
-	Title       string
-	Author      *string
-	Language    *string
-	Filename    string
-	SourceCount int
-	GeneratedAt time.Time
+	ID            uuid.UUID
+	Title         string
+	Author        *string
+	Language      *string
+	Filename      string
+	CoverDiskPath *string
+	SourceCount   int
+	GeneratedAt   time.Time
 }
 
 // Download contains the stored EPUB file information for an e-book.
@@ -101,14 +103,15 @@ func GetDownload(ctx context.Context, db *sql.DB, ownerID, ebookID uuid.UUID) (*
 // List returns active e-books owned by a user, newest first.
 func List(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]Summary, error) {
 	query := `
-		SELECT e.id, e.title, eb.author, eb.language, a.filename, eb.generated_at,
+		SELECT e.id, e.title, eb.author, eb.language, a.filename, cover.disk_path, eb.generated_at,
 		       COUNT(l.target_id) AS source_count
 		FROM entities e
 		JOIN ebooks eb ON eb.id = e.id
 		JOIN attachments a ON a.id = eb.epub_attachment_id
+		LEFT JOIN attachments cover ON cover.id = eb.cover_attachment_id
 		LEFT JOIN rel_entity_links l ON l.source_id = e.id AND l.context = 'ebook-source'
 		WHERE e.owner_id = $1 AND e.type = $2 AND e.deleted_at IS NULL
-		GROUP BY e.id, e.title, eb.author, eb.language, a.filename, eb.generated_at
+		GROUP BY e.id, e.title, eb.author, eb.language, a.filename, cover.disk_path, eb.generated_at
 		ORDER BY eb.generated_at DESC
 	`
 	rows, err := db.QueryContext(ctx, query, ownerID, core.TypeEbook)
@@ -120,7 +123,7 @@ func List(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]Summary, error)
 	var ebooks []Summary
 	for rows.Next() {
 		var ebook Summary
-		if err := rows.Scan(&ebook.ID, &ebook.Title, &ebook.Author, &ebook.Language, &ebook.Filename, &ebook.GeneratedAt, &ebook.SourceCount); err != nil {
+		if err := rows.Scan(&ebook.ID, &ebook.Title, &ebook.Author, &ebook.Language, &ebook.Filename, &ebook.CoverDiskPath, &ebook.GeneratedAt, &ebook.SourceCount); err != nil {
 			return nil, fmt.Errorf("scan e-book: %w", err)
 		}
 		ebooks = append(ebooks, ebook)
@@ -240,13 +243,14 @@ func Import(ctx context.Context, db *sql.DB, ownerID uuid.UUID, input ImportInpu
 func GetDetail(ctx context.Context, db *sql.DB, ownerID, ebookID uuid.UUID) (*Detail, error) {
 	var detail Detail
 	err := db.QueryRowContext(ctx, `
-		SELECT e.id, e.title, eb.description, eb.author, eb.language, a.filename, eb.generated_at
+		SELECT e.id, e.title, eb.description, eb.author, eb.language, a.filename, cover.disk_path, eb.generated_at
 		FROM entities e
 		JOIN ebooks eb ON eb.id = e.id
 		JOIN attachments a ON a.id = eb.epub_attachment_id
+		LEFT JOIN attachments cover ON cover.id = eb.cover_attachment_id
 		WHERE e.id = $1 AND e.owner_id = $2 AND e.type = $3 AND e.deleted_at IS NULL
 	`, ebookID, ownerID, core.TypeEbook).Scan(
-		&detail.ID, &detail.Title, &detail.Description, &detail.Author, &detail.Language, &detail.Filename, &detail.GeneratedAt,
+		&detail.ID, &detail.Title, &detail.Description, &detail.Author, &detail.Language, &detail.Filename, &detail.CoverDiskPath, &detail.GeneratedAt,
 	)
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("e-book not found")

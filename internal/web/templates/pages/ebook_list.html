@@ -11,7 +11,8 @@
 
     {{range .Ebooks}}
     <div class="list-item">
-        <div>
+        {{if .CoverDiskPath}}<img src="/data/attachments/{{.CoverDiskPath}}" alt="Cover of {{.Title}}" style="width: 42px; max-height: 60px; object-fit: cover; flex-shrink: 0" />{{end}}
+        <div></div>
             <h4><a href="/ebooks/{{.ID}}" hx-get="/ebooks/{{.ID}}" hx-target="#main-content" hx-push-url="true">{{.Title}}</a></h4>
             <small class="text-muted">{{.Filename}} · {{.SourceCount}} chapters · {{formatDate .GeneratedAt}}</small>
             {{if .Author}}<div class="text-muted" style="font-size: 0.9rem">{{.Author}}{{if .Language}} · {{.Language}}{{end}}</div>{{end}}

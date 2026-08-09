@@ -15,6 +15,7 @@
         </div>
     </div>
 
+    {{if .Ebook.CoverDiskPath}}<img src="/data/attachments/{{.Ebook.CoverDiskPath}}" alt="Cover of {{.Ebook.Title}}" style="width: 180px; max-height: 280px; object-fit: contain; margin-bottom: 1rem" />{{end}}
     {{if .Ebook.Description}}<p>{{.Ebook.Description}}</p>{{end}}
     <dl>
         {{if .Ebook.Author}}<dt>Author</dt><dd>{{.Ebook.Author}}</dd>{{end}}
