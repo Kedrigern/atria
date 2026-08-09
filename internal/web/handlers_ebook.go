@@ -3,6 +3,9 @@ package web
 import (
 	"atria/internal/core"
 	"atria/internal/ebooks"
+	"fmt"
+	"io"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -51,22 +54,12 @@ func (s *Server) handleEbookImport(c *gin.Context) {
 		s.renderError(c, http.StatusBadRequest, "An EPUB file is required")
 		return
 	}
-	temp, err := os.CreateTemp("", "atria-ebook-import-*")
+	tempPath, cleanup, err := saveEbookImportUpload(file)
 	if err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Failed to prepare imported EPUB")
+		s.renderError(c, http.StatusInternalServerError, "Failed to save imported EPUB: "+err.Error())
 		return
 	}
-	tempPath := temp.Name()
-	if err := temp.Close(); err != nil {
-		os.Remove(tempPath)
-		s.renderError(c, http.StatusInternalServerError, "Failed to prepare imported EPUB")
-		return
-	}
-	defer os.Remove(tempPath)
-	if err := c.SaveUploadedFile(file, tempPath); err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Failed to save imported EPUB")
-		return
-	}
+	defer cleanup()
 
 	book, err := ebooks.Import(c.Request.Context(), s.db, user.ID, ebooks.ImportInput{
 		Title:       title,
@@ -89,6 +82,41 @@ func (s *Server) handleEbookImport(c *gin.Context) {
 		return
 	}
 	c.Redirect(http.StatusSeeOther, url)
+}
+
+func saveEbookImportUpload(file *multipart.FileHeader) (string, func(), error) {
+	storagePath := os.Getenv("STORAGE_PATH")
+	if storagePath == "" {
+		storagePath = "./data/attachments"
+	}
+	tempDir := filepath.Join(storagePath, ".tmp")
+	if err := os.MkdirAll(tempDir, 0755); err != nil {
+		return "", func() {}, fmt.Errorf("create import temporary directory: %w", err)
+	}
+
+	source, err := file.Open()
+	if err != nil {
+		return "", func() {}, fmt.Errorf("open uploaded EPUB: %w", err)
+	}
+	defer source.Close()
+
+	temp, err := os.CreateTemp(tempDir, "ebook-import-*")
+	if err != nil {
+		return "", func() {}, fmt.Errorf("create temporary EPUB: %w", err)
+	}
+	tempPath := temp.Name()
+	cleanup := func() { _ = os.Remove(tempPath) }
+
+	if _, err := io.Copy(temp, source); err != nil {
+		_ = temp.Close()
+		cleanup()
+		return "", func() {}, fmt.Errorf("copy uploaded EPUB: %w", err)
+	}
+	if err := temp.Close(); err != nil {
+		cleanup()
+		return "", func() {}, fmt.Errorf("close temporary EPUB: %w", err)
+	}
+	return tempPath, cleanup, nil
 }
 
 func (s *Server) handleEbookCreate(c *gin.Context) {
