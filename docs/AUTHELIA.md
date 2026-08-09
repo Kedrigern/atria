@@ -13,6 +13,9 @@ When Authelia is enabled at the Angie server level, add public exceptions for At
 ```nginx
 include /etc/angie/authelia-auth.conf;
 
+# Permit attachments and e-book imports up to 32 MiB.
+client_max_body_size 32m;
+
 location ^~ /public/ {
     auth_request off;
     proxy_pass http://localhost:8089;

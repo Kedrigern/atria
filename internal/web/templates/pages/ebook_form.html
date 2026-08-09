@@ -6,6 +6,7 @@
     </div>
 
     <form method="post" action="/api/ebooks/create" enctype="multipart/form-data">
+        <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
         <div class="form-group">
             <label for="ebook-title">Title</label>
             <input id="ebook-title" name="title" class="form-control" required />

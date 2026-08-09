@@ -1,8 +1,10 @@
 package web_test
 
 import (
+	"bytes"
 	"context"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -153,6 +155,17 @@ func TestCSRFMiddleware(t *testing.T) {
 		// Submit token as _csrf form field.
 		formBody := strings.NewReader("_csrf=" + token)
 		w := runCSRFTestWithBody(t, srv, "development", testUser.Email, formBody, "application/x-www-form-urlencoded")
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("POST with correct CSRF token via multipart form is allowed", func(t *testing.T) {
+		token := fetchCSRFToken(t, srv, "development", testUser.Email)
+		body := &bytes.Buffer{}
+		writer := multipart.NewWriter(body)
+		require.NoError(t, writer.WriteField("_csrf", token))
+		require.NoError(t, writer.Close())
+
+		w := runCSRFTestWithBody(t, srv, "development", testUser.Email, body, writer.FormDataContentType())
 		assert.Equal(t, http.StatusOK, w.Code)
 	})
 

@@ -6,6 +6,7 @@
     </div>
 
     <form method="post" action="/api/ebooks/import" enctype="multipart/form-data">
+        <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
         <div class="form-group">
             <label for="import-ebook-file">EPUB file</label>
             <input id="import-ebook-file" type="file" name="epub" accept="application/epub+zip,.epub" class="form-control" required />
