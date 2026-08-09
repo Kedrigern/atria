@@ -199,16 +199,40 @@ func Import(ctx context.Context, db *sql.DB, ownerID uuid.UUID, input ImportInpu
 		return nil, fmt.Errorf("uploaded file must be an EPUB, got %s", mimeType.String())
 	}
 
+	metadata, _ := ReadEPUBMetadata(input.Path)
+	if metadata != nil {
+		input.Title = firstNonEmpty(input.Title, metadata.Title)
+		input.Description = firstNonEmpty(input.Description, metadata.Description)
+		input.Author = firstNonEmpty(input.Author, metadata.Author)
+		input.Language = firstNonEmpty(input.Language, metadata.Language)
+	}
+	if strings.TrimSpace(input.Title) == "" {
+		input.Title = strings.TrimSuffix(filepath.Base(input.Filename), filepath.Ext(input.Filename))
+	}
+
 	attachment, err := attachments.AddAttachment(ctx, db, ownerID, input.Path, input.Filename)
 	if err != nil {
 		return nil, fmt.Errorf("store imported EPUB: %w", err)
 	}
+
+	var coverAttachmentID *uuid.UUID
+	cover, err := ExtractEPUBCover(input.Path, filepath.Dir(input.Path))
+	if err == nil {
+		defer os.Remove(cover.Path)
+		coverAttachment, err := attachments.AddAttachment(ctx, db, ownerID, cover.Path, cover.Filename)
+		if err != nil {
+			return nil, fmt.Errorf("store imported EPUB cover: %w", err)
+		}
+		coverAttachmentID = &coverAttachment.ID
+	}
+
 	return Create(ctx, db, ownerID, CreateInput{
-		Title:            input.Title,
-		Description:      input.Description,
-		Author:           input.Author,
-		Language:         input.Language,
-		EPUBAttachmentID: attachment.ID,
+		Title:             input.Title,
+		Description:       input.Description,
+		Author:            input.Author,
+		Language:          input.Language,
+		CoverAttachmentID: coverAttachmentID,
+		EPUBAttachmentID:  attachment.ID,
 	})
 }
 
@@ -405,6 +429,13 @@ func ebookSlug(title string) string {
 		slug = slug[:100]
 	}
 	return slug
+}
+
+func firstNonEmpty(value, fallback string) string {
+	if strings.TrimSpace(value) != "" {
+		return value
+	}
+	return fallback
 }
 
 func stringPointer(value string) *string {

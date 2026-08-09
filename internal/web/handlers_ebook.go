@@ -43,12 +43,6 @@ func (s *Server) handleEbookImport(c *gin.Context) {
 		return
 	}
 
-	title := strings.TrimSpace(c.PostForm("title"))
-	if title == "" {
-		s.renderError(c, http.StatusBadRequest, "Title is required")
-		return
-	}
-
 	file, err := c.FormFile("epub")
 	if err != nil {
 		s.renderError(c, http.StatusBadRequest, "An EPUB file is required")
@@ -62,7 +56,7 @@ func (s *Server) handleEbookImport(c *gin.Context) {
 	defer cleanup()
 
 	book, err := ebooks.Import(c.Request.Context(), s.db, user.ID, ebooks.ImportInput{
-		Title:       title,
+		Title:       c.PostForm("title"),
 		Description: c.PostForm("description"),
 		Author:      c.PostForm("author"),
 		Language:    c.PostForm("language"),
