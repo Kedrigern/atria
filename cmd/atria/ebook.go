@@ -35,7 +35,7 @@ var ebookListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List generated e-books",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		ebooks, err := ebooks.List(app.Ctx, app.DB, app.Owner.ID)
+		ebooks, err := ebooks.List(app.Ctx, app.DB, app.Owner.ID, "")
 		if err != nil {
 			return err
 		}

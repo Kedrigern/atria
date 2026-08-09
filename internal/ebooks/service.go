@@ -102,7 +102,7 @@ func GetDownload(ctx context.Context, db *sql.DB, ownerID, ebookID uuid.UUID) (*
 }
 
 // List returns active e-books owned by a user, newest first.
-func List(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]Summary, error) {
+func List(ctx context.Context, db *sql.DB, ownerID uuid.UUID, author string) ([]Summary, error) {
 	query := `
 		SELECT e.id, e.title, eb.description, eb.author, eb.language, a.filename, cover.disk_path, eb.generated_at,
 		       COUNT(l.target_id) AS source_count
@@ -112,10 +112,11 @@ func List(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]Summary, error)
 		LEFT JOIN attachments cover ON cover.id = eb.cover_attachment_id
 		LEFT JOIN rel_entity_links l ON l.source_id = e.id AND l.context = 'ebook-source'
 		WHERE e.owner_id = $1 AND e.type = $2 AND e.deleted_at IS NULL
+		  AND ($3 = '' OR eb.author = $3)
 		GROUP BY e.id, e.title, eb.description, eb.author, eb.language, a.filename, cover.disk_path, eb.generated_at
 		ORDER BY eb.generated_at DESC
 	`
-	rows, err := db.QueryContext(ctx, query, ownerID, core.TypeEbook)
+	rows, err := db.QueryContext(ctx, query, ownerID, core.TypeEbook, author)
 	if err != nil {
 		return nil, fmt.Errorf("list e-books: %w", err)
 	}
@@ -133,6 +134,24 @@ func List(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]Summary, error)
 		return nil, fmt.Errorf("iterate e-books: %w", err)
 	}
 	return ebooks, nil
+}
+
+// Authors returns distinct e-book authors owned by a user.
+func Authors(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]string, error) {
+	rows, err := db.QueryContext(ctx, `SELECT DISTINCT author FROM ebooks eb JOIN entities e ON e.id = eb.id WHERE e.owner_id = $1 AND e.deleted_at IS NULL AND author IS NOT NULL AND author <> '' ORDER BY author`, ownerID)
+	if err != nil {
+		return nil, fmt.Errorf("list e-book authors: %w", err)
+	}
+	defer rows.Close()
+	var authors []string
+	for rows.Next() {
+		var author string
+		if err := rows.Scan(&author); err != nil {
+			return nil, err
+		}
+		authors = append(authors, author)
+	}
+	return authors, rows.Err()
 }
 
 // Generate creates an immutable EPUB snapshot, stores its attachments, and creates the e-book entity.

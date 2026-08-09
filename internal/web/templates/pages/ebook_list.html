@@ -13,6 +13,14 @@
         </div>
     </div>
 
+    <form method="get" action="/ebooks" class="mb-3">
+        <label for="ebook-author-filter">Author</label>
+        <select id="ebook-author-filter" name="author" onchange="this.form.submit()">
+            <option value="">All authors</option>
+            {{range .Authors}}<option value="{{.}}" {{if eq . $.SelectedAuthor}}selected{{end}}>{{.}}</option>{{end}}
+        </select>
+    </form>
+
     <div class="ebook-library" data-ebook-library data-view="list">
         {{range .Ebooks}}
         <article class="ebook-card">

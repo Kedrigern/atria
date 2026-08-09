@@ -21,12 +21,18 @@ func (s *Server) handleEbookList(c *gin.Context) {
 		return
 	}
 
-	books, err := ebooks.List(c.Request.Context(), s.db, user.ID)
+	author := c.Query("author")
+	books, err := ebooks.List(c.Request.Context(), s.db, user.ID, author)
 	if err != nil {
 		s.renderError(c, http.StatusInternalServerError, "Failed to load e-books: "+err.Error())
 		return
 	}
-	s.render(c, "ebook_list.html", gin.H{"Ebooks": books})
+	authors, err := ebooks.Authors(c.Request.Context(), s.db, user.ID)
+	if err != nil {
+		s.renderError(c, http.StatusInternalServerError, "Failed to load e-book authors: "+err.Error())
+		return
+	}
+	s.render(c, "ebook_list.html", gin.H{"Ebooks": books, "Authors": authors, "SelectedAuthor": author})
 }
 
 func (s *Server) handleEbookNew(c *gin.Context) {
