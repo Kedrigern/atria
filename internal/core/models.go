@@ -33,6 +33,7 @@ const (
 	TypeRSS         EntityType = "rss"
 	TypeSpreadsheet EntityType = "spreadsheet"
 	TypeFolder      EntityType = "folder"
+	TypeEbook       EntityType = "ebook"
 )
 
 type AuthSource string
@@ -123,6 +124,19 @@ type Article struct {
 // Article DomainPrefs solves specific settings for domain
 type DomainPrefs struct {
 	ArticleImages string `json:"article_images"` // "replace", "strip", "link"
+}
+
+// EBOOK
+
+type Ebook struct {
+	Entity
+	ID                uuid.UUID  `json:"id" db:"id"`
+	Description       *string    `json:"description,omitempty" db:"description"`
+	Author            *string    `json:"author,omitempty" db:"author"`
+	Language          *string    `json:"language,omitempty" db:"language"`
+	CoverAttachmentID *uuid.UUID `json:"cover_attachment_id,omitempty" db:"cover_attachment_id"`
+	EPUBAttachmentID  uuid.UUID  `json:"epub_attachment_id" db:"epub_attachment_id"`
+	GeneratedAt       time.Time  `json:"generated_at" db:"generated_at"`
 }
 
 // RSS
