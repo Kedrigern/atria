@@ -61,7 +61,9 @@ PDF support is out of scope for the initial implementation.
 ### 2. Extend the CLI
 
 - Add an `atria ebook` command group and service functions for creating, retrieving, listing, and deleting e-books.
-- Add a command that accepts entity IDs in order and generates an immutable EPUB snapshot.
+- Add `atria ebook create --title <title> <identifier>...` to generate an immutable EPUB snapshot.
+- Add `atria ebook list` to show generated e-books, their EPUB file, and source count.
+- Add `atria ebook download <identifier> --out <path>` to retrieve a generated EPUB.
 - Support title, description, author, language, cover image, and output filename options.
 - Ignore invalid, missing, deleted, unauthorized, and unsupported IDs.
 - Create the e-book entity, attach the generated EPUB, and link the source entities.
