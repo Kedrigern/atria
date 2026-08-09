@@ -1,0 +1,22 @@
+{{define "content"}}
+<div class="centered-view" data-mobile-title="ATRIA: E-books">
+    {{template "flash_message" .}}
+    <div class="page-header-row mb-3">
+        <h2 class="hide-mobile">E-books</h2>
+        <a href="/ebooks/new" hx-get="/ebooks/new" hx-target="#main-content" hx-push-url="true" class="button-link btn-primary btn-sm">+ Create e-book</a>
+    </div>
+
+    {{range .Ebooks}}
+    <div class="list-item">
+        <div>
+            <h4><a href="/ebooks/{{.ID}}" hx-get="/ebooks/{{.ID}}" hx-target="#main-content" hx-push-url="true">{{.Title}}</a></h4>
+            <small class="text-muted">{{.Filename}} · {{.SourceCount}} chapters · {{formatDate .GeneratedAt}}</small>
+            {{if .Author}}<div class="text-muted" style="font-size: 0.9rem">{{.Author}}{{if .Language}} · {{.Language}}{{end}}</div>{{end}}
+        </div>
+        <a href="/ebooks/{{.ID}}/download" class="button-link outline btn-sm" title="Download EPUB"><span class="icon-sm icon-download"></span></a>
+    </div>
+    {{else}}
+    <p class="page-empty-hint">No e-books yet. Create one from articles and notes.</p>
+    {{end}}
+</div>
+{{end}}

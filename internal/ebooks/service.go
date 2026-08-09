@@ -4,10 +4,14 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
+	"atria/internal/attachments"
 	"atria/internal/core"
+	"atria/internal/export"
 
 	"github.com/gofrs/uuid/v5"
 )
@@ -21,6 +25,30 @@ type CreateInput struct {
 	CoverAttachmentID *uuid.UUID
 	EPUBAttachmentID  uuid.UUID
 	SourceEntityIDs   []uuid.UUID
+}
+
+// GenerateInput contains the source entities and metadata for an EPUB snapshot.
+type GenerateInput struct {
+	Title       string
+	Description string
+	Author      string
+	Language    string
+	CoverPath   string
+	CoverName   string
+	Filename    string
+	Sources     []core.EntitySummary
+}
+
+// Detail contains an e-book and the source entities recorded for it.
+type Detail struct {
+	ID          uuid.UUID
+	Title       string
+	Description *string
+	Author      *string
+	Language    *string
+	Filename    string
+	GeneratedAt time.Time
+	Sources     []core.EntitySummary
 }
 
 // Summary contains the fields displayed by the e-book library and CLI list command.
@@ -90,6 +118,127 @@ func List(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]Summary, error)
 		return nil, fmt.Errorf("iterate e-books: %w", err)
 	}
 	return ebooks, nil
+}
+
+// Generate creates an immutable EPUB snapshot, stores its attachments, and creates the e-book entity.
+func Generate(ctx context.Context, db *sql.DB, ownerID uuid.UUID, input GenerateInput) (*core.Ebook, error) {
+	if len(input.Sources) == 0 {
+		return nil, fmt.Errorf("at least one source entity is required")
+	}
+
+	tempDir, err := os.MkdirTemp("", "atria-ebook-*")
+	if err != nil {
+		return nil, fmt.Errorf("create temporary directory: %w", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	filename := ebookFilename(input.Title, input.Filename)
+	outputPath := filepath.Join(tempDir, filename)
+	if err := export.ExportEbookEPUB(ctx, db, input.Sources, outputPath, export.EbookMetadata{
+		Title:              input.Title,
+		Description:        input.Description,
+		Author:             input.Author,
+		Language:           input.Language,
+		CoverPath:          input.CoverPath,
+		IncludeChapterTags: true,
+	}); err != nil {
+		return nil, fmt.Errorf("generate EPUB: %w", err)
+	}
+
+	epubAttachment, err := attachments.AddAttachment(ctx, db, ownerID, outputPath, filename)
+	if err != nil {
+		return nil, fmt.Errorf("store EPUB attachment: %w", err)
+	}
+
+	var coverAttachmentID *uuid.UUID
+	if input.CoverPath != "" {
+		coverName := input.CoverName
+		if coverName == "" {
+			coverName = filepath.Base(input.CoverPath)
+		}
+		cover, err := attachments.AddAttachment(ctx, db, ownerID, input.CoverPath, coverName)
+		if err != nil {
+			return nil, fmt.Errorf("store e-book cover: %w", err)
+		}
+		coverAttachmentID = &cover.ID
+	}
+
+	sourceIDs := make([]uuid.UUID, 0, len(input.Sources))
+	for _, source := range input.Sources {
+		sourceIDs = append(sourceIDs, source.ID)
+	}
+	return Create(ctx, db, ownerID, CreateInput{
+		Title:             input.Title,
+		Description:       input.Description,
+		Author:            input.Author,
+		Language:          input.Language,
+		CoverAttachmentID: coverAttachmentID,
+		EPUBAttachmentID:  epubAttachment.ID,
+		SourceEntityIDs:   sourceIDs,
+	})
+}
+
+// GetDetail returns an active e-book and its linked sources.
+func GetDetail(ctx context.Context, db *sql.DB, ownerID, ebookID uuid.UUID) (*Detail, error) {
+	var detail Detail
+	err := db.QueryRowContext(ctx, `
+		SELECT e.id, e.title, eb.description, eb.author, eb.language, a.filename, eb.generated_at
+		FROM entities e
+		JOIN ebooks eb ON eb.id = e.id
+		JOIN attachments a ON a.id = eb.epub_attachment_id
+		WHERE e.id = $1 AND e.owner_id = $2 AND e.type = $3 AND e.deleted_at IS NULL
+	`, ebookID, ownerID, core.TypeEbook).Scan(
+		&detail.ID, &detail.Title, &detail.Description, &detail.Author, &detail.Language, &detail.Filename, &detail.GeneratedAt,
+	)
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("e-book not found")
+	}
+	if err != nil {
+		return nil, fmt.Errorf("get e-book: %w", err)
+	}
+
+	rows, err := db.QueryContext(ctx, `
+		SELECT e.id, e.title, e.type
+		FROM rel_entity_links l
+		JOIN entities e ON e.id = l.target_id
+		WHERE l.source_id = $1 AND l.context = 'ebook-source' AND e.deleted_at IS NULL
+		ORDER BY e.created_at ASC
+	`, ebookID)
+	if err != nil {
+		return nil, fmt.Errorf("list e-book sources: %w", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var source core.EntitySummary
+		if err := rows.Scan(&source.ID, &source.Title, &source.Type); err != nil {
+			return nil, fmt.Errorf("scan e-book source: %w", err)
+		}
+		detail.Sources = append(detail.Sources, source)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate e-book sources: %w", err)
+	}
+	return &detail, nil
+}
+
+// Delete marks an active e-book owned by the user as deleted.
+func Delete(ctx context.Context, db *sql.DB, ownerID, ebookID uuid.UUID) error {
+	result, err := db.ExecContext(ctx, `
+		UPDATE entities
+		SET deleted_at = CURRENT_TIMESTAMP
+		WHERE id = $1 AND owner_id = $2 AND type = $3 AND deleted_at IS NULL
+	`, ebookID, ownerID, core.TypeEbook)
+	if err != nil {
+		return fmt.Errorf("delete e-book: %w", err)
+	}
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("confirm e-book deletion: %w", err)
+	}
+	if rows == 0 {
+		return fmt.Errorf("e-book not found")
+	}
+	return nil
 }
 
 // Create creates an e-book entity, links its attachments, and records its source entities.
@@ -201,6 +350,18 @@ func linkAttachment(ctx context.Context, tx *sql.Tx, ebookID, attachmentID uuid.
 		return fmt.Errorf("link e-book attachment: %w", err)
 	}
 	return nil
+}
+
+func ebookFilename(title, filename string) string {
+	filename = strings.TrimSpace(filepath.Base(filename))
+	if filename == "" || filename == "." {
+		filename = strings.ToLower(strings.Join(strings.Fields(title), "-"))
+		filename = strings.NewReplacer("/", "-", "\\", "-").Replace(filename)
+	}
+	if !strings.HasSuffix(strings.ToLower(filename), ".epub") {
+		filename += ".epub"
+	}
+	return filename
 }
 
 func ebookSlug(title string) string {

@@ -1,0 +1,201 @@
+package web
+
+import (
+	"atria/internal/core"
+	"atria/internal/ebooks"
+	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
+
+	"github.com/gin-gonic/gin"
+	"github.com/gofrs/uuid/v5"
+)
+
+func (s *Server) handleEbookList(c *gin.Context) {
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+
+	books, err := ebooks.List(c.Request.Context(), s.db, user.ID)
+	if err != nil {
+		s.renderError(c, http.StatusInternalServerError, "Failed to load e-books: "+err.Error())
+		return
+	}
+	s.render(c, "ebook_list.html", gin.H{"Ebooks": books})
+}
+
+func (s *Server) handleEbookNew(c *gin.Context) {
+	s.render(c, "ebook_form.html", gin.H{})
+}
+
+func (s *Server) handleEbookCreate(c *gin.Context) {
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+
+	title := strings.TrimSpace(c.PostForm("title"))
+	if title == "" {
+		s.renderError(c, http.StatusBadRequest, "Title is required")
+		return
+	}
+
+	sources, skipped, err := s.resolveEbookSources(c, user.ID, c.PostForm("source_ids"))
+	if err != nil {
+		s.renderError(c, http.StatusInternalServerError, "Failed to resolve sources: "+err.Error())
+		return
+	}
+	if len(sources) == 0 {
+		s.renderError(c, http.StatusBadRequest, "Provide at least one valid article or note ID")
+		return
+	}
+
+	coverPath, coverName, cleanup, err := saveEbookCover(c)
+	if err != nil {
+		s.renderError(c, http.StatusInternalServerError, "Failed to save cover image: "+err.Error())
+		return
+	}
+	defer cleanup()
+
+	book, err := ebooks.Generate(c.Request.Context(), s.db, user.ID, ebooks.GenerateInput{
+		Title:       title,
+		Description: c.PostForm("description"),
+		Author:      c.PostForm("author"),
+		Language:    c.PostForm("language"),
+		CoverPath:   coverPath,
+		CoverName:   coverName,
+		Filename:    c.PostForm("filename"),
+		Sources:     sources,
+	})
+	if err != nil {
+		s.renderError(c, http.StatusInternalServerError, "Failed to generate e-book: "+err.Error())
+		return
+	}
+
+	message := "E-book created."
+	if skipped > 0 {
+		message += " Some invalid or unsupported source IDs were skipped."
+	}
+	s.setFlash(c, "success", message)
+	url := "/ebooks/" + book.ID.String()
+	if c.GetHeader("HX-Request") == "true" {
+		c.Header("HX-Redirect", url)
+		c.Status(http.StatusOK)
+		return
+	}
+	c.Redirect(http.StatusSeeOther, url)
+}
+
+func (s *Server) handleEbookDetail(c *gin.Context) {
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+
+	id, err := core.ParseUUID(c.Param("id"))
+	if err != nil {
+		s.renderError(c, http.StatusNotFound, "E-book not found")
+		return
+	}
+	book, err := ebooks.GetDetail(c.Request.Context(), s.db, user.ID, id)
+	if err != nil {
+		s.renderError(c, http.StatusNotFound, "E-book not found")
+		return
+	}
+	s.render(c, "ebook_detail.html", gin.H{"Ebook": book})
+}
+
+func (s *Server) handleEbookDownload(c *gin.Context) {
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+
+	id, err := core.ParseUUID(c.Param("id"))
+	if err != nil {
+		s.renderError(c, http.StatusNotFound, "E-book not found")
+		return
+	}
+	download, err := ebooks.GetDownload(c.Request.Context(), s.db, user.ID, id)
+	if err != nil {
+		s.renderError(c, http.StatusNotFound, "E-book not found")
+		return
+	}
+
+	storagePath := os.Getenv("STORAGE_PATH")
+	if storagePath == "" {
+		storagePath = "./data/attachments"
+	}
+	path := filepath.Join(storagePath, download.DiskPath)
+	if _, err := os.Stat(path); err != nil {
+		s.renderError(c, http.StatusNotFound, "E-book file not found")
+		return
+	}
+	c.FileAttachment(path, download.Filename)
+}
+
+func (s *Server) handleEbookDelete(c *gin.Context) {
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+
+	id, err := core.ParseUUID(c.Param("id"))
+	if err != nil {
+		s.renderError(c, http.StatusNotFound, "E-book not found")
+		return
+	}
+	if err := ebooks.Delete(c.Request.Context(), s.db, user.ID, id); err != nil {
+		s.renderError(c, http.StatusNotFound, "E-book not found")
+		return
+	}
+
+	if c.GetHeader("HX-Request") == "true" {
+		c.Header("HX-Redirect", "/ebooks")
+		c.Status(http.StatusOK)
+		return
+	}
+	c.Redirect(http.StatusSeeOther, "/ebooks")
+}
+
+func (s *Server) resolveEbookSources(c *gin.Context, ownerID uuid.UUID, rawIDs string) ([]core.EntitySummary, int, error) {
+	identifiers := strings.Fields(rawIDs)
+	sources := make([]core.EntitySummary, 0, len(identifiers))
+	skipped := 0
+	for _, identifier := range identifiers {
+		entities, err := core.FindEntities(c.Request.Context(), s.db, ownerID, "", identifier, false)
+		if err != nil {
+			return nil, skipped, err
+		}
+		if len(entities) != 1 || (entities[0].Type != core.TypeArticle && entities[0].Type != core.TypeNote) {
+			skipped++
+			continue
+		}
+		sources = append(sources, entities[0])
+	}
+	return sources, skipped, nil
+}
+
+func saveEbookCover(c *gin.Context) (string, string, func(), error) {
+	file, err := c.FormFile("cover")
+	if err != nil {
+		return "", "", func() {}, nil
+	}
+
+	temp, err := os.CreateTemp("", "atria-ebook-cover-*")
+	if err != nil {
+		return "", "", func() {}, err
+	}
+	tempPath := temp.Name()
+	if err := temp.Close(); err != nil {
+		os.Remove(tempPath)
+		return "", "", func() {}, err
+	}
+	if err := c.SaveUploadedFile(file, tempPath); err != nil {
+		os.Remove(tempPath)
+		return "", "", func() {}, err
+	}
+	return tempPath, file.Filename, func() { _ = os.Remove(tempPath) }, nil
+}

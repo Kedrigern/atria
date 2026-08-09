@@ -1,0 +1,37 @@
+{{define "content"}}
+<div class="centered-view" data-mobile-title="ATRIA: E-book" style="max-width: 900px">
+    {{template "flash_message" .}}
+    <div class="page-header-row mb-3">
+        <div>
+            <h2 style="margin: 0">{{.Ebook.Title}}</h2>
+            <small class="text-muted">Generated {{formatDate .Ebook.GeneratedAt}}</small>
+        </div>
+        <div class="action-row">
+            <a href="/ebooks/{{.Ebook.ID}}/download" class="button-link btn-primary btn-sm"><span class="icon-sm icon-download"></span> Download EPUB</a>
+            <form method="post" action="/api/ebooks/{{.Ebook.ID}}/delete" class="inline-action-form" onsubmit="return confirm('Delete this e-book?')">
+                <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
+                <button type="submit" class="outline btn-sm btn-danger" title="Delete e-book"><span class="icon-sm icon-trash"></span></button>
+            </form>
+        </div>
+    </div>
+
+    {{if .Ebook.Description}}<p>{{.Ebook.Description}}</p>{{end}}
+    <dl>
+        {{if .Ebook.Author}}<dt>Author</dt><dd>{{.Ebook.Author}}</dd>{{end}}
+        {{if .Ebook.Language}}<dt>Language</dt><dd>{{.Ebook.Language}}</dd>{{end}}
+        <dt>File</dt><dd>{{.Ebook.Filename}}</dd>
+    </dl>
+
+    <h3>Source entities</h3>
+    <ul class="meta-list">
+        {{range .Ebook.Sources}}
+        <li class="meta-list-item">
+            {{if eq .Type "note"}}<a href="/notes/{{.ID}}">{{.Title}}</a>{{else}}<a href="/read/{{.ID}}">{{.Title}}</a>{{end}}
+            <span class="tag">{{.Type}}</span>
+        </li>
+        {{else}}
+        <li class="text-muted">No active source entities remain.</li>
+        {{end}}
+    </ul>
+</div>
+{{end}}

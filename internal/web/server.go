@@ -237,6 +237,15 @@ func (s *Server) SetupRouter() *gin.Engine {
 		notes.GET("/:id/export/epub", s.handleNoteExportEPUB)
 	}
 
+	// E-books
+	ebooks := auth.Group("/ebooks")
+	{
+		ebooks.GET("", s.handleEbookList)
+		ebooks.GET("/new", s.handleEbookNew)
+		ebooks.GET("/:id", s.handleEbookDetail)
+		ebooks.GET("/:id/download", s.handleEbookDownload)
+	}
+
 	// Tag details are content navigation, not settings.
 	auth.GET("/tags/:name", s.handleTagDetail)
 
@@ -285,6 +294,13 @@ func (s *Server) SetupRouter() *gin.Engine {
 			apiArticles.POST("/:id/delete", s.handleArticleDelete)
 			apiArticles.POST("/:id/refetch", s.handleArticleRefetch)
 			apiArticles.POST("/:id/note", s.handleArticleNoteUpdate)
+		}
+
+		// API: E-books
+		apiEbooks := api.Group("/ebooks")
+		{
+			apiEbooks.POST("/create", s.handleEbookCreate)
+			apiEbooks.POST("/:id/delete", s.handleEbookDelete)
 		}
 
 		// API: Notes

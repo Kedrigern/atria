@@ -73,6 +73,23 @@ PDF support is out of scope for the initial implementation.
 
 - Add an **E-books** item to the main navigation.
 - Add an e-book library page with metadata, source links, download, and deletion actions.
-- Add an e-book creation page that initially accepts one entity ID per line.
+- Add an e-book creation page that initially accepts one entity ID per line, optional EPUB metadata, and an optional cover image.
 - Reuse the same generation service and validation rules as the CLI.
 - Add clear success and error feedback for generation failures.
+
+## Future enhancements
+
+### Code blocks and syntax highlighting
+
+EPUB readers do not run Atria’s browser-side Highlight.js integration. Add an EPUB stylesheet so code blocks remain readable offline. Server-side syntax highlighting can be added later with a Go library such as Chroma.
+
+### Mermaid diagrams
+
+EPUB readers do not run Atria’s browser-side Mermaid integration. To include rendered diagrams, generate an SVG during e-book creation and embed it in the EPUB.
+
+Potential to-do:
+
+- Add optional Mermaid rendering through a locally installed Mermaid CLI (`mmdc`) or equivalent renderer.
+- Render each Mermaid source block as an SVG during EPUB generation.
+- Preserve the original Mermaid block as code and emit a warning when the renderer is unavailable or fails.
+- Do not use a remote rendering service, because diagrams may contain private content.

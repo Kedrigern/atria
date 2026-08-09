@@ -7,11 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"atria/internal/attachments"
 	"atria/internal/cli"
 	"atria/internal/core"
 	"atria/internal/ebooks"
-	"atria/internal/export"
 
 	"github.com/gofrs/uuid/v5"
 	"github.com/spf13/cobra"
@@ -89,59 +87,27 @@ var ebookCreateCmd = &cobra.Command{
 	Short: "Create an EPUB snapshot from articles and notes",
 	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		items, sourceIDs := resolveEbookSources(args)
+		items, _ := resolveEbookSources(args)
 		if len(items) == 0 {
 			return fmt.Errorf("no valid articles or notes found for the e-book")
 		}
 
-		tempDir, err := os.MkdirTemp("", "atria-ebook-*")
-		if err != nil {
-			return fmt.Errorf("create temporary directory: %w", err)
-		}
-		defer os.RemoveAll(tempDir)
-
-		outputFilename := ebookOutputFilename(ebookTitle, ebookFilename)
-		outputPath := filepath.Join(tempDir, outputFilename)
 		fmt.Printf("📚 Generating EPUB with %d chapters...\n", len(items))
-		if err := export.ExportEbookEPUB(app.Ctx, app.DB, items, outputPath, export.EbookMetadata{
-			Title:              ebookTitle,
-			Description:        ebookDescription,
-			Author:             ebookAuthor,
-			Language:           ebookLanguage,
-			CoverPath:          ebookCoverPath,
-			IncludeChapterTags: true,
-		}); err != nil {
-			return fmt.Errorf("generate EPUB: %w", err)
-		}
-
-		epubAttachment, err := attachments.AddAttachment(app.Ctx, app.DB, app.Owner.ID, outputPath, outputFilename)
-		if err != nil {
-			return fmt.Errorf("store EPUB attachment: %w", err)
-		}
-
-		var coverAttachmentID *uuid.UUID
-		if ebookCoverPath != "" {
-			cover, err := attachments.AddAttachment(app.Ctx, app.DB, app.Owner.ID, ebookCoverPath, filepath.Base(ebookCoverPath))
-			if err != nil {
-				return fmt.Errorf("store e-book cover: %w", err)
-			}
-			coverAttachmentID = &cover.ID
-		}
-
-		ebook, err := ebooks.Create(app.Ctx, app.DB, app.Owner.ID, ebooks.CreateInput{
-			Title:             ebookTitle,
-			Description:       ebookDescription,
-			Author:            ebookAuthor,
-			Language:          ebookLanguage,
-			CoverAttachmentID: coverAttachmentID,
-			EPUBAttachmentID:  epubAttachment.ID,
-			SourceEntityIDs:   sourceIDs,
+		ebook, err := ebooks.Generate(app.Ctx, app.DB, app.Owner.ID, ebooks.GenerateInput{
+			Title:       ebookTitle,
+			Description: ebookDescription,
+			Author:      ebookAuthor,
+			Language:    ebookLanguage,
+			CoverPath:   ebookCoverPath,
+			CoverName:   filepath.Base(ebookCoverPath),
+			Filename:    ebookFilename,
+			Sources:     items,
 		})
 		if err != nil {
-			return fmt.Errorf("create e-book: %w", err)
+			return err
 		}
 
-		fmt.Printf("✅ E-book created\nID:   %s\nFile: %s\n", FormatID(ebook.ID, showLong), epubAttachment.Filename)
+		fmt.Printf("✅ E-book created\nID:   %s\n", FormatID(ebook.ID, showLong))
 		return nil
 	},
 }
