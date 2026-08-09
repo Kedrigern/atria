@@ -30,6 +30,67 @@ func (s *Server) handleEbookNew(c *gin.Context) {
 	s.render(c, "ebook_form.html", gin.H{})
 }
 
+func (s *Server) handleEbookImportForm(c *gin.Context) {
+	s.render(c, "ebook_import.html", gin.H{})
+}
+
+func (s *Server) handleEbookImport(c *gin.Context) {
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+
+	title := strings.TrimSpace(c.PostForm("title"))
+	if title == "" {
+		s.renderError(c, http.StatusBadRequest, "Title is required")
+		return
+	}
+
+	file, err := c.FormFile("epub")
+	if err != nil {
+		s.renderError(c, http.StatusBadRequest, "An EPUB file is required")
+		return
+	}
+	temp, err := os.CreateTemp("", "atria-ebook-import-*")
+	if err != nil {
+		s.renderError(c, http.StatusInternalServerError, "Failed to prepare imported EPUB")
+		return
+	}
+	tempPath := temp.Name()
+	if err := temp.Close(); err != nil {
+		os.Remove(tempPath)
+		s.renderError(c, http.StatusInternalServerError, "Failed to prepare imported EPUB")
+		return
+	}
+	defer os.Remove(tempPath)
+	if err := c.SaveUploadedFile(file, tempPath); err != nil {
+		s.renderError(c, http.StatusInternalServerError, "Failed to save imported EPUB")
+		return
+	}
+
+	book, err := ebooks.Import(c.Request.Context(), s.db, user.ID, ebooks.ImportInput{
+		Title:       title,
+		Description: c.PostForm("description"),
+		Author:      c.PostForm("author"),
+		Language:    c.PostForm("language"),
+		Path:        tempPath,
+		Filename:    file.Filename,
+	})
+	if err != nil {
+		s.renderError(c, http.StatusBadRequest, "Failed to import EPUB: "+err.Error())
+		return
+	}
+
+	s.setFlash(c, "success", "E-book imported.")
+	url := "/ebooks/" + book.ID.String()
+	if c.GetHeader("HX-Request") == "true" {
+		c.Header("HX-Redirect", url)
+		c.Status(http.StatusOK)
+		return
+	}
+	c.Redirect(http.StatusSeeOther, url)
+}
+
 func (s *Server) handleEbookCreate(c *gin.Context) {
 	user := s.getUser(c)
 	if user == nil {

@@ -13,6 +13,7 @@ import (
 	"atria/internal/core"
 	"atria/internal/export"
 
+	"github.com/gabriel-vasile/mimetype"
 	"github.com/gofrs/uuid/v5"
 )
 
@@ -37,6 +38,16 @@ type GenerateInput struct {
 	CoverName   string
 	Filename    string
 	Sources     []core.EntitySummary
+}
+
+// ImportInput contains metadata for an existing EPUB uploaded to Atria.
+type ImportInput struct {
+	Title       string
+	Description string
+	Author      string
+	Language    string
+	Path        string
+	Filename    string
 }
 
 // Detail contains an e-book and the source entities recorded for it.
@@ -175,6 +186,29 @@ func Generate(ctx context.Context, db *sql.DB, ownerID uuid.UUID, input Generate
 		CoverAttachmentID: coverAttachmentID,
 		EPUBAttachmentID:  epubAttachment.ID,
 		SourceEntityIDs:   sourceIDs,
+	})
+}
+
+// Import stores an existing EPUB and creates an e-book without source entity links.
+func Import(ctx context.Context, db *sql.DB, ownerID uuid.UUID, input ImportInput) (*core.Ebook, error) {
+	mimeType, err := mimetype.DetectFile(input.Path)
+	if err != nil {
+		return nil, fmt.Errorf("detect imported file type: %w", err)
+	}
+	if mimeType.String() != "application/epub+zip" {
+		return nil, fmt.Errorf("uploaded file must be an EPUB, got %s", mimeType.String())
+	}
+
+	attachment, err := attachments.AddAttachment(ctx, db, ownerID, input.Path, input.Filename)
+	if err != nil {
+		return nil, fmt.Errorf("store imported EPUB: %w", err)
+	}
+	return Create(ctx, db, ownerID, CreateInput{
+		Title:            input.Title,
+		Description:      input.Description,
+		Author:           input.Author,
+		Language:         input.Language,
+		EPUBAttachmentID: attachment.ID,
 	})
 }
 

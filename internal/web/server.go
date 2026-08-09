@@ -242,6 +242,7 @@ func (s *Server) SetupRouter() *gin.Engine {
 	{
 		ebooks.GET("", s.handleEbookList)
 		ebooks.GET("/new", s.handleEbookNew)
+		ebooks.GET("/import", s.handleEbookImportForm)
 		ebooks.GET("/:id", s.handleEbookDetail)
 		ebooks.GET("/:id/download", s.handleEbookDownload)
 	}
@@ -300,6 +301,7 @@ func (s *Server) SetupRouter() *gin.Engine {
 		apiEbooks := api.Group("/ebooks")
 		{
 			apiEbooks.POST("/create", s.handleEbookCreate)
+			apiEbooks.POST("/import", s.handleEbookImport)
 			apiEbooks.POST("/:id/delete", s.handleEbookDelete)
 		}
 

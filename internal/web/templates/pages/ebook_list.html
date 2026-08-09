@@ -3,7 +3,10 @@
     {{template "flash_message" .}}
     <div class="page-header-row mb-3">
         <h2 class="hide-mobile">E-books</h2>
-        <a href="/ebooks/new" hx-get="/ebooks/new" hx-target="#main-content" hx-push-url="true" class="button-link btn-primary btn-sm">+ Create e-book</a>
+        <div class="action-row">
+            <a href="/ebooks/import" hx-get="/ebooks/import" hx-target="#main-content" hx-push-url="true" class="button-link outline btn-sm">Import EPUB</a>
+            <a href="/ebooks/new" hx-get="/ebooks/new" hx-target="#main-content" hx-push-url="true" class="button-link btn-primary btn-sm">+ Create e-book</a>
+        </div>
     </div>
 
     {{range .Ebooks}}

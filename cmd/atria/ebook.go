@@ -82,6 +82,27 @@ var ebookDownloadCmd = &cobra.Command{
 	},
 }
 
+var ebookImportCmd = &cobra.Command{
+	Use:   "import <epub-file>",
+	Short: "Import an existing EPUB as an e-book",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		book, err := ebooks.Import(app.Ctx, app.DB, app.Owner.ID, ebooks.ImportInput{
+			Title:       ebookTitle,
+			Description: ebookDescription,
+			Author:      ebookAuthor,
+			Language:    ebookLanguage,
+			Path:        args[0],
+			Filename:    filepath.Base(args[0]),
+		})
+		if err != nil {
+			return err
+		}
+		fmt.Printf("✅ E-book imported\nID:   %s\n", FormatID(book.ID, showLong))
+		return nil
+	},
+}
+
 var ebookCreateCmd = &cobra.Command{
 	Use:   "create <identifier1> [identifier2...]",
 	Short: "Create an EPUB snapshot from articles and notes",
@@ -176,15 +197,20 @@ func ebookOutputFilename(title, filename string) string {
 
 func init() {
 	rootCmd.AddCommand(ebookCmd)
-	ebookCmd.AddCommand(ebookCreateCmd, ebookListCmd, ebookDownloadCmd)
+	ebookCmd.AddCommand(ebookCreateCmd, ebookImportCmd, ebookListCmd, ebookDownloadCmd)
 
 	ebookCreateCmd.Flags().StringVar(&ebookTitle, "title", "", "E-book title")
 	ebookCreateCmd.Flags().StringVar(&ebookDescription, "description", "", "E-book description")
 	ebookCreateCmd.Flags().StringVar(&ebookAuthor, "author", "", "E-book author or publisher")
 	ebookCreateCmd.Flags().StringVar(&ebookLanguage, "language", "", "EPUB language code, for example cs or en")
+	ebookImportCmd.Flags().StringVar(&ebookTitle, "title", "", "E-book title")
+	ebookImportCmd.Flags().StringVar(&ebookDescription, "description", "", "E-book description")
+	ebookImportCmd.Flags().StringVar(&ebookAuthor, "author", "", "E-book author or publisher")
+	ebookImportCmd.Flags().StringVar(&ebookLanguage, "language", "", "EPUB language code, for example cs or en")
 	ebookCreateCmd.Flags().StringVar(&ebookCoverPath, "cover", "", "Path to a local cover image")
 	ebookCreateCmd.Flags().StringVar(&ebookFilename, "filename", "", "Filename of the stored EPUB attachment")
 	ebookDownloadCmd.Flags().StringVarP(&ebookDownloadOut, "out", "o", "", "Destination EPUB path")
 	_ = ebookCreateCmd.MarkFlagRequired("title")
+	_ = ebookImportCmd.MarkFlagRequired("title")
 	_ = ebookDownloadCmd.MarkFlagRequired("out")
 }

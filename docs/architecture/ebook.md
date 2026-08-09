@@ -64,6 +64,7 @@ PDF support is out of scope for the initial implementation.
 - Add `atria ebook create --title <title> <identifier>...` to generate an immutable EPUB snapshot.
 - Add `atria ebook list` to show generated e-books, their EPUB file, and source count.
 - Add `atria ebook download <identifier> --out <path>` to retrieve a generated EPUB.
+- Add `atria ebook import --title <title> <epub-file>` to import an existing EPUB without source links.
 - Support title, description, author, language, cover image, and output filename options.
 - Ignore invalid, missing, deleted, unauthorized, and unsupported IDs.
 - Create the e-book entity, attach the generated EPUB, and link the source entities.
@@ -74,6 +75,7 @@ PDF support is out of scope for the initial implementation.
 - Add an **E-books** item to the main navigation.
 - Add an e-book library page with metadata, source links, download, and deletion actions.
 - Add an e-book creation page that initially accepts one entity ID per line, optional EPUB metadata, and an optional cover image.
+- Add an EPUB import page for existing e-books without source links.
 - Reuse the same generation service and validation rules as the CLI.
 - Add clear success and error feedback for generation failures.
 
