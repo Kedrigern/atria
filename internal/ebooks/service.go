@@ -284,6 +284,32 @@ func GetDetail(ctx context.Context, db *sql.DB, ownerID, ebookID uuid.UUID) (*De
 	return &detail, nil
 }
 
+// UpdateMetadata updates editable Atria metadata without changing the EPUB attachment.
+func UpdateMetadata(ctx context.Context, db *sql.DB, ownerID, ebookID uuid.UUID, title, description, author, language string) error {
+	title = strings.TrimSpace(title)
+	if title == "" {
+		return fmt.Errorf("e-book title is required")
+	}
+	result, err := db.ExecContext(ctx, `
+		UPDATE entities e
+		SET title = $1, slug = $2, updated_at = CURRENT_TIMESTAMP
+		FROM ebooks eb
+		WHERE e.id = eb.id AND e.id = $3 AND e.owner_id = $4 AND e.type = $5 AND e.deleted_at IS NULL
+	`, title, ebookSlug(title), ebookID, ownerID, core.TypeEbook)
+	if err != nil {
+		return fmt.Errorf("update e-book title: %w", err)
+	}
+	rows, err := result.RowsAffected()
+	if err != nil || rows == 0 {
+		return fmt.Errorf("e-book not found")
+	}
+	_, err = db.ExecContext(ctx, `UPDATE ebooks SET description = NULLIF($1, ''), author = NULLIF($2, ''), language = NULLIF($3, '') WHERE id = $4`, description, author, language, ebookID)
+	if err != nil {
+		return fmt.Errorf("update e-book metadata: %w", err)
+	}
+	return nil
+}
+
 // Delete marks an active e-book owned by the user as deleted.
 func Delete(ctx context.Context, db *sql.DB, ownerID, ebookID uuid.UUID) error {
 	result, err := db.ExecContext(ctx, `

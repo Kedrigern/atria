@@ -190,6 +190,42 @@ func (s *Server) handleEbookDetail(c *gin.Context) {
 	s.render(c, "ebook_detail.html", gin.H{"Ebook": book})
 }
 
+func (s *Server) handleEbookEdit(c *gin.Context) {
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+	id, err := core.ParseUUID(c.Param("id"))
+	if err != nil {
+		s.renderError(c, http.StatusNotFound, "E-book not found")
+		return
+	}
+	book, err := ebooks.GetDetail(c.Request.Context(), s.db, user.ID, id)
+	if err != nil {
+		s.renderError(c, http.StatusNotFound, "E-book not found")
+		return
+	}
+	s.render(c, "ebook_edit.html", gin.H{"Ebook": book})
+}
+
+func (s *Server) handleEbookUpdate(c *gin.Context) {
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+	id, err := core.ParseUUID(c.Param("id"))
+	if err != nil {
+		s.renderError(c, http.StatusNotFound, "E-book not found")
+		return
+	}
+	err = ebooks.UpdateMetadata(c.Request.Context(), s.db, user.ID, id, c.PostForm("title"), c.PostForm("description"), c.PostForm("author"), c.PostForm("language"))
+	if err != nil {
+		s.renderError(c, http.StatusBadRequest, "Failed to update e-book: "+err.Error())
+		return
+	}
+	c.Redirect(http.StatusSeeOther, "/ebooks/"+id.String())
+}
+
 func (s *Server) handleEbookDownload(c *gin.Context) {
 	user := s.getUser(c)
 	if user == nil {
