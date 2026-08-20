@@ -44,6 +44,11 @@ func VerifyOwner(ctx context.Context, db *sql.DB, entityID uuid.UUID) (uuid.UUID
 
 // RenameEntity updates the title (and recalculates slug) for any entity.
 func RenameEntity(ctx context.Context, db *sql.DB, ownerID, entityID uuid.UUID, newTitle string) error {
+	newTitle = strings.TrimSpace(newTitle)
+	if newTitle == "" {
+		return fmt.Errorf("entity title is required")
+	}
+
 	// Simple slug generation
 	slug := strings.ToLower(strings.ReplaceAll(newTitle, " ", "-"))
 	slug = strings.ReplaceAll(slug, "/", "-")
