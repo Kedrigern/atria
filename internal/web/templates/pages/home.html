@@ -61,6 +61,17 @@
             <p>Items in Inbox: <strong>{{.InboxCount}}</strong></p>
         </a>
 
+        <a
+            href="/games"
+            hx-get="/games"
+            hx-target="#main-content"
+            hx-push-url="true"
+            class="dashboard-card"
+        >
+            <h4 class="flex-row" style="gap: 8px">🎲 Cryptograms</h4>
+            <p>Solve short quotes one letter at a time.</p>
+        </a>
+
         <div class="dashboard-card full-width">
             <h4 class="flex-row" style="gap: 8px">
                 <span class="icon icon-note"></span>

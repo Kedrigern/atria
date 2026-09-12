@@ -1,0 +1,29 @@
+{{define "content"}}
+<div class="centered-view" data-mobile-title="ATRIA: Games">
+    <div class="page-header-row mb-3">
+        <div>
+            <h2 class="hide-mobile">Cryptograms</h2>
+            <p class="text-muted">Solve a quote by matching every number to a letter.</p>
+        </div>
+    </div>
+
+    <div class="game-library">
+        {{range .Puzzles}}
+        <article class="game-card">
+            <div>
+                <h3>{{.Title}}</h3>
+                {{if .Category}}<p class="text-muted">{{.Category}}</p>{{end}}
+                {{if .IntroText}}<p>{{.IntroText}}</p>{{end}}
+                <small class="text-muted">Difficulty: {{.DifficultyScore}} / 5</small>
+            </div>
+            <div class="game-card-action">
+                {{if .CompletedAt}}<span class="game-complete">Completed</span>{{end}}
+                <a class="button-link btn-primary" href="/games/cryptograms/{{.ID}}" hx-get="/games/cryptograms/{{.ID}}" hx-target="#main-content" hx-push-url="true">{{if .CompletedAt}}Play again{{else}}Play{{end}}</a>
+            </div>
+        </article>
+        {{else}}
+        <p class="page-empty-hint">No cryptograms are available yet.</p>
+        {{end}}
+    </div>
+</div>
+{{end}}

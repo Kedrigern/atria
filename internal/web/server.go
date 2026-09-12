@@ -237,6 +237,13 @@ func (s *Server) SetupRouter() *gin.Engine {
 		notes.GET("/:id/export/epub", s.handleNoteExportEPUB)
 	}
 
+	// Games
+	games := auth.Group("/games")
+	{
+		games.GET("", s.handleGameList)
+		games.GET("/cryptograms/:id", s.handleCryptogramPlay)
+	}
+
 	// E-books
 	ebooks := auth.Group("/ebooks")
 	{
@@ -296,6 +303,14 @@ func (s *Server) SetupRouter() *gin.Engine {
 			apiArticles.POST("/:id/delete", s.handleArticleDelete)
 			apiArticles.POST("/:id/refetch", s.handleArticleRefetch)
 			apiArticles.POST("/:id/note", s.handleArticleNoteUpdate)
+		}
+
+		// API: Games
+		apiGames := api.Group("/games/cryptograms/:id")
+		{
+			apiGames.POST("/guesses", s.handleCryptogramGuess)
+			apiGames.POST("/hint", s.handleCryptogramHint)
+			apiGames.POST("/reset", s.handleCryptogramReset)
 		}
 
 		// API: E-books

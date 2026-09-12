@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Atria - Personal Mind Palace</title>
         <link rel="stylesheet" href="/static/water.css?v=2" />
-        <link rel="stylesheet" href="/static/style.css?v=2" />
+        <link rel="stylesheet" href="/static/style.css?v=4" />
         <link rel="icon" type="image/png" href="/static/atria.png" />
         <link rel="manifest" href="/manifest.webmanifest" />
         <meta name="theme-color" content="#0d1117" />
@@ -133,6 +133,16 @@
                         <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
                     </svg>
                 </a>
+                <a
+                    href="/games"
+                    hx-get="/games"
+                    hx-target="#main-content"
+                    hx-push-url="true"
+                    class="nav-link"
+                    title="Games"
+                    aria-label="Games"
+                    ><span aria-hidden="true">🎲</span></a
+                >
                 <a
                     href="/tables"
                     hx-get="/tables"
