@@ -39,18 +39,20 @@
     </form>
     {{end}}
 
-    <div class="cryptogram-stats" aria-label="Puzzle statistics">
-        <span>Mistakes: {{.Puzzle.ErrorsMade}}</span>
-        <span>Hints: {{.Puzzle.HintsUsed}}</span>
+    <div id="cryptogram-feedback">
+        <div class="cryptogram-stats" aria-label="Puzzle statistics">
+            <span>Mistakes: {{.Puzzle.ErrorsMade}}</span>
+            <span>Hints: {{.Puzzle.HintsUsed}}</span>
+        </div>
+        {{if .Puzzle.RecentMoves}}
+        <section aria-label="Recent guesses">
+            <h3>Recent guesses</h3>
+            <ul class="cryptogram-log">
+                {{range .Puzzle.RecentMoves}}<li class="{{if .IsHint}}hint{{else if .IsCorrect}}correct{{else}}wrong{{end}}">{{.Code}} → {{.Letter}} — {{if .IsHint}}hint{{else if .IsCorrect}}correct{{else}}wrong{{end}}</li>{{end}}
+            </ul>
+        </section>
+        {{end}}
     </div>
-    {{if .Puzzle.RecentMoves}}
-    <section aria-label="Recent guesses">
-        <h3>Recent guesses</h3>
-        <ul class="cryptogram-log">
-            {{range .Puzzle.RecentMoves}}<li class="{{if .IsHint}}hint{{else if .IsCorrect}}correct{{else}}wrong{{end}}">{{.Code}} → {{.Letter}} — {{if .IsHint}}hint{{else if .IsCorrect}}correct{{else}}wrong{{end}}</li>{{end}}
-        </ul>
-    </section>
-    {{end}}
 
     {{if .Puzzle.CompletedAt}}
     <section class="cryptogram-finished">
@@ -61,5 +63,5 @@
     </section>
     {{end}}
 </div>
-<script src="/static/cryptogram.js?v=3"></script>
+<script src="/static/cryptogram.js?v=4"></script>
 {{end}}

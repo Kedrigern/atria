@@ -1041,7 +1041,7 @@ form.htmx-request button[type="submit"] {
 .cryptogram-board { display: flex; flex-wrap: wrap; align-items: end; column-gap: 22px; row-gap: 10px; padding: 22px 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 1.3rem; line-height: 2.4; }
 .cryptogram-word { display: inline-flex; align-items: end; gap: 4px; margin-right: 16px; white-space: nowrap; }
 .cipher-input, .cipher-cell { box-sizing: border-box; width: 2.1em; height: 2.35em; padding: 0 0 0.2em; border: 0; border-bottom: 2px solid var(--text-main); border-radius: 0; background: transparent; color: var(--text-bright); font: inherit; font-weight: 700; text-align: center; }
-.cipher-input::placeholder { color: var(--text-muted); font-size: 0.52em; font-weight: 400; opacity: 1; }
+.cipher-input::placeholder { color: var(--text-muted); font-size: 0.68em; font-weight: 500; opacity: 1; }
 .cipher-input:focus { outline: none; border-bottom-color: var(--links); background: color-mix(in srgb, var(--links) 12%, transparent); }
 .cipher-input.solved, .cipher-cell.solved { border-bottom-color: #15803d; }
 .cipher-cell { display: inline-flex; flex-direction: column; align-items: center; justify-content: end; }

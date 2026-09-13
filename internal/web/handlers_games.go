@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"atria/internal/core"
 	"atria/internal/games"
@@ -47,6 +48,10 @@ func (s *Server) handleCryptogramPlay(c *gin.Context) {
 	s.render(c, "cryptogram_play.html", gin.H{"Puzzle": puzzle})
 }
 
+func wantsJSON(c *gin.Context) bool {
+	return strings.Contains(c.GetHeader("Accept"), "application/json")
+}
+
 func (s *Server) handleCryptogramGuess(c *gin.Context) {
 	user := s.getUser(c)
 	if user == nil {
@@ -58,19 +63,42 @@ func (s *Server) handleCryptogramGuess(c *gin.Context) {
 		return
 	}
 	var code int
-	focusIndex := c.PostForm("focus_index")
-	nextFocusIndex := c.PostForm("next_focus_index")
 	if _, err := fmt.Sscanf(c.PostForm("code"), "%d", &code); err != nil {
-		s.renderError(c, http.StatusBadRequest, "Invalid cipher number")
+		if wantsJSON(c) {
+			c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Invalid cipher number"})
+		} else {
+			s.renderError(c, http.StatusBadRequest, "Invalid cipher number")
+		}
 		return
-	} else if err := games.Guess(c.Request.Context(), s.db, user.ID, id, code, c.PostForm("letter")); err == nil {
-		focusIndex = nextFocusIndex
-	} else {
+	}
+
+	guessSucceeded := false
+	if err := games.Guess(c.Request.Context(), s.db, user.ID, id, code, c.PostForm("letter")); err != nil {
 		var validation *games.ValidationError
-		if !errors.As(err, &validation) {
-			s.renderError(c, http.StatusInternalServerError, "Failed to save cryptogram guess")
+		if errors.As(err, &validation) {
+			if wantsJSON(c) {
+				c.JSON(http.StatusOK, gin.H{"success": false, "error": validation.Message})
+				return
+			}
+		} else {
+			if wantsJSON(c) {
+				c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to save cryptogram guess"})
+			} else {
+				s.renderError(c, http.StatusInternalServerError, "Failed to save cryptogram guess")
+			}
 			return
 		}
+	} else {
+		guessSucceeded = true
+		if wantsJSON(c) {
+			c.JSON(http.StatusOK, gin.H{"success": true})
+			return
+		}
+	}
+
+	focusIndex := c.PostForm("focus_index")
+	if guessSucceeded && c.PostForm("next_focus_index") != "" {
+		focusIndex = c.PostForm("next_focus_index")
 	}
 	url := "/games/cryptograms/" + id.String()
 	if focusIndex != "" {
