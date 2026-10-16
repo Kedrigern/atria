@@ -13,7 +13,7 @@
                 <button type="submit" class="outline btn-sm">Hint</button>
             </form>
             {{end}}
-            <form method="post" action="/api/games/cryptograms/{{.Puzzle.ID}}/reset" onsubmit="return confirm('Reset all of your guesses for this puzzle?')">
+            <form method="post" action="/api/games/cryptograms/{{.Puzzle.ID}}/reset" data-confirm="Reset all of your guesses for this puzzle?">
                 <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
                 <button type="submit" class="outline btn-sm">Reset</button>
             </form>

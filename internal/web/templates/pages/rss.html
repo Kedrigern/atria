@@ -26,7 +26,6 @@
             action="/api/rss/fetch"
             hx-post="/api/rss/fetch"
             hx-headers='{"X-CSRF-Token": "{{.CSRFToken}}"}'
-            hx-on::after-request="if(event.detail.successful){location.reload()}"
         >
             <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
             <button type="submit" class="outline btn-sm">⟳ Fetch</button>
@@ -79,11 +78,7 @@
             <button
                 type="button"
                 class="button-link outline"
-                onclick="
-                    document
-                        .getElementById('main-content')
-                        .scrollTo({ top: 0, behavior: 'smooth' })
-                "
+                data-scroll-top
             >
                 ↑ Top
             </button>

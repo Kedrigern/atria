@@ -9,7 +9,7 @@
         <div class="action-row">
             <a href="/ebooks/{{.Ebook.ID}}/edit" class="button-link outline btn-sm">Edit metadata</a>
             <a href="/ebooks/{{.Ebook.ID}}/download" class="button-link btn-primary btn-sm"><span class="icon-sm icon-download"></span> Download EPUB</a>
-            <form method="post" action="/api/ebooks/{{.Ebook.ID}}/delete" class="inline-action-form" onsubmit="return confirm('Delete this e-book?')">
+            <form method="post" action="/api/ebooks/{{.Ebook.ID}}/delete" class="inline-action-form" data-confirm="Delete this e-book?">
                 <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
                 <button type="submit" class="outline btn-sm btn-danger" title="Delete e-book"><span class="icon-sm icon-trash"></span></button>
             </form>

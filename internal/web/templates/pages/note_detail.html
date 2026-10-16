@@ -81,7 +81,7 @@
                         <button
                             type="button"
                             class="outline"
-                            onclick="setNoteEditing(false)"
+                            data-note-editing="false"
                         >
                             Zrušit
                         </button>
@@ -104,15 +104,4 @@
         </div>
     </div>
 </div>
-<script>
-    function setNoteEditing(editing) {
-        document.getElementById("note-detail").classList.toggle("is-editing", editing);
-        document.getElementById("note-view").style.display = editing ? "none" : "block";
-        document.getElementById("note-edit").style.display = editing ? "block" : "none";
-
-        if (editing) {
-            document.querySelector("#note-edit textarea").focus();
-        }
-    }
-</script>
 {{end}}
