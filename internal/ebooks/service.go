@@ -475,10 +475,7 @@ func ebookFilename(title, filename string) string {
 func ebookSlug(title string) string {
 	slug := strings.ToLower(strings.Join(strings.Fields(title), "-"))
 	slug = strings.NewReplacer("/", "-", "\\", "-").Replace(slug)
-	if len(slug) > 100 {
-		slug = slug[:100]
-	}
-	return slug
+	return core.LimitRunes(slug, core.MaxSlugLength)
 }
 
 func firstNonEmpty(value, fallback string) string {

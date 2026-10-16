@@ -89,7 +89,7 @@ func CreateFeed(ctx context.Context, db *sql.DB, ownerID uuid.UUID, title, feedU
 	defer tx.Rollback()
 
 	entityID := core.NewUUID()
-	slug := strings.ToLower(strings.ReplaceAll(title, " ", "-"))
+	slug := core.LimitRunes(strings.ToLower(strings.ReplaceAll(title, " ", "-")), core.MaxSlugLength)
 	now := time.Now().UTC()
 
 	// 1. Create the base entity

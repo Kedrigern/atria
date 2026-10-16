@@ -80,7 +80,7 @@ func EnsurePath(ctx context.Context, tx *sql.Tx, ownerID uuid.UUID, path string)
 
 	for _, part := range parts {
 		var folderID uuid.UUID
-		slug := strings.ToLower(strings.ReplaceAll(part, " ", "-"))
+		slug := core.LimitRunes(strings.ToLower(strings.ReplaceAll(part, " ", "-")), core.MaxSlugLength)
 		folderUUID := core.NewUUID()
 
 		queryInsert := `
@@ -340,9 +340,5 @@ func noteSlug(title string) string {
 	slug := strings.ToLower(strings.ReplaceAll(title, " ", "-"))
 	slug = strings.ReplaceAll(slug, "/", "-")
 	slug = strings.ReplaceAll(slug, "\\", "-")
-	chars := []rune(slug)
-	if len(chars) > 100 {
-		return string(chars[:100])
-	}
-	return slug
+	return core.LimitRunes(slug, core.MaxSlugLength)
 }

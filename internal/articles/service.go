@@ -271,6 +271,7 @@ func processArticleHTML(htmlStr string, parsedURL *url.URL) (*readability.Articl
 	if title == "" {
 		title = "Untitled Article"
 	}
+	title = core.LimitRunes(title, core.MaxTitleLength)
 
 	return &parsedArticle, title, nil
 }
@@ -299,9 +300,7 @@ func CreateArticle(ctx context.Context, db *sql.DB, ownerID uuid.UUID, urlStr st
 	slug := strings.ToLower(strings.ReplaceAll(title, " ", "-"))
 	slug = strings.ReplaceAll(slug, "/", "-")
 	slug = strings.ReplaceAll(slug, "\\", "-")
-	if len(slug) > 100 {
-		slug = slug[:100]
-	}
+	slug = core.LimitRunes(slug, core.MaxSlugLength)
 
 	entityID := core.NewUUID()
 	now := time.Now().UTC()
