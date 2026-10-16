@@ -169,9 +169,8 @@ func CreateNote(ctx context.Context, db *sql.DB, ownerID uuid.UUID, title, path,
 func FindNotes(ctx context.Context, db *sql.DB, ownerID uuid.UUID, identifier string, includeDeleted bool) ([]NoteSummary, error) {
 	// Added JOIN with notes to calculate the character count of markdown_content
 	query := `
-		SELECT n.id, n.title, COALESCE(p.full_path, '/') AS path, n.created_at, COALESCE(LENGTH(nt.markdown_content), 0) AS char_count
+		SELECT n.id, n.title, COALESCE(entity_path(n.parent_id), '/') AS path, n.created_at, COALESCE(LENGTH(nt.markdown_content), 0) AS char_count
 		FROM entities n
-		LEFT JOIN entity_paths_view p ON n.parent_id = p.id
 		JOIN notes nt ON n.id = nt.id
 		WHERE n.owner_id = $1 AND n.type = 'note'
 	`
@@ -185,8 +184,10 @@ func FindNotes(ctx context.Context, db *sql.DB, ownerID uuid.UUID, identifier st
 		query += ` AND n.id = $2`
 		args = []interface{}{ownerID, parsedID}
 	} else {
-		query += ` AND (n.id::text LIKE $2 OR n.title = $3)`
-		args = []interface{}{ownerID, "%" + identifier, identifier}
+		// short_id is the indexed last-8-characters column shown by the CLI;
+		// a leading-wildcard LIKE on id::text could not use any index.
+		query += ` AND (n.short_id = $2 OR n.title = $2)`
+		args = []interface{}{ownerID, identifier}
 	}
 
 	rows, err := db.QueryContext(ctx, query, args...)
@@ -209,11 +210,33 @@ func FindNotes(ctx context.Context, db *sql.DB, ownerID uuid.UUID, identifier st
 
 // ListNotes retrieves notes for the authenticated user, optimized for tree view display.
 func ListNotes(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]NoteSummary, error) {
+	// Paths are built in one recursive pass over this owner's entities only
+	// (calling entity_path per row would walk the tree once per note).
 	query := `
-		SELECT id, title, path, created_at, char_count, tags
-		FROM notes_tree_view
-		WHERE owner_id = $1
-		ORDER BY path ASC, title ASC
+		WITH RECURSIVE tree AS (
+			SELECT id, '/' || slug::text AS full_path, 1 AS depth
+			FROM entities
+			WHERE owner_id = $1 AND parent_id IS NULL
+			UNION ALL
+			SELECT e.id, t.full_path || '/' || e.slug, t.depth + 1
+			FROM entities e
+			JOIN tree t ON e.parent_id = t.id
+			WHERE e.owner_id = $1 AND t.depth < 100
+		)
+		SELECT e.id, e.title, COALESCE(p.full_path, '/') AS path, e.created_at,
+		       COALESCE(LENGTH(n.markdown_content), 0) AS char_count,
+		       COALESCE(
+		           array_agg(t.name ORDER BY t.name) FILTER (WHERE t.id IS NOT NULL),
+		           ARRAY[]::VARCHAR(20)[]
+		       ) AS tags
+		FROM entities e
+		JOIN notes n ON n.id = e.id
+		LEFT JOIN tree p ON p.id = e.parent_id
+		LEFT JOIN rel_entity_tags ret ON ret.entity_id = e.id
+		LEFT JOIN tags t ON t.id = ret.tag_id AND t.owner_id = e.owner_id
+		WHERE e.owner_id = $1 AND e.deleted_at IS NULL AND e.type = 'note'
+		GROUP BY e.id, e.title, p.full_path, e.created_at, n.markdown_content
+		ORDER BY path ASC, e.title ASC
 	`
 	rows, err := db.QueryContext(ctx, query, ownerID)
 	if err != nil {
