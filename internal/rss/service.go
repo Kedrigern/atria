@@ -185,7 +185,7 @@ func SaveItemAsArticle(ctx context.Context, db *sql.DB, ownerID, itemID uuid.UUI
 	`
 	err := db.QueryRowContext(ctx, queryGet, itemID, ownerID).Scan(&link, &feedTitle)
 	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("rss item not found")
+		return nil, core.NewUserError("rss item not found")
 	}
 	if err != nil {
 		return nil, err
@@ -347,7 +347,7 @@ func GetFeedDetail(ctx context.Context, db *sql.DB, ownerID, feedID uuid.UUID, i
 		&fd.LastFetchedAt, &fd.LastFetchStatus, &fd.LastFetchError,
 	)
 	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("feed not found")
+		return nil, core.NewUserError("feed not found")
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch feed: %w", err)

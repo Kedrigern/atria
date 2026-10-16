@@ -17,10 +17,10 @@ func CreateTag(ctx context.Context, db *sql.DB, ownerID uuid.UUID, name string, 
 	name = strings.ToLower(strings.ReplaceAll(name, " ", "-"))
 
 	if len(name) > 20 {
-		return nil, fmt.Errorf("tag name '%s' exceeds the 20 characters limit", name)
+		return nil, NewUserError("tag name '%s' exceeds the 20 characters limit", name)
 	}
 	if !validTagRegex.MatchString(name) {
-		return nil, fmt.Errorf("tag name '%s' can only contain lowercase letters, numbers, and hyphens", name)
+		return nil, NewUserError("tag name '%s' can only contain lowercase letters, numbers, and hyphens", name)
 	}
 
 	tag := &Tag{

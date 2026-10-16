@@ -34,7 +34,7 @@ func VerifyOwner(ctx context.Context, db *sql.DB, entityID uuid.UUID) (uuid.UUID
 		entityID,
 	).Scan(&ownerID)
 	if err == sql.ErrNoRows {
-		return uuid.Nil, fmt.Errorf("entity not found")
+		return uuid.Nil, NewUserError("entity not found")
 	}
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("failed to verify owner: %w", err)
@@ -46,7 +46,7 @@ func VerifyOwner(ctx context.Context, db *sql.DB, entityID uuid.UUID) (uuid.UUID
 func RenameEntity(ctx context.Context, db *sql.DB, ownerID, entityID uuid.UUID, newTitle string) error {
 	newTitle = strings.TrimSpace(newTitle)
 	if newTitle == "" {
-		return fmt.Errorf("entity title is required")
+		return NewUserError("entity title is required")
 	}
 
 	// Simple slug generation

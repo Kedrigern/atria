@@ -19,7 +19,7 @@ func (s *Server) handleGameList(c *gin.Context) {
 	}
 	puzzles, err := games.List(c.Request.Context(), s.db, user.ID)
 	if err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Failed to load cryptograms: "+err.Error())
+		s.respondError(c, http.StatusInternalServerError, "Failed to load cryptograms", err)
 		return
 	}
 	s.render(c, "games_list.html", gin.H{"Puzzles": puzzles})

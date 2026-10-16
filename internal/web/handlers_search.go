@@ -24,7 +24,7 @@ func (s *Server) handleSearch(c *gin.Context) {
 
 	results, err := search.Search(c.Request.Context(), s.db, user.ID, q, filter, includeArchived)
 	if err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Search failed: "+err.Error())
+		s.respondError(c, http.StatusInternalServerError, "Search failed", err)
 		return
 	}
 
@@ -45,7 +45,7 @@ func (s *Server) handleSearch(c *gin.Context) {
 
 	tags, err := core.ListTags(c.Request.Context(), s.db, user.ID)
 	if err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Failed to load tags: "+err.Error())
+		s.respondError(c, http.StatusInternalServerError, "Failed to load tags", err)
 		return
 	}
 	data["Tags"] = tags

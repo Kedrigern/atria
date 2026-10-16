@@ -33,7 +33,7 @@ func (s *Server) handleNoteList(c *gin.Context) {
 	// Fetch flat list of notes optimized for tree building
 	list, err := notes.ListNotes(c.Request.Context(), s.db, user.ID)
 	if err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Failed to load notes: "+err.Error())
+		s.respondError(c, http.StatusInternalServerError, "Failed to load notes", err)
 		return
 	}
 
@@ -133,7 +133,7 @@ func (s *Server) handleNoteUpdate(c *gin.Context) {
 	}
 	content := c.PostForm("markdown_content")
 	if err := notes.UpdateNote(c.Request.Context(), s.db, user.ID, id, title, path, content); err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Failed to save note: "+err.Error())
+		s.respondError(c, http.StatusInternalServerError, "Failed to save note", err)
 		return
 	}
 
@@ -166,7 +166,7 @@ func (s *Server) handleNoteCreate(c *gin.Context) {
 
 	note, err := notes.CreateNote(c.Request.Context(), s.db, user.ID, title, path, content)
 	if err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Failed to create note: "+err.Error())
+		s.respondError(c, http.StatusInternalServerError, "Failed to create note", err)
 		return
 	}
 

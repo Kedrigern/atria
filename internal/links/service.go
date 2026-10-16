@@ -4,7 +4,6 @@ import (
 	"atria/internal/core"
 	"context"
 	"database/sql"
-	"fmt"
 
 	"github.com/gofrs/uuid/v5"
 )
@@ -12,7 +11,7 @@ import (
 // AddLink creates a directed relationship between two entities (e.g., Note A mentions Note B).
 func AddLink(ctx context.Context, db *sql.DB, sourceID, targetID uuid.UUID, linkContext string) error {
 	if sourceID == targetID {
-		return fmt.Errorf("an entity cannot link to itself")
+		return core.NewUserError("an entity cannot link to itself")
 	}
 
 	query := `
