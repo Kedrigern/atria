@@ -117,9 +117,11 @@ func fetchAndStoreFeed(ctx context.Context, db *sql.DB, client *http.Client, f F
 	fetchCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
+	// Fetch failures describe the user's own feed (bad URL, HTTP status,
+	// parse error), so they are safe and useful to show.
 	fail := func(status int, err error) error {
 		_ = UpdateFetchStatus(ctx, db, f.ID, status, err)
-		return err
+		return core.NewUserError("%w", err)
 	}
 
 	req, err := http.NewRequestWithContext(fetchCtx, http.MethodGet, f.FeedURL, nil)

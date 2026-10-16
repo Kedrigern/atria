@@ -35,7 +35,7 @@ func (s *Server) handleArticleList(c *gin.Context) {
 
 	list, err := articles.ListArticles(c.Request.Context(), s.db, user.ID, limit+1, offset)
 	if err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Failed to load articles: "+err.Error())
+		s.respondError(c, http.StatusInternalServerError, "Failed to load articles", err)
 		return
 	}
 
@@ -122,7 +122,7 @@ func (s *Server) handleArticleDelete(c *gin.Context) {
 			s.renderError(c, http.StatusNotFound, "Article not found")
 			return
 		}
-		s.renderError(c, http.StatusInternalServerError, "Failed to delete article: "+err.Error())
+		s.respondError(c, http.StatusInternalServerError, "Failed to delete article", err)
 		return
 	}
 
@@ -148,7 +148,7 @@ func (s *Server) handleArticleArchive(c *gin.Context) {
 
 	err = articles.ArchiveArticle(c.Request.Context(), s.db, user.ID, id)
 	if err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Failed to archive article: "+err.Error())
+		s.respondError(c, http.StatusInternalServerError, "Failed to archive article", err)
 		return
 	}
 
@@ -164,7 +164,7 @@ func (s *Server) handleArticleArchive(c *gin.Context) {
 	offset := (page - 1) * limit
 	list, err := articles.ListArticles(c.Request.Context(), s.db, user.ID, limit+1, offset)
 	if err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Failed to refresh article list: "+err.Error())
+		s.respondError(c, http.StatusInternalServerError, "Failed to refresh article list", err)
 		return
 	}
 	if len(list) == 0 && page > 1 {
@@ -212,7 +212,7 @@ func (s *Server) handleArticleAdd(c *gin.Context) {
 			return
 		}
 
-		s.renderError(c, http.StatusInternalServerError, "Failed to save article: "+err.Error())
+		s.respondError(c, http.StatusInternalServerError, "Failed to save article", err)
 		return
 	}
 
@@ -240,7 +240,7 @@ func (s *Server) handleArticleRefetch(c *gin.Context) {
 
 	err = articles.RefetchArticle(c.Request.Context(), s.db, user.ID, id)
 	if err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Refetch failed: "+err.Error())
+		s.respondError(c, http.StatusInternalServerError, "Refetch failed", err)
 		return
 	}
 
@@ -264,7 +264,7 @@ func (s *Server) handleArticleNoteUpdate(c *gin.Context) {
 	newNote := c.PostForm("user_note")
 
 	if err := articles.UpdateUserNote(c.Request.Context(), s.db, user.ID, articleID, newNote); err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Failed to update note: "+err.Error())
+		s.respondError(c, http.StatusInternalServerError, "Failed to update note", err)
 		return
 	}
 

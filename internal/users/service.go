@@ -104,7 +104,7 @@ func DeleteUser(ctx context.Context, db *sql.DB, email string) error {
 	}
 	rows, _ := result.RowsAffected()
 	if rows == 0 {
-		return fmt.Errorf("user not found: %s", email)
+		return core.NewUserError("user not found: %s", email)
 	}
 	return nil
 }
