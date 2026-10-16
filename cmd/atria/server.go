@@ -25,15 +25,22 @@ var serverPort string
 func startRSSWorker(ctx context.Context, db *sql.DB, interval time.Duration) {
 	go func() {
 		log.Printf("🔄 RSS background worker started (interval: %s)", interval)
+		fetch := func() {
+			log.Println("RSS Worker: running scheduled fetch...")
+			if err := rss.FetchAllActiveFeeds(ctx, db); err != nil {
+				log.Printf("RSS Worker: fetch error: %v", err)
+			}
+		}
+		// Catch up on feeds that became due while the server was down instead
+		// of waiting a full interval.
+		fetch()
+
 		ticker := time.NewTicker(interval)
 		defer ticker.Stop()
 		for {
 			select {
 			case <-ticker.C:
-				log.Println("RSS Worker: running scheduled fetch...")
-				if err := rss.FetchAllActiveFeeds(ctx, db); err != nil {
-					log.Printf("RSS Worker: fetch error: %v", err)
-				}
+				fetch()
 			case <-ctx.Done():
 				log.Println("RSS Worker: stopped.")
 				return

@@ -1,11 +1,16 @@
 package rss
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha256"
 	"database/sql"
+	"encoding/hex"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -61,8 +66,7 @@ func fetchDueFeeds(ctx context.Context, db *sql.DB, query string, args ...any) e
 	sem := make(chan struct{}, maxWorkers)
 	var wg sync.WaitGroup
 
-	fp := gofeed.NewParser()
-	fp.Client = netutil.SafeHTTPClient()
+	client := netutil.SafeHTTPClient()
 
 	for _, f := range feedsToFetch {
 		wg.Add(1)
@@ -74,42 +78,9 @@ func fetchDueFeeds(ctx context.Context, db *sql.DB, query string, args ...any) e
 			defer func() { <-sem }()
 
 			log.Printf("RSS Worker: Fetching %s", feedInfo.FeedURL)
-
-			fetchCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
-			defer cancel()
-
-			feed, err := fp.ParseURLWithContext(feedInfo.FeedURL, fetchCtx)
-			if err != nil {
+			if err := fetchAndStoreFeed(ctx, db, client, feedInfo, 30*time.Second); err != nil {
 				log.Printf("RSS Worker: fetch failed for %s: %v", feedInfo.FeedURL, err)
-				_ = UpdateFetchStatus(ctx, db, feedInfo.ID, 0, err)
-				return
 			}
-
-			for _, item := range feed.Items {
-				itemID := core.NewUUID()
-
-				pubDate := time.Now().UTC()
-				if item.PublishedParsed != nil {
-					pubDate = item.PublishedParsed.UTC()
-				} else if item.UpdatedParsed != nil {
-					pubDate = item.UpdatedParsed.UTC()
-				}
-
-				queryItem := `
-								INSERT INTO rss_items (id, feed_id, title, link, description, content, guid, published_at)
-								VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-								ON CONFLICT (feed_id, guid) DO NOTHING
-							`
-				_, err = db.ExecContext(ctx, queryItem,
-					itemID, feedInfo.ID, item.Title, item.Link, item.Description, item.Content, item.GUID, pubDate,
-				)
-				if err != nil {
-					log.Printf("RSS Worker: failed to save item %s: %v", item.Link, err)
-				}
-			}
-
-			_ = UpdateFetchStatus(ctx, db, feedInfo.ID, 200, nil)
-
 		}(f)
 	}
 
@@ -117,7 +88,7 @@ func fetchDueFeeds(ctx context.Context, db *sql.DB, query string, args ...any) e
 	return nil
 }
 
-// FetchFeed imidietly fetch one feed
+// FetchFeed immediately fetches one feed, regardless of its schedule.
 func FetchFeed(ctx context.Context, db *sql.DB, feedID uuid.UUID) error {
 	query := `
 		SELECT id, feed_url, etag_header, last_modified_header,
@@ -131,56 +102,139 @@ func FetchFeed(ctx context.Context, db *sql.DB, feedID uuid.UUID) error {
 		return err
 	}
 
-	fp := gofeed.NewParser()
-	fp.Client = netutil.SafeHTTPClient()
-
 	log.Printf("RSS Worker: Vynucené stažení zdroje %s", f.FeedURL)
+	return fetchAndStoreFeed(ctx, db, netutil.SafeHTTPClient(), f, 40*time.Second)
+}
 
-	fetchCtx, cancel := context.WithTimeout(ctx, 40*time.Second)
+// maxFeedBytes caps the size of a downloaded feed document.
+const maxFeedBytes = 5 << 20
+
+// fetchAndStoreFeed downloads one feed (conditionally, using the stored
+// ETag/Last-Modified and the feed's HTTP auth), stores new items and records
+// the outcome with UpdateFetchStatus. ctx is used for database writes; the
+// HTTP request gets its own timeout.
+func fetchAndStoreFeed(ctx context.Context, db *sql.DB, client *http.Client, f FeedToFetch, timeout time.Duration) error {
+	fetchCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
+
+	fail := func(status int, err error) error {
+		_ = UpdateFetchStatus(ctx, db, f.ID, status, err)
+		return err
+	}
 
 	req, err := http.NewRequestWithContext(fetchCtx, http.MethodGet, f.FeedURL, nil)
 	if err != nil {
-		_ = UpdateFetchStatus(ctx, db, f.ID, 0, err)
-		return err
+		return fail(0, err)
 	}
+	req.Header.Set("Accept", "application/rss+xml, application/atom+xml, application/feed+json, application/xml;q=0.9, text/xml;q=0.8, */*;q=0.5")
+	if f.ETag.Valid && f.ETag.String != "" {
+		req.Header.Set("If-None-Match", f.ETag.String)
+	}
+	if f.LastMod.Valid && f.LastMod.String != "" {
+		req.Header.Set("If-Modified-Since", f.LastMod.String)
+	}
+	applyFeedAuth(req, f)
 
-	resp, err := fp.Client.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
-		_ = UpdateFetchStatus(ctx, db, f.ID, 0, err)
-		return err
+		return fail(0, err)
 	}
 	defer resp.Body.Close()
 
-	// Safety cap: limit response body to 5 MB.
-	limitedXMLReader := io.LimitReader(resp.Body, 5*1024*1024)
-	feed, err := fp.Parse(limitedXMLReader)
+	if resp.StatusCode == http.StatusNotModified {
+		return UpdateFetchStatus(ctx, db, f.ID, resp.StatusCode, nil)
+	}
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		return fail(resp.StatusCode, fmt.Errorf("unexpected HTTP status %s", resp.Status))
+	}
+
+	body, err := io.ReadAll(io.LimitReader(resp.Body, maxFeedBytes+1))
 	if err != nil {
-		_ = UpdateFetchStatus(ctx, db, f.ID, resp.StatusCode, err)
-		return err
+		return fail(resp.StatusCode, fmt.Errorf("read feed: %w", err))
+	}
+	if len(body) > maxFeedBytes {
+		return fail(resp.StatusCode, fmt.Errorf("feed is larger than %d MB", maxFeedBytes>>20))
+	}
+
+	feed, err := gofeed.NewParser().Parse(bytes.NewReader(body))
+	if err != nil {
+		return fail(resp.StatusCode, fmt.Errorf("parse feed: %w", err))
 	}
 
 	for _, item := range feed.Items {
-		itemID := core.NewUUID()
-		pubDate := time.Now().UTC()
-		if item.PublishedParsed != nil {
-			pubDate = item.PublishedParsed.UTC()
-		} else if item.UpdatedParsed != nil {
-			pubDate = item.UpdatedParsed.UTC()
-		}
-
-		queryItem := `
-			INSERT INTO rss_items (id, feed_id, title, link, description, content, guid, published_at)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-			ON CONFLICT (feed_id, guid) DO NOTHING
-		`
-		_, err = db.ExecContext(ctx, queryItem,
-			itemID, f.ID, item.Title, item.Link, item.Description, item.Content, item.GUID, pubDate,
-		)
-		if err != nil {
-			log.Printf("RSS Worker: nepodařilo se uložit položku %s: %v", item.Link, err)
+		if err := storeFeedItem(ctx, db, f.ID, item); err != nil {
+			log.Printf("RSS Worker: failed to save item %s: %v", item.Link, err)
 		}
 	}
 
-	return UpdateFetchStatus(ctx, db, f.ID, 200, nil)
+	if err := saveCacheHeaders(ctx, db, f.ID, resp.Header); err != nil {
+		log.Printf("RSS Worker: failed to save cache headers for %s: %v", f.FeedURL, err)
+	}
+	return UpdateFetchStatus(ctx, db, f.ID, resp.StatusCode, nil)
+}
+
+func applyFeedAuth(req *http.Request, f FeedToFetch) {
+	if f.AuthType == nil || f.AuthToken == nil || *f.AuthToken == "" {
+		return
+	}
+	switch *f.AuthType {
+	case "basic":
+		username := ""
+		if f.AuthUsername != nil {
+			username = *f.AuthUsername
+		}
+		req.SetBasicAuth(username, *f.AuthToken)
+	case "bearer":
+		req.Header.Set("Authorization", "Bearer "+*f.AuthToken)
+	}
+}
+
+func saveCacheHeaders(ctx context.Context, db *sql.DB, feedID uuid.UUID, h http.Header) error {
+	_, err := db.ExecContext(ctx, `
+		UPDATE rss_feeds
+		SET etag_header = NULLIF($1, ''), last_modified_header = NULLIF($2, '')
+		WHERE id = $3`,
+		truncateHeader(h.Get("ETag")), truncateHeader(h.Get("Last-Modified")), feedID)
+	return err
+}
+
+// truncateHeader keeps cache validators within the VARCHAR(255) columns; an
+// oversized validator is dropped rather than stored mangled.
+func truncateHeader(v string) string {
+	if len(v) > 255 {
+		return ""
+	}
+	return v
+}
+
+func storeFeedItem(ctx context.Context, db *sql.DB, feedID uuid.UUID, item *gofeed.Item) error {
+	pubDate := time.Now().UTC()
+	if item.PublishedParsed != nil {
+		pubDate = item.PublishedParsed.UTC()
+	} else if item.UpdatedParsed != nil {
+		pubDate = item.UpdatedParsed.UTC()
+	}
+
+	_, err := db.ExecContext(ctx, `
+		INSERT INTO rss_items (id, feed_id, title, link, description, content, guid, published_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		ON CONFLICT (feed_id, guid) DO NOTHING`,
+		core.NewUUID(), feedID, item.Title, item.Link, item.Description, item.Content, itemKey(item), pubDate,
+	)
+	return err
+}
+
+// itemKey returns the identity used to deduplicate feed items. Many feeds omit
+// <guid>; gofeed then reports "", which would collapse every such item into
+// one row under UNIQUE(feed_id, guid). Fall back to the link, and if there is
+// none, to a hash of the item's text.
+func itemKey(item *gofeed.Item) string {
+	if guid := strings.TrimSpace(item.GUID); guid != "" {
+		return guid
+	}
+	if link := strings.TrimSpace(item.Link); link != "" {
+		return link
+	}
+	sum := sha256.Sum256([]byte(item.Title + "\x00" + item.Description + "\x00" + item.Content))
+	return "sha256:" + hex.EncodeToString(sum[:])
 }

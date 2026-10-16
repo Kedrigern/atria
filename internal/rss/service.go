@@ -23,25 +23,60 @@ type FeedToFetch struct {
 	AuthToken    *string
 }
 
-// UpdateFetchStatus persists the result of a fetch attempt (success or error).
+const (
+	fetchInterval    = 1 * time.Hour
+	maxFetchInterval = 24 * time.Hour
+)
+
+// nextFetchDelay returns how long to wait before the next fetch: the regular
+// interval after a success, doubling with every consecutive failure up to
+// maxFetchInterval.
+func nextFetchDelay(consecutiveFailures int) time.Duration {
+	delay := fetchInterval
+	for i := 0; i < consecutiveFailures && delay < maxFetchInterval; i++ {
+		delay *= 2
+	}
+	if delay > maxFetchInterval {
+		delay = maxFetchInterval
+	}
+	return delay
+}
+
+// UpdateFetchStatus persists the result of a fetch attempt (success or error)
+// and schedules the next one, backing off exponentially on repeated failures.
+// next_fetch_at is computed in SQL from NOW() so it uses the same clock and
+// time zone as the "due" comparison in dueFeedsQuery.
 func UpdateFetchStatus(ctx context.Context, db *sql.DB, id uuid.UUID, status int, fetchErr error) error {
-	errMsg := ""
-	if fetchErr != nil {
-		errMsg = fetchErr.Error()
+	if fetchErr == nil {
+		_, err := db.ExecContext(ctx, `
+			UPDATE rss_feeds
+			SET last_fetch_at = NOW(),
+			    last_fetch_status = $1,
+			    last_fetch_error = '',
+			    consecutive_failures = 0,
+			    next_fetch_at = NOW() + make_interval(secs => $2)
+			WHERE id = $3`,
+			status, nextFetchDelay(0).Seconds(), id)
+		return err
 	}
 
-	// Schedule the next fetch in 1 hour (may become dynamic in the future).
-	nextFetch := time.Now().Add(1 * time.Hour)
-
-	query := `
+	var failures int
+	err := db.QueryRowContext(ctx, `
+		UPDATE rss_feeds
+		SET consecutive_failures = consecutive_failures + 1
+		WHERE id = $1
+		RETURNING consecutive_failures`, id).Scan(&failures)
+	if err != nil {
+		return err
+	}
+	_, err = db.ExecContext(ctx, `
 		UPDATE rss_feeds
 		SET last_fetch_at = NOW(),
 		    last_fetch_status = $1,
 		    last_fetch_error = $2,
-		    next_fetch_at = $3
-		WHERE id = $4
-	`
-	_, err := db.ExecContext(ctx, query, status, errMsg, nextFetch, id)
+		    next_fetch_at = NOW() + make_interval(secs => $3)
+		WHERE id = $4`,
+		status, fetchErr.Error(), nextFetchDelay(failures).Seconds(), id)
 	return err
 }
 
@@ -72,9 +107,9 @@ func CreateFeed(ctx context.Context, db *sql.DB, ownerID uuid.UUID, title, feedU
 	// 2. Create the RSS specific record
 	queryFeed := `
 		INSERT INTO rss_feeds (id, feed_url, next_fetch_at)
-		VALUES ($1, $2, $3)
+		VALUES ($1, $2, NOW())
 	`
-	_, err = tx.ExecContext(ctx, queryFeed, entityID, feedURL, now)
+	_, err = tx.ExecContext(ctx, queryFeed, entityID, feedURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to insert rss feed: %w", err)
 	}
