@@ -22,6 +22,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -37,7 +38,37 @@ var StaticFS embed.FS
 type Server struct {
 	db           *sql.DB
 	loginLimiter *loginLimiter
+	templates    templateCache
 }
+
+// templateCache keeps parsed template sets. Templates are embedded in the
+// binary, so parsing them once per process is enough; parsed templates are
+// safe for concurrent execution.
+type templateCache struct {
+	mu   sync.Mutex
+	sets map[string]*template.Template
+}
+
+// get returns the cached set for key, parsing it on first use. Parse errors
+// are not cached.
+func (tc *templateCache) get(key string, parse func() (*template.Template, error)) (*template.Template, error) {
+	tc.mu.Lock()
+	defer tc.mu.Unlock()
+	if t, ok := tc.sets[key]; ok {
+		return t, nil
+	}
+	t, err := parse()
+	if err != nil {
+		return nil, err
+	}
+	if tc.sets == nil {
+		tc.sets = map[string]*template.Template{}
+	}
+	tc.sets[key] = t
+	return t, nil
+}
+
+var htmlTagRe = regexp.MustCompile(`<[^>]*>`)
 
 type FlashMessage struct {
 	Type     string
@@ -356,8 +387,7 @@ func (s *Server) getTemplateFuncs() template.FuncMap {
 			return t.Format("02.01.2006 15:04")
 		},
 		"stripHTML": func(s string) string {
-			re := regexp.MustCompile(`<[^>]*>`)
-			stripped := re.ReplaceAllString(s, "")
+			stripped := htmlTagRe.ReplaceAllString(s, "")
 
 			return html.UnescapeString(stripped)
 		},
@@ -405,8 +435,9 @@ func (s *Server) getTemplateFuncs() template.FuncMap {
 func (s *Server) renderSnippet(c *gin.Context, snippetName string, data any) {
 	c.Header("Content-Type", "text/html; charset=utf-8")
 
-	t := template.New("").Funcs(s.getTemplateFuncs())
-	t, err := t.ParseFS(TemplatesFS, "templates/partials.html")
+	t, err := s.templates.get("partials", func() (*template.Template, error) {
+		return template.New("").Funcs(s.getTemplateFuncs()).ParseFS(TemplatesFS, "templates/partials.html")
+	})
 	if err != nil {
 		s.respondError(c, http.StatusInternalServerError, "Failed to render page", err)
 		return
@@ -449,17 +480,19 @@ func (s *Server) render(c *gin.Context, tmplName string, data gin.H) {
 	data["Flash"] = s.getFlash(c)
 	data["CSRFToken"] = s.GetCSRFToken(c)
 
-	funcMap := s.getTemplateFuncs()
-
 	if c.GetHeader("HX-Request") == "true" {
-		t = template.New(tmplName).Funcs(funcMap)
-		t, err = t.ParseFS(TemplatesFS, "templates/partials.html", "templates/pages/"+tmplName)
+		t, err = s.templates.get("hx:"+tmplName, func() (*template.Template, error) {
+			return template.New(tmplName).Funcs(s.getTemplateFuncs()).
+				ParseFS(TemplatesFS, "templates/partials.html", "templates/pages/"+tmplName)
+		})
 		if err == nil {
 			err = t.ExecuteTemplate(c.Writer, "content", data)
 		}
 	} else {
-		t = template.New("base.html").Funcs(funcMap)
-		t, err = t.ParseFS(TemplatesFS, "templates/base.html", "templates/partials.html", "templates/pages/"+tmplName)
+		t, err = s.templates.get("page:"+tmplName, func() (*template.Template, error) {
+			return template.New("base.html").Funcs(s.getTemplateFuncs()).
+				ParseFS(TemplatesFS, "templates/base.html", "templates/partials.html", "templates/pages/"+tmplName)
+		})
 		if err == nil {
 			err = t.ExecuteTemplate(c.Writer, "base.html", data)
 		}
