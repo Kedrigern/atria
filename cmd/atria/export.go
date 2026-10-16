@@ -65,7 +65,7 @@ var exportEpubCmd = &cobra.Command{
 
 		// 3. Generate EPUB
 		fmt.Printf("📚 Generating EPUB with %d items...\n", len(itemsToExport))
-		err := export.ExportEPUB(app.Ctx, app.DB, itemsToExport, finalOutPath)
+		err := export.ExportEPUB(app.Ctx, app.DB, app.Owner.ID, itemsToExport, finalOutPath)
 		if err != nil {
 			return fmt.Errorf("EPUB generation failed: %w", err)
 		}

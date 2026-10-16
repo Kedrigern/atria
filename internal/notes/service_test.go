@@ -28,7 +28,7 @@ func TestNoteLifecycle(t *testing.T) {
 	}
 
 	// --- 2. Retrieve Content ---
-	fetchedContent, err := notes.GetNoteContent(ctx, db, noteEntity.ID)
+	fetchedContent, err := notes.GetNoteContent(ctx, db, user.ID, noteEntity.ID)
 	if err != nil {
 		t.Fatalf("Failed to get note content: %v", err)
 	}

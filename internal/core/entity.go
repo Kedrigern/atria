@@ -11,19 +11,22 @@ import (
 
 // SoftDeleteEntity marks an entity as deleted without removing it from the database.
 func SoftDeleteEntity(ctx context.Context, db *sql.DB, ownerID, entityID uuid.UUID) error {
-	query := `UPDATE entities SET deleted_at = CURRENT_TIMESTAMP WHERE id = $1 AND owner_id = $2`
-	_, err := db.ExecContext(ctx, query, entityID, ownerID)
-	return err
+	query := `UPDATE entities SET deleted_at = CURRENT_TIMESTAMP WHERE id = $1 AND owner_id = $2 AND deleted_at IS NULL`
+	result, err := db.ExecContext(ctx, query, entityID, ownerID)
+	if err != nil {
+		return fmt.Errorf("failed to delete entity: %w", err)
+	}
+	return RequireAffected(result, "entity not found")
 }
 
 // UpdateVisibility sets the visibility of any entity owned by ownerID.
 func UpdateVisibility(ctx context.Context, db *sql.DB, ownerID, entityID uuid.UUID, visibility Visibility) error {
-	query := `UPDATE entities SET visibility = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 AND owner_id = $3`
-	_, err := db.ExecContext(ctx, query, visibility, entityID, ownerID)
+	query := `UPDATE entities SET visibility = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 AND owner_id = $3 AND deleted_at IS NULL`
+	result, err := db.ExecContext(ctx, query, visibility, entityID, ownerID)
 	if err != nil {
 		return fmt.Errorf("failed to update visibility: %w", err)
 	}
-	return nil
+	return RequireAffected(result, "entity not found")
 }
 
 // VerifyOwner returns the owner UUID for the given entity, or an error if not found.
@@ -58,11 +61,11 @@ func RenameEntity(ctx context.Context, db *sql.DB, ownerID, entityID uuid.UUID, 
 	query := `
 		UPDATE entities
 		SET title = $1, slug = $2, updated_at = CURRENT_TIMESTAMP
-		WHERE id = $3 AND owner_id = $4
+		WHERE id = $3 AND owner_id = $4 AND deleted_at IS NULL
 	`
-	_, err := db.ExecContext(ctx, query, newTitle, slug, entityID, ownerID)
+	result, err := db.ExecContext(ctx, query, newTitle, slug, entityID, ownerID)
 	if err != nil {
 		return fmt.Errorf("failed to rename entity: %w", err)
 	}
-	return nil
+	return RequireAffected(result, "entity not found")
 }

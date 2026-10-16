@@ -56,6 +56,10 @@ func fetchDueFeeds(ctx context.Context, db *sql.DB, query string, args ...any) e
 		}
 		feedsToFetch = append(feedsToFetch, f)
 	}
+	if err := rows.Err(); err != nil {
+		rows.Close()
+		return err
+	}
 	rows.Close()
 
 	if len(feedsToFetch) == 0 {

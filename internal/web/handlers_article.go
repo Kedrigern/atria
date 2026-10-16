@@ -74,9 +74,9 @@ func (s *Server) handleArticleDetail(c *gin.Context) {
 		return
 	}
 
-	tags, _ := core.GetEntityTags(c.Request.Context(), s.db, id)
-	atts, _ := attachments.GetEntityAttachments(c.Request.Context(), s.db, id)
-	outgoingLinks, incomingLinks, _ := links.GetEntityLinks(c.Request.Context(), s.db, id)
+	tags, _ := core.GetEntityTags(c.Request.Context(), s.db, user.ID, id)
+	atts, _ := attachments.GetEntityAttachments(c.Request.Context(), s.db, user.ID, id)
+	outgoingLinks, incomingLinks, _ := links.GetEntityLinks(c.Request.Context(), s.db, user.ID, id)
 
 	var htmlContent template.HTML
 	if article.HTMLContent != nil {
@@ -295,7 +295,7 @@ func (s *Server) handleArticleExportMD(c *gin.Context) {
 		return
 	}
 
-	content, err := articles.GetArticleMarkdown(c.Request.Context(), s.db, id)
+	content, err := articles.GetArticleMarkdown(c.Request.Context(), s.db, user.ID, id)
 	if err != nil {
 		s.renderError(c, http.StatusInternalServerError, "Failed to process article Markdown")
 		return
@@ -345,7 +345,7 @@ func (s *Server) handleArticleExportEPUB(c *gin.Context) {
 	defer os.Remove(tempPath)
 
 	items := []core.EntitySummary{{ID: id, Title: article.Title, Type: core.TypeArticle}}
-	if err := export.ExportEPUB(c.Request.Context(), s.db, items, tempPath); err != nil {
+	if err := export.ExportEPUB(c.Request.Context(), s.db, user.ID, items, tempPath); err != nil {
 		s.renderError(c, http.StatusInternalServerError, "EPUB generation failed")
 		return
 	}

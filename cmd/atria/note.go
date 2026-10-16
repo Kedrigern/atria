@@ -100,7 +100,7 @@ var noteShowCmd = &cobra.Command{
 			return err
 		}
 
-		content, err := notes.GetNoteContent(app.Ctx, app.DB, targetNote.ID)
+		content, err := notes.GetNoteContent(app.Ctx, app.DB, app.Owner.ID, targetNote.ID)
 		if err != nil {
 			return fmt.Errorf("failed to fetch content: %w", err)
 		}
@@ -133,7 +133,7 @@ var noteExportCmd = &cobra.Command{
 			return err
 		}
 
-		content, err := notes.GetNoteContent(app.Ctx, app.DB, targetNote.ID)
+		content, err := notes.GetNoteContent(app.Ctx, app.DB, app.Owner.ID, targetNote.ID)
 		if err != nil {
 			return fmt.Errorf("failed to fetch content: %w", err)
 		}

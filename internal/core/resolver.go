@@ -53,7 +53,7 @@ func FindEntities(ctx context.Context, db *sql.DB, ownerID uuid.UUID, entityType
 		}
 		results = append(results, e)
 	}
-	return results, nil
+	return results, rows.Err()
 }
 
 // FindUser resolves a user by full UUID or exact email match.

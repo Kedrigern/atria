@@ -55,14 +55,14 @@ func FindTagByName(ctx context.Context, db *sql.DB, ownerID uuid.UUID, name stri
 }
 
 // GetEntityTags retrieves all tags associated with a specific entity.
-func GetEntityTags(ctx context.Context, db *sql.DB, entityID uuid.UUID) ([]Tag, error) {
+func GetEntityTags(ctx context.Context, db *sql.DB, ownerID, entityID uuid.UUID) ([]Tag, error) {
 	query := `
 		SELECT t.id, t.owner_id, t.name, t.description, t.color, t.icon, t.is_system
 		FROM tags t
 		JOIN rel_entity_tags rel ON t.id = rel.tag_id
-		WHERE rel.entity_id = $1
+		WHERE rel.entity_id = $1 AND t.owner_id = $2
 	`
-	rows, err := db.QueryContext(ctx, query, entityID)
+	rows, err := db.QueryContext(ctx, query, entityID, ownerID)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +77,7 @@ func GetEntityTags(ctx context.Context, db *sql.DB, entityID uuid.UUID) ([]Tag, 
 		}
 		tags = append(tags, t)
 	}
-	return tags, nil
+	return tags, rows.Err()
 }
 
 // AttachTag connects an existing tag to any entity (Note, Article, RSS).
@@ -164,5 +164,5 @@ func GetTagEntities(ctx context.Context, db *sql.DB, ownerID uuid.UUID, tagName 
 		}
 		results = append(results, e)
 	}
-	return results, nil
+	return results, rows.Err()
 }

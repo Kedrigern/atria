@@ -168,7 +168,7 @@ func Generate(ctx context.Context, db *sql.DB, ownerID uuid.UUID, input Generate
 
 	filename := ebookFilename(input.Title, input.Filename)
 	outputPath := filepath.Join(tempDir, filename)
-	if err := export.ExportEbookEPUB(ctx, db, input.Sources, outputPath, export.EbookMetadata{
+	if err := export.ExportEbookEPUB(ctx, db, ownerID, input.Sources, outputPath, export.EbookMetadata{
 		Title:              input.Title,
 		Description:        input.Description,
 		Author:             input.Author,

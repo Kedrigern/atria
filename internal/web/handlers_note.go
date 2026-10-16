@@ -95,9 +95,9 @@ func (s *Server) handleNoteDetail(c *gin.Context) {
 		return
 	}
 
-	tags, _ := core.GetEntityTags(c.Request.Context(), s.db, id)
-	atts, _ := attachments.GetEntityAttachments(c.Request.Context(), s.db, id)
-	outgoingLinks, incomingLinks, _ := links.GetEntityLinks(c.Request.Context(), s.db, id)
+	tags, _ := core.GetEntityTags(c.Request.Context(), s.db, user.ID, id)
+	atts, _ := attachments.GetEntityAttachments(c.Request.Context(), s.db, user.ID, id)
+	outgoingLinks, incomingLinks, _ := links.GetEntityLinks(c.Request.Context(), s.db, user.ID, id)
 
 	s.render(c, "note_detail.html", gin.H{
 		"Note":          note,
@@ -269,7 +269,7 @@ func (s *Server) handleNoteExportMD(c *gin.Context) {
 		return
 	}
 
-	tags, _ := core.GetEntityTags(c.Request.Context(), s.db, id)
+	tags, _ := core.GetEntityTags(c.Request.Context(), s.db, user.ID, id)
 	tagValues := make([]string, 0, len(tags))
 	for _, t := range tags {
 		tagValues = append(tagValues, t.Name)
@@ -322,7 +322,7 @@ func (s *Server) handleNoteExportEPUB(c *gin.Context) {
 	defer os.Remove(tempPath) // Delete after request is closed
 
 	items := []core.EntitySummary{{ID: id, Title: note.Title, Type: core.TypeNote}}
-	if err := export.ExportEPUB(c.Request.Context(), s.db, items, tempPath); err != nil {
+	if err := export.ExportEPUB(c.Request.Context(), s.db, user.ID, items, tempPath); err != nil {
 		s.renderError(c, http.StatusInternalServerError, "EPUB generation failed")
 		return
 	}
