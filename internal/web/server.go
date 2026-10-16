@@ -5,12 +5,11 @@ import (
 	"atria/internal/core"
 	"atria/internal/notes"
 	"atria/internal/rss"
+	"atria/internal/search"
 	"atria/internal/users"
-	"crypto/hmac"
-	"crypto/sha256"
 	"database/sql"
 	"embed"
-	"encoding/hex"
+	"errors"
 	"fmt"
 	"html"
 	"html/template"
@@ -36,7 +35,8 @@ var TemplatesFS embed.FS
 var StaticFS embed.FS
 
 type Server struct {
-	db *sql.DB
+	db           *sql.DB
+	loginLimiter *loginLimiter
 }
 
 type FlashMessage struct {
@@ -57,7 +57,7 @@ func debugLog(format string, args ...any) {
 }
 
 func NewServer(db *sql.DB) *Server {
-	return &Server{db: db}
+	return &Server{db: db, loginLimiter: newLoginLimiter(10, 15*time.Minute)}
 }
 
 // isProxyAllowed checks whether the direct TCP connection (RemoteAddr) is in the PROXY_ALLOWLIST.
@@ -97,37 +97,15 @@ func hasExactGroup(groupHeader, group string) bool {
 
 func (s *Server) AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var email string
-		var authSource core.AuthSource
+		// Proxy headers are trusted only from allowlisted IPs; see resolveRequestUser.
+		user, authSource, identity := s.resolveRequestUser(c)
 
-		headerName := os.Getenv("PROXY_AUTH_HEADER")
-		if headerName == "" {
-			headerName = "Remote-Email"
-		}
-
-		// Only trust proxy auth headers if the request comes from an allowlisted IP.
-		proxyEmail := c.GetHeader(headerName)
-		if proxyEmail != "" && isProxyAllowed(c) {
-			email = proxyEmail
-			authSource = core.AuthSourceProxy
-		} else {
-			email = s.verifySessionCookie(c)
-			authSource = core.AuthSourceLocal
-		}
-
-		// (Dev fallback)
-		if email == "" && os.Getenv("ATRIA_ENV") == "development" {
-			email = os.Getenv("ATRIA_USER")
-			authSource = core.AuthSourceLocal
-		}
-
-		if email == "" {
+		if identity == "" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 			return
 		}
 
-		user, err := core.FindUser(c.Request.Context(), s.db, email)
-		if err != nil {
+		if user == nil {
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Forbidden: User not registered in Atria"})
 			return
 		}
@@ -165,6 +143,8 @@ func (s *Server) getUser(c *gin.Context) *core.User {
 
 func (s *Server) SetupRouter() *gin.Engine {
 	r := gin.Default()
+	r.Use(SecurityHeadersMiddleware())
+	r.Use(BodyLimitMiddleware(maxUploadBytes()))
 
 	trustedProxiesRaw := os.Getenv("TRUSTED_PROXIES")
 	if trustedProxiesRaw != "" {
@@ -388,9 +368,13 @@ func (s *Server) getTemplateFuncs() template.FuncMap {
 			}
 			return s
 		},
-		"safeHTML": func(s string) template.HTML {
-			return template.HTML(s)
+		// sanitizeHTML renders untrusted third-party HTML (e.g. RSS content)
+		// through the allowlist sanitizer. There is deliberately no raw
+		// "safeHTML" helper: trusted HTML must be produced in Go code.
+		"sanitizeHTML": func(s string) template.HTML {
+			return template.HTML(core.SanitizeHTML(s))
 		},
+		"searchHeadline": search.HeadlineHTML,
 
 		"normoPages": func(charCount int) string {
 			// 1 normopage = 1800 characters (Czech standard ČSN).
@@ -685,11 +669,7 @@ func (s *Server) handleFontSizeAdjust(c *gin.Context) {
 		s.setFlash(c, "error", "Nepodařilo se uložit velikost písma.")
 	}
 
-	redirectTo := c.Request.Referer()
-	if redirectTo == "" {
-		redirectTo = "/"
-	}
-	c.Redirect(http.StatusFound, redirectTo)
+	c.Redirect(http.StatusFound, localRedirectTarget(c, "/"))
 }
 
 func (s *Server) makeHandler(tmplName string, data gin.H) gin.HandlerFunc {
@@ -702,113 +682,6 @@ func (s *Server) makeHandler(tmplName string, data gin.H) gin.HandlerFunc {
 	}
 }
 
-func (s *Server) setSessionCookie(c *gin.Context, email string) {
-	secret := os.Getenv("SESSION_SECRET")
-	if secret == "" {
-		secret = "default_dev_secret_please_change" // Fallback
-	}
-
-	mac := hmac.New(sha256.New, []byte(secret))
-	mac.Write([]byte(email))
-	signature := hex.EncodeToString(mac.Sum(nil))
-
-	value := email + "|" + signature
-
-	http.SetCookie(c.Writer, &http.Cookie{
-		Name:     "atria_session",
-		Value:    value,
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   isSecureContext(),
-		SameSite: http.SameSiteStrictMode,
-		MaxAge:   3600 * 24 * 30,
-	})
-}
-
-func (s *Server) verifySessionCookie(c *gin.Context) string {
-	cookie, err := c.Request.Cookie("atria_session")
-	if err != nil {
-		return ""
-	}
-
-	parts := strings.Split(cookie.Value, "|")
-	if len(parts) != 2 {
-		return ""
-	}
-	email, signature := parts[0], parts[1]
-
-	secret := os.Getenv("SESSION_SECRET")
-	if secret == "" {
-		secret = "default_dev_secret_please_change"
-	}
-
-	// Recompute signature and compare (constant-time to prevent timing attacks)
-	mac := hmac.New(sha256.New, []byte(secret))
-	mac.Write([]byte(email))
-	expectedSignature := hex.EncodeToString(mac.Sum(nil))
-
-	if hmac.Equal([]byte(signature), []byte(expectedSignature)) {
-		return email
-	}
-	return ""
-}
-
-// GetCSRFToken derives a per-user CSRF token from the authenticated user in context.
-// The CSRF token is HMAC-SHA256("csrf:"+email, SESSION_SECRET) so it is tied
-// to the authenticated user without requiring a separate DB lookup.
-func (s *Server) GetCSRFToken(c *gin.Context) string {
-	user := s.getUser(c)
-	if user == nil {
-		return ""
-	}
-
-	secret := os.Getenv("SESSION_SECRET")
-	if secret == "" {
-		secret = "default_dev_secret_please_change"
-	}
-
-	m := hmac.New(sha256.New, []byte(secret))
-	m.Write([]byte("csrf:" + user.Email))
-	return hex.EncodeToString(m.Sum(nil))
-}
-
-func (s *Server) CSRFMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		method := c.Request.Method
-		if method == http.MethodGet || method == http.MethodHead || method == http.MethodOptions {
-			c.Next()
-			return
-		}
-
-		// Use the already-authenticated user from context (set by AuthMiddleware).
-		// This works for all auth sources: proxy, session cookie, and dev fallback.
-		user := s.getUser(c)
-		if user == nil {
-			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Invalid CSRF token"})
-			return
-		}
-		secret := os.Getenv("SESSION_SECRET")
-		if secret == "" {
-			secret = "default_dev_secret_please_change"
-		}
-		m := hmac.New(sha256.New, []byte(secret))
-		m.Write([]byte("csrf:" + user.Email))
-		storedCSRF := hex.EncodeToString(m.Sum(nil))
-
-		submittedCSRF := c.GetHeader("X-CSRF-Token")
-		if submittedCSRF == "" {
-			submittedCSRF = c.PostForm("_csrf")
-		}
-
-		if !hmac.Equal([]byte(submittedCSRF), []byte(storedCSRF)) {
-			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Invalid CSRF token"})
-			return
-		}
-
-		c.Next()
-	}
-}
-
 func (s *Server) handleLoginGet(c *gin.Context) {
 	if user := s.getUser(c); user != nil {
 		c.Redirect(http.StatusFound, "/")
@@ -818,39 +691,47 @@ func (s *Server) handleLoginGet(c *gin.Context) {
 }
 
 func (s *Server) handleLoginPost(c *gin.Context) {
+	if isCrossSiteRequest(c) {
+		c.String(http.StatusForbidden, "Cross-site login is not allowed")
+		return
+	}
+
+	limiterKey := c.ClientIP()
+	if !s.loginLimiter.allowed(limiterKey) {
+		s.setFlash(c, "error", "Příliš mnoho neúspěšných pokusů. Zkuste to znovu později.")
+		c.Redirect(http.StatusFound, "/login")
+		return
+	}
+
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxLoginBodyBytes)
 	email := c.PostForm("email")
 	password := c.PostForm("password")
 
 	user, err := core.FindUser(c.Request.Context(), s.db, email)
+	if err == nil && user.PasswordHash != "" {
+		err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password))
+	} else {
+		compareDummyPassword(password)
+		if err == nil {
+			err = errors.New("user has no local password")
+		}
+	}
 	if err != nil {
+		s.loginLimiter.fail(limiterKey)
 		s.setFlash(c, "error", "Neplatný e-mail nebo heslo.")
 		c.Redirect(http.StatusFound, "/login")
 		return
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password))
-	if err != nil {
-		s.setFlash(c, "error", "Neplatný e-mail nebo heslo.")
-		c.Redirect(http.StatusFound, "/login")
-		return
-	}
-
-	s.setSessionCookie(c, user.Email)
+	s.loginLimiter.reset(limiterKey)
+	s.setSessionCookie(c, user)
 	c.Redirect(http.StatusFound, "/")
 }
 
 func (s *Server) handleLogout(c *gin.Context) {
 	user := s.getUser(c)
 
-	http.SetCookie(c.Writer, &http.Cookie{
-		Name:     "atria_session",
-		Value:    "",
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   isSecureContext(),
-		SameSite: http.SameSiteStrictMode,
-		MaxAge:   -1,
-	})
+	s.clearSessionCookie(c)
 
 	if user != nil && user.AuthSource == core.AuthSourceProxy {
 		logoutURL := os.Getenv("SSO_LOGOUT_URL")

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gofrs/uuid/v5"
 )
 
 func (s *Server) handleUpdateVisibility(c *gin.Context) {
@@ -75,5 +76,16 @@ func (s *Server) handleEntityRename(c *gin.Context) {
 		c.Status(http.StatusOK)
 		return
 	}
-	c.Redirect(http.StatusSeeOther, c.Request.Referer())
+	c.Redirect(http.StatusSeeOther, localRedirectTarget(c, "/"))
+}
+
+// requireOwnedEntity responds 404 and returns false unless entityID is an
+// active entity owned by user. Use it before any write keyed by a URL ID.
+func (s *Server) requireOwnedEntity(c *gin.Context, user *core.User, entityID uuid.UUID) bool {
+	ownerID, err := core.VerifyOwner(c.Request.Context(), s.db, entityID)
+	if err != nil || ownerID != user.ID {
+		s.renderError(c, http.StatusNotFound, "Entity not found")
+		return false
+	}
+	return true
 }

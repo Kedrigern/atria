@@ -4,14 +4,15 @@ import (
 	"atria/internal/attachments"
 	"atria/internal/core"
 	"fmt"
+	"mime"
 	"net/http"
 	"os"
+	"strings"
 
 	"database/sql"
 	"path/filepath"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gofrs/uuid/v5"
 )
 
 func (s *Server) handleAttachments(c *gin.Context) {
@@ -51,20 +52,27 @@ func (s *Server) handleEntityAttachmentUpload(c *gin.Context) {
 		return
 	}
 
-	entityID, _ := core.ParseUUID(c.Param("id"))
+	entityID, err := core.ParseUUID(c.Param("id"))
+	if err != nil {
+		s.renderError(c, http.StatusBadRequest, "Invalid ID")
+		return
+	}
+	if !s.requireOwnedEntity(c, user, entityID) {
+		return
+	}
 
 	file, err := c.FormFile("file")
 	if err != nil {
-		s.renderError(c, http.StatusBadRequest, "No file uploaded")
+		s.renderError(c, http.StatusBadRequest, "No file uploaded (or file too large)")
 		return
 	}
 
-	tempPath := "./data/temp_" + file.Filename
-	if err := c.SaveUploadedFile(file, tempPath); err != nil {
+	tempPath, cleanup, err := saveUploadToTemp(file, "", "atria-upload-*")
+	if err != nil {
 		s.renderError(c, http.StatusInternalServerError, "Failed to save temp file")
 		return
 	}
-	defer os.Remove(tempPath)
+	defer cleanup()
 
 	att, err := attachments.AddAttachment(c.Request.Context(), s.db, user.ID, tempPath, file.Filename)
 	if err != nil {
@@ -82,74 +90,61 @@ func (s *Server) handleEntityAttachmentUpload(c *gin.Context) {
 		c.Status(http.StatusOK)
 		return
 	}
-	c.Redirect(http.StatusSeeOther, c.Request.Referer())
+	c.Redirect(http.StatusSeeOther, localRedirectTarget(c, "/"))
+}
+
+// inlineAttachmentTypes are served inline; every other type is forced to
+// download so uploaded HTML/SVG/JS can never execute on the Atria origin.
+var inlineAttachmentTypes = map[string]bool{
+	"image/png":       true,
+	"image/jpeg":      true,
+	"image/gif":       true,
+	"image/webp":      true,
+	"image/avif":      true,
+	"image/bmp":       true,
+	"application/pdf": true,
+	"text/plain":      true,
+}
+
+func isInlineAttachmentType(mimeType string) bool {
+	mediaType, _, err := mime.ParseMediaType(mimeType)
+	if err != nil {
+		return false
+	}
+	return inlineAttachmentTypes[mediaType] ||
+		strings.HasPrefix(mediaType, "audio/") ||
+		strings.HasPrefix(mediaType, "video/")
 }
 
 func (s *Server) handleProtectedAttachment(c *gin.Context) {
-	year := c.Param("year")
-	month := c.Param("month")
-	filename := c.Param("filename")
+	relDiskPath := filepath.Join(c.Param("year"), c.Param("month"), c.Param("filename"))
 
-	relDiskPath := filepath.Join(year, month, filename)
+	// This route is outside the auth group so public attachments work for
+	// anonymous visitors; identify the caller with the same rules as AuthMiddleware.
+	user, _, _ := s.resolveRequestUser(c)
 
-	// --- MANUAL USER EXTRACTION (needed to support public sharing outside the auth group) ---
-	var user *core.User
-	headerName := os.Getenv("PROXY_AUTH_HEADER")
-	if headerName == "" {
-		headerName = "Remote-Email"
+	// Several users can own the same file (dedup is per owner, the disk path
+	// is content-addressed), so check access across all matching rows.
+	query := `SELECT mime_type, filename FROM attachments
+		WHERE disk_path = $1 AND deleted_at IS NULL AND visibility = 'public'
+		LIMIT 1`
+	args := []any{relDiskPath}
+	if user != nil {
+		query = `SELECT mime_type, filename FROM attachments
+			WHERE disk_path = $1 AND deleted_at IS NULL
+			  AND (owner_id = $2 OR visibility IN ('users', 'public'))
+			ORDER BY (owner_id = $2) DESC
+			LIMIT 1`
+		args = append(args, user.ID)
 	}
 
-	var email string
-	proxyEmail := c.GetHeader(headerName)
-
-	// Verify proxy auth or session cookie, same logic as in middleware.
-	if proxyEmail != "" && isProxyAllowed(c) {
-		email = proxyEmail
-	} else {
-		email = s.verifySessionCookie(c)
-	}
-
-	// Dev fallback
-	if email == "" && os.Getenv("ATRIA_ENV") == "development" {
-		email = os.Getenv("ATRIA_USER")
-	}
-
-	if email != "" {
-		user, _ = core.FindUser(c.Request.Context(), s.db, email)
-	}
-	// -------------------------------------------------------------------------------
-
-	var ownerID uuid.UUID
-	var visibility core.Visibility
-	var actualFilename string
-
-	err := s.db.QueryRowContext(c.Request.Context(),
-		`SELECT owner_id, visibility, filename FROM attachments WHERE disk_path = $1 AND deleted_at IS NULL`,
-		relDiskPath,
-	).Scan(&ownerID, &visibility, &actualFilename)
-
+	var mimeType, filename string
+	err := s.db.QueryRowContext(c.Request.Context(), query, args...).Scan(&mimeType, &filename)
 	if err == sql.ErrNoRows {
 		c.String(http.StatusNotFound, "Příloha nebyla nalezena")
 		return
 	} else if err != nil {
 		c.String(http.StatusInternalServerError, "Chyba databáze při ověřování přílohy")
-		return
-	}
-
-	// Access Control Logic
-	allowed := false
-	if visibility == core.VisibilityPublic {
-		allowed = true
-	} else if user != nil {
-		if visibility == core.VisibilityUsers {
-			allowed = true
-		} else if visibility == core.VisibilityPrivate && ownerID == user.ID {
-			allowed = true
-		}
-	}
-
-	if !allowed {
-		c.String(http.StatusForbidden, "Nemáte oprávnění k zobrazení tohoto souboru")
 		return
 	}
 
@@ -164,6 +159,19 @@ func (s *Server) handleProtectedAttachment(c *gin.Context) {
 		return
 	}
 
+	// Content-Type comes from the sniffed MIME type stored at upload time,
+	// never from the user-controlled file extension.
+	h := c.Writer.Header()
+	h.Set("Content-Type", mimeType)
+	h.Set("X-Content-Type-Options", "nosniff")
+	if isInlineAttachmentType(mimeType) {
+		// Built-in viewers (e.g. PDF) can break under the page CSP; these
+		// types cannot run script on our origin anyway.
+		h.Del("Content-Security-Policy")
+	} else {
+		h.Set("Content-Disposition", contentDispositionAttachment(filename))
+		h.Set("Content-Security-Policy", "sandbox; default-src 'none'")
+	}
 	c.File(absPath)
 }
 

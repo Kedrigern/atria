@@ -16,16 +16,28 @@ import (
 	"github.com/mmcdole/gofeed"
 )
 
-// FetchAllActiveFeeds iterates through all feeds that are due for an update
-// and fetches them concurrently using a worker pool.
+const dueFeedsQuery = `
+	SELECT f.id, f.feed_url, f.etag_header, f.last_modified_header,
+	       f.http_auth_type, f.http_auth_username, f.http_auth_token
+	FROM rss_feeds f
+	JOIN entities e ON e.id = f.id
+	WHERE f.next_fetch_at <= NOW() AND e.deleted_at IS NULL
+`
+
+// FetchAllActiveFeeds iterates through all feeds of all users that are due
+// for an update and fetches them concurrently using a worker pool. It is meant
+// for the background worker; request handlers use FetchActiveFeedsForOwner.
 func FetchAllActiveFeeds(ctx context.Context, db *sql.DB) error {
-	query := `
-		SELECT id, feed_url, etag_header, last_modified_header,
-		       http_auth_type, http_auth_username, http_auth_token
-		FROM rss_feeds
-		WHERE next_fetch_at <= NOW()
-	`
-	rows, err := db.QueryContext(ctx, query)
+	return fetchDueFeeds(ctx, db, dueFeedsQuery)
+}
+
+// FetchActiveFeedsForOwner fetches the due feeds belonging to one user.
+func FetchActiveFeedsForOwner(ctx context.Context, db *sql.DB, ownerID uuid.UUID) error {
+	return fetchDueFeeds(ctx, db, dueFeedsQuery+` AND e.owner_id = $1`, ownerID)
+}
+
+func fetchDueFeeds(ctx context.Context, db *sql.DB, query string, args ...any) error {
+	rows, err := db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return err
 	}

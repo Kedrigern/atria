@@ -554,7 +554,15 @@ func ArchiveArticle(ctx context.Context, db *sql.DB, ownerID, articleID uuid.UUI
 // RefetchArticle re-fetches the article content from its original URL and updates the database.
 func RefetchArticle(ctx context.Context, db *sql.DB, ownerID, articleID uuid.UUID) error {
 	var originalURL string
-	err := db.QueryRowContext(ctx, "SELECT original_url FROM articles WHERE id = $1", articleID).Scan(&originalURL)
+	err := db.QueryRowContext(ctx, `
+		SELECT a.original_url
+		FROM articles a
+		JOIN entities e ON e.id = a.id
+		WHERE a.id = $1 AND e.owner_id = $2 AND e.deleted_at IS NULL`,
+		articleID, ownerID).Scan(&originalURL)
+	if err == sql.ErrNoRows {
+		return fmt.Errorf("article not found")
+	}
 	if err != nil {
 		return fmt.Errorf("failed to find original URL: %w", err)
 	}
@@ -570,7 +578,7 @@ func RefetchArticle(ctx context.Context, db *sql.DB, ownerID, articleID uuid.UUI
 	}
 	defer tx.Rollback()
 
-	_, err = tx.ExecContext(ctx, "UPDATE entities SET title = $1, updated_at = NOW() WHERE id = $2", title, articleID)
+	_, err = tx.ExecContext(ctx, "UPDATE entities SET title = $1, updated_at = NOW() WHERE id = $2 AND owner_id = $3", title, articleID, ownerID)
 	if err != nil {
 		return err
 	}

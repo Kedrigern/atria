@@ -131,8 +131,13 @@ func (s *Server) handleRSSFeedUpdate(c *gin.Context) {
 }
 
 func (s *Server) handleRSSFetchAll(c *gin.Context) {
-	// Triggers the parallel worker pool to fetch all feeds
-	err := rss.FetchAllActiveFeeds(c.Request.Context(), s.db)
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+
+	// Triggers the parallel worker pool to fetch the user's due feeds
+	err := rss.FetchActiveFeedsForOwner(c.Request.Context(), s.db, user.ID)
 	if err != nil {
 		s.renderError(c, http.StatusInternalServerError, "Fetch failed: "+err.Error())
 		return
