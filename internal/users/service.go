@@ -22,7 +22,7 @@ func CreateUser(ctx context.Context, db *sql.DB, email, displayName, password st
 
 	user := &core.User{
 		ID:           core.NewUUID(),
-		Email:        email,
+		Email:        core.NormalizeEmail(email),
 		DisplayName:  displayName,
 		PasswordHash: string(hash),
 		Role:         role,
@@ -98,7 +98,7 @@ func UpdateUserRole(ctx context.Context, db *sql.DB, identifier string, newRole 
 }
 
 func DeleteUser(ctx context.Context, db *sql.DB, email string) error {
-	result, err := db.ExecContext(ctx, `DELETE FROM users WHERE email = $1`, email)
+	result, err := db.ExecContext(ctx, `DELETE FROM users WHERE email = $1`, core.NormalizeEmail(email))
 	if err != nil {
 		return fmt.Errorf("failed to delete user: %w", err)
 	}

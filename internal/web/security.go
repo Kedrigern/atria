@@ -2,9 +2,9 @@ package web
 
 import (
 	"atria/internal/core"
+	"atria/internal/users"
 	"crypto/hmac"
 	"crypto/sha256"
-	"encoding/base64"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -98,34 +98,29 @@ func hmacHex(secret []byte, parts ...string) string {
 	return hex.EncodeToString(m.Sum(nil))
 }
 
-// signSession binds the cookie to the email, its expiry and the user's current
-// password hash, so changing the password invalidates all existing sessions.
-func signSession(secret []byte, email string, expires int64, passwordHash string) string {
-	return hmacHex(secret, "session:v1", email, strconv.FormatInt(expires, 10), passwordHash)
-}
+// sessionCookiePrefix versions the cookie format; cookies from the older
+// signed-email format ("v1.") are simply not recognised and require a new login.
+const sessionCookiePrefix = "v2."
 
-func (s *Server) setSessionCookie(c *gin.Context, user *core.User) {
-	secret := sessionSecret()
-	if secret == nil {
-		return
+// setSessionCookie starts a server-side session for user and sets its token
+// as the session cookie. It reports whether the session was created.
+func (s *Server) setSessionCookie(c *gin.Context, user *core.User) bool {
+	token, err := users.CreateSession(c.Request.Context(), s.db, user.ID, sessionTTL)
+	if err != nil {
+		logRequestError(c, "Failed to create session", err)
+		return false
 	}
-	expires := time.Now().Add(sessionTTL).Unix()
-	value := strings.Join([]string{
-		"v1",
-		base64.RawURLEncoding.EncodeToString([]byte(user.Email)),
-		strconv.FormatInt(expires, 10),
-		signSession(secret, user.Email, expires, user.PasswordHash),
-	}, ".")
 
 	http.SetCookie(c.Writer, &http.Cookie{
 		Name:     sessionCookieName,
-		Value:    value,
+		Value:    sessionCookiePrefix + token,
 		Path:     "/",
 		HttpOnly: true,
 		Secure:   isSecureContext(),
 		SameSite: http.SameSiteStrictMode,
 		MaxAge:   int(sessionTTL.Seconds()),
 	})
+	return true
 }
 
 func (s *Server) clearSessionCookie(c *gin.Context) {
@@ -140,40 +135,43 @@ func (s *Server) clearSessionCookie(c *gin.Context) {
 	})
 }
 
-// userFromSessionCookie returns the user identified by a valid, unexpired
-// session cookie, or nil.
-func (s *Server) userFromSessionCookie(c *gin.Context) *core.User {
-	secret := sessionSecret()
-	if secret == nil {
-		return nil
-	}
+// sessionToken returns the token from the session cookie, or "".
+func sessionToken(c *gin.Context) string {
 	cookie, err := c.Request.Cookie(sessionCookieName)
-	if err != nil {
-		return nil
+	if err != nil || !strings.HasPrefix(cookie.Value, sessionCookiePrefix) {
+		return ""
 	}
+	return strings.TrimPrefix(cookie.Value, sessionCookiePrefix)
+}
 
-	parts := strings.Split(cookie.Value, ".")
-	if len(parts) != 4 || parts[0] != "v1" {
+// userFromSessionCookie returns the user of an active, unexpired session, or nil.
+func (s *Server) userFromSessionCookie(c *gin.Context) *core.User {
+	token := sessionToken(c)
+	if token == "" {
 		return nil
 	}
-	emailBytes, err := base64.RawURLEncoding.DecodeString(parts[1])
+	userID, err := users.SessionUserID(c.Request.Context(), s.db, token)
 	if err != nil {
+		if !errors.Is(err, users.ErrSessionNotFound) {
+			logRequestError(c, "Failed to look up session", err)
+		}
 		return nil
 	}
-	expires, err := strconv.ParseInt(parts[2], 10, 64)
-	if err != nil || time.Now().Unix() > expires {
-		return nil
-	}
-
-	user, err := core.FindUser(c.Request.Context(), s.db, string(emailBytes))
+	user, err := core.FindUser(c.Request.Context(), s.db, userID.String())
 	if err != nil {
-		return nil
-	}
-	expected := signSession(secret, user.Email, expires, user.PasswordHash)
-	if !hmac.Equal([]byte(parts[3]), []byte(expected)) {
 		return nil
 	}
 	return user
+}
+
+// endSession revokes the current session on the server and clears the cookie.
+func (s *Server) endSession(c *gin.Context) {
+	if token := sessionToken(c); token != "" {
+		if err := users.DeleteSession(c.Request.Context(), s.db, token); err != nil {
+			logRequestError(c, "Failed to delete session", err)
+		}
+	}
+	s.clearSessionCookie(c)
 }
 
 func proxyAuthHeader() string {

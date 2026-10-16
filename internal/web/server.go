@@ -722,14 +722,18 @@ func (s *Server) handleLoginPost(c *gin.Context) {
 	}
 
 	s.loginLimiter.reset(limiterKey)
-	s.setSessionCookie(c, user)
+	if !s.setSessionCookie(c, user) {
+		s.setFlash(c, "error", "Přihlášení se nezdařilo, zkuste to znovu.")
+		c.Redirect(http.StatusFound, "/login")
+		return
+	}
 	c.Redirect(http.StatusFound, "/")
 }
 
 func (s *Server) handleLogout(c *gin.Context) {
 	user := s.getUser(c)
 
-	s.clearSessionCookie(c)
+	s.endSession(c)
 
 	if user != nil && user.AuthSource == core.AuthSourceProxy {
 		logoutURL := os.Getenv("SSO_LOGOUT_URL")

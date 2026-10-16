@@ -1,5 +1,7 @@
 package core
 
+import "strings"
+
 // Column limits from the entities table.
 const (
 	MaxSlugLength  = 100 // well under slug VARCHAR(150)
@@ -18,4 +20,10 @@ func LimitRunes(s string, n int) string {
 		return s
 	}
 	return string(runes[:n])
+}
+
+// NormalizeEmail is the canonical form emails are stored and looked up in;
+// email addresses are matched case-insensitively.
+func NormalizeEmail(email string) string {
+	return strings.ToLower(strings.TrimSpace(email))
 }
