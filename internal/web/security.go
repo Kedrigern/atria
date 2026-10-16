@@ -37,12 +37,13 @@ const (
 )
 
 // contentSecurityPolicy limits where scripts, styles and other resources may be
-// loaded from. Inline scripts are still allowed because the templates rely on
-// inline handlers; untrusted HTML is sanitized before rendering, so the CSP is
-// a second line of defence (no plugins, no framing, no foreign form targets,
-// no <base> hijacking).
+// loaded from. Scripts may only come from our own /static files and the exact
+// CDN paths of the rendering libraries: no inline scripts, no on* handlers, no
+// javascript: URLs and no eval (htmx runs with allowEval=false). Page
+// behaviour therefore lives in static/app.js and is wired up via data-*
+// attributes. Inline styles stay allowed; they cannot execute code.
 const contentSecurityPolicy = "default-src 'self'; " +
-	"script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; " +
+	"script-src 'self' https://cdn.jsdelivr.net/npm/mermaid@10/ https://cdn.jsdelivr.net/npm/mathjax@3/ https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/; " +
 	"style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; " +
 	"img-src * data: blob:; " +
 	"media-src *; " +

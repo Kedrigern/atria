@@ -56,15 +56,7 @@
                         >
                         <a
                             href="#"
-                            onclick="
-                                document.getElementById(
-                                    'note-view',
-                                ).style.display = 'none';
-                                document.getElementById(
-                                    'note-edit',
-                                ).style.display = 'block';
-                                return false;
-                            "
+                            data-note-editing="true"
                             style="font-size: 0.8rem; color: var(--text-muted)"
                             >Upravit</a
                         >
@@ -100,12 +92,7 @@
                         <button
                             type="button"
                             class="outline btn-sm"
-                            onclick="
-                                this.closest('form').style.display = 'none';
-                                document.getElementById(
-                                    'note-view',
-                                ).style.display = 'block';
-                            "
+                            data-note-editing="false"
                         >
                             Zrušit
                         </button>

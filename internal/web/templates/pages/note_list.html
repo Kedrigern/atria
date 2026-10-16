@@ -8,11 +8,7 @@
                 type="button"
                 class="outline btn-sm"
                 title="Rozbalit vše"
-                onclick="
-                    document
-                        .querySelectorAll('.note-tree details')
-                        .forEach((d) => (d.open = true))
-                "
+                data-tree-open="true"
             >
                 <span class="icon-sm icon-expand"></span>
             </button>
@@ -21,11 +17,7 @@
                 type="button"
                 class="outline btn-sm"
                 title="Sbalit vše"
-                onclick="
-                    document
-                        .querySelectorAll('.note-tree details')
-                        .forEach((d) => (d.open = false))
-                "
+                data-tree-open="false"
             >
                 <span class="icon-sm icon-collapse"></span>
             </button>

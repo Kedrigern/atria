@@ -31,7 +31,8 @@ Atria synchronizes user roles dynamically based on the group headers provided by
 ## 5. Content Security
 * Third-party HTML (readability output of saved articles, RSS item content) is sanitized with a bluemonday allowlist before rendering (`core.SanitizeHTML`). There is intentionally no template helper that marks arbitrary strings as safe HTML.
 * Search snippets are HTML-escaped; only the highlight markers become `<mark>`.
-* Every response carries `Content-Security-Policy`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` and `Referrer-Policy`. The CSP still allows inline scripts because the templates use inline handlers; moving them to static files would allow dropping `'unsafe-inline'`.
+* Every response carries `Content-Security-Policy`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` and `Referrer-Policy`.
+* The CSP allows scripts only from `/static` and the exact CDN paths of Mermaid, MathJax and highlight.js — no inline `<script>`, no `on*=` handlers, no `javascript:` URLs, no `eval` (htmx runs with `allowEval: false`, so `hx-on` and trigger filters are not available). Page behaviour lives in `static/app.js` and is attached through `data-*` attributes (`data-confirm`, `data-copy`, `data-auto-submit`, …). `TestTemplatesHaveNoInlineJavaScript` fails if inline JavaScript is reintroduced.
 * Attachments are served with the MIME type sniffed at upload time. Only raster images, PDF, plain text, audio and video are shown inline; everything else (HTML, SVG, …) is forced to download under a `sandbox` CSP.
 * Request bodies are capped by `MAX_UPLOAD_MB` (default 100). Server-side fetches (articles, RSS) refuse private, loopback, link-local/metadata, CGNAT and other reserved address ranges.
 

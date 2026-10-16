@@ -41,7 +41,7 @@
     <form hx-post="/api/entity/{{.ID}}/attachments" hx-encoding="multipart/form-data" hx-target="#main-content" style="margin: 0;">
         <label class="button outline btn-sm flex-row btn-dashed">
             <span class="icon-sm icon-file"></span> Nahrát soubor
-            <input type="file" name="file" style="display: none;" required onchange="this.form.dispatchEvent(new Event('submit', {cancelable: true, bubbles: true}));">
+            <input type="file" name="file" style="display: none;" required data-auto-submit>
         </label>
     </form>
 </div>
@@ -87,7 +87,7 @@
             <option value="public" {{if eq .Visibility "public"}}selected{{end}}>Public Link</option>
         </select>
         {{if eq .Visibility "public"}}
-        <button type="button" class="outline btn-sm" title="Kopírovat veřejný odkaz" onclick="navigator.clipboard.writeText(window.location.origin + '/public/{{if eq .Type "note"}}notes{{else}}articles{{end}}/{{.ID}}')">Kopírovat odkaz</button>
+        <button type="button" class="outline btn-sm" title="Kopírovat veřejný odkaz" data-copy="/public/{{if eq .Type "note"}}notes{{else}}articles{{end}}/{{.ID}}" data-copy-origin>Kopírovat odkaz</button>
         {{end}}
     </div>
 </div>
@@ -164,8 +164,7 @@
     <div class="page-header-row" style="width: 100%">
         <div>
             <h4 style="margin: 0 0 5px 0">
-                <a href="javascript:void(0)"
-                   onclick="const d = this.closest('.list-item').querySelector('.inline-content'); if(d) d.style.display = d.style.display === 'none' ? 'block' : 'none';">
+                <a href="#" data-toggle-inline>
                     {{.Title}}
                 </a>
             </h4>
@@ -206,7 +205,7 @@
         {{if .Content}}{{sanitizeHTML .Content}}{{else}}{{sanitizeHTML .Description}}{{end}}
 
         <div class="flex-row flex-between flex-wrap mt-3" style="padding-top: 15px; border-top: 1px dashed var(--border); gap: 10px;">
-            <button type="button" class="outline btn-sm" onclick="this.closest('.inline-content').style.display = 'none';">
+            <button type="button" class="outline btn-sm" data-hide-inline>
                 ↑ Zobrazit méně
             </button>
 
@@ -278,8 +277,8 @@
     </div>
     <div class="toolbar-group">
         {{template "font_size_controls" .}}
-        <span class="tag hide-mobile entity-short-id" onclick="navigator.clipboard.writeText('{{.Article.ShortID}}');" title="Zkopírovat ID">#{{.Article.ShortID}}</span>
-        <form method="post" action="/api/articles/{{.Article.ID}}/delete" class="inline-action-form article-toolbar-mobile-hidden" onsubmit="return confirm('Opravdu smazat tento článek?')">
+        <span class="tag hide-mobile entity-short-id" data-copy="{{.Article.ShortID}}" title="Zkopírovat ID">#{{.Article.ShortID}}</span>
+        <form method="post" action="/api/articles/{{.Article.ID}}/delete" class="inline-action-form article-toolbar-mobile-hidden" data-confirm="Opravdu smazat tento článek?">
             <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
             <button type="submit" class="outline btn-sm btn-danger" title="Smazat článek">
                 <span class="icon-sm icon-trash"></span>
@@ -321,9 +320,9 @@
     </div>
     <div class="toolbar-group">
         {{template "font_size_controls" .}}
-        <span class="tag hide-mobile entity-short-id" onclick="navigator.clipboard.writeText('{{.Note.ShortID}}');" title="Zkopírovat ID">#{{.Note.ShortID}}</span>
+        <span class="tag hide-mobile entity-short-id" data-copy="{{.Note.ShortID}}" title="Zkopírovat ID">#{{.Note.ShortID}}</span>
         <button type="button" class="outline btn-sm btn-primary" title="Upravit poznámku"
-            onclick="setNoteEditing(true)">
+            data-note-editing="true">
             <span class="icon-sm icon-edit"></span> Upravit
         </button>
     </div>
