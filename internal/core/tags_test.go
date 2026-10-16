@@ -3,23 +3,17 @@ package core_test
 import (
 	"context"
 	"database/sql"
-	"os"
 	"testing"
 
 	"atria/internal/core"
 	"atria/internal/database"
 	"atria/internal/notes"
+	"atria/internal/testutil"
 	"atria/internal/users"
-
-	"github.com/joho/godotenv"
 )
 
 func setupTagDB(t *testing.T) (*sql.DB, *core.User) {
-	_ = godotenv.Load("../../.env")
-	dsn := os.Getenv("TEST_DATABASE_URL")
-	if dsn == "" {
-		t.Skip("TEST_DATABASE_URL not set")
-	}
+	dsn := testutil.TestDatabaseURL(t)
 
 	db, err := database.InitDB(dsn)
 	if err != nil {

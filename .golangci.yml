@@ -1,0 +1,14 @@
+version: "2"
+
+linters:
+  # Default set: errcheck, govet, ineffassign, staticcheck, unused.
+  exclusions:
+    presets:
+      # Unchecked Close/Rollback/fmt.Fprint* and similar idioms.
+      - std-error-handling
+      - common-false-positives
+
+issues:
+  # Report everything instead of the first few findings per linter.
+  max-issues-per-linter: 0
+  max-same-issues: 0

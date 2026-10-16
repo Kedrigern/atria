@@ -9,8 +9,8 @@ import (
 
 func main() {
 
-	if err := godotenv.Load(); err != nil {
-	}
+	// A missing .env is fine: configuration may come from the environment.
+	_ = godotenv.Load()
 
 	// Execute the root command and capture any errors
 	err := rootCmd.Execute()

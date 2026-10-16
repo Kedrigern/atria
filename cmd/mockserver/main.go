@@ -90,7 +90,7 @@ func handleRSS(baseURL string) http.HandlerFunc {
 </channel>
 </rss>`, baseURL, items)
 
-		w.Write([]byte(feed))
+		_, _ = w.Write([]byte(feed))
 	}
 }
 
@@ -198,5 +198,5 @@ func handleArticle(w http.ResponseWriter, r *http.Request) {
 </body>
 </html>`, id, id, id)
 
-	w.Write([]byte(html))
+	_, _ = w.Write([]byte(html))
 }

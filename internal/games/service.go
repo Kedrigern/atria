@@ -113,7 +113,7 @@ func GetPuzzle(ctx context.Context, db *sql.DB, userID, cryptogramID uuid.UUID) 
 	if err != nil {
 		return nil, fmt.Errorf("begin cryptogram attempt: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	puzzle, plainText, reveals, err := loadDefinition(ctx, tx, cryptogramID)
 	if err != nil {
@@ -212,7 +212,7 @@ func Guess(ctx context.Context, db *sql.DB, userID, cryptogramID uuid.UUID, code
 	if err != nil {
 		return fmt.Errorf("begin cryptogram guess: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	mapping, guesses, _, _, _, completedAt, found, err := loadProgress(ctx, tx, userID, cryptogramID)
 	if err != nil {
@@ -288,7 +288,7 @@ func Hint(ctx context.Context, db *sql.DB, userID, cryptogramID uuid.UUID) error
 	if err != nil {
 		return fmt.Errorf("begin cryptogram hint: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	mapping, guesses, _, _, _, completedAt, found, err := loadProgress(ctx, tx, userID, cryptogramID)
 	if err != nil {

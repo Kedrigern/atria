@@ -2,6 +2,8 @@ package web
 
 import (
 	"atria/internal/core"
+	"fmt"
+	"html"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -172,6 +174,8 @@ func (s *Server) handleTagOptions(c *gin.Context) {
 	}
 
 	for _, t := range tags {
-		c.Writer.Write([]byte(`<option value="` + t.Name + `">`))
+		if _, err := fmt.Fprintf(c.Writer, `<option value="%s">`, html.EscapeString(t.Name)); err != nil {
+			return
+		}
 	}
 }
