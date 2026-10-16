@@ -21,6 +21,9 @@ CREATE INDEX idx_ebooks_epub_attachment ON ebooks(epub_attachment_id);
 
 DROP TABLE IF EXISTS ebooks;
 
+-- The restored type check cannot hold while ebook entities exist.
+DELETE FROM entities WHERE type = 'ebook';
+
 ALTER TABLE entities DROP CONSTRAINT IF EXISTS entities_type_check;
 ALTER TABLE entities ADD CONSTRAINT entities_type_check
     CHECK (type IN ('note', 'article', 'rss', 'spreadsheet', 'folder', 'dashboard'));

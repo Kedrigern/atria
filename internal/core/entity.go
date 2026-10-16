@@ -53,9 +53,7 @@ func RenameEntity(ctx context.Context, db *sql.DB, ownerID, entityID uuid.UUID, 
 	slug := strings.ToLower(strings.ReplaceAll(newTitle, " ", "-"))
 	slug = strings.ReplaceAll(slug, "/", "-")
 	slug = strings.ReplaceAll(slug, "\\", "-")
-	if len(slug) > 100 {
-		slug = slug[:100]
-	}
+	slug = LimitRunes(slug, MaxSlugLength)
 
 	query := `
 		UPDATE entities

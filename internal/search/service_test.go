@@ -181,6 +181,18 @@ func TestSearch(t *testing.T) {
 		assert.Equal(t, "Supernova Explosion", results[0].Title)
 	})
 
+	t.Run("RenamedNoteIsFoundByNewTitle", func(t *testing.T) {
+		entity, err := notes.CreateNote(ctx, db, user.ID, "Plain Name", "/", "body without the keyword")
+		require.NoError(t, err)
+
+		require.NoError(t, core.RenameEntity(ctx, db, user.ID, entity.ID, "Magnetar Observations"))
+
+		results, err := search.Search(ctx, db, user.ID, "magnetar", "notes", false)
+		require.NoError(t, err)
+		require.Len(t, results, 1, "renamed note must be found by its new title")
+		assert.Equal(t, entity.ID, results[0].ID)
+	})
+
 	t.Run("NoResultsForUnknownTerm", func(t *testing.T) {
 		results, err := search.Search(ctx, db, user.ID, "xyzzy_nonexistent_term_9847", "", false)
 		require.NoError(t, err)
