@@ -24,7 +24,10 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.25"
+          # Latest 1.26 patch release: govulncheck reports standard-library
+          # vulnerabilities of whatever Go version runs it.
+          go-version: "1.26.x"
+          check-latest: true
 
       - name: Run Tests
         env:
@@ -38,7 +41,10 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.25"
+          # Latest 1.26 patch release: govulncheck reports standard-library
+          # vulnerabilities of whatever Go version runs it.
+          go-version: "1.26.x"
+          check-latest: true
 
       - name: golangci-lint
         run: go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.15.0 run ./...
