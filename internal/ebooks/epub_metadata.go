@@ -16,6 +16,13 @@ import (
 // ErrEPUBCoverNotFound indicates that an EPUB does not declare a cover image.
 var ErrEPUBCoverNotFound = errors.New("EPUB cover image not found")
 
+// Limits on decompressed sizes, so a crafted archive (zip bomb) cannot
+// exhaust disk or memory.
+const (
+	maxEPUBCoverBytes = 20 << 20
+	maxEPUBXMLBytes   = 4 << 20
+)
+
 // EPUBMetadata contains descriptive metadata read from an EPUB package document.
 type EPUBMetadata struct {
 	Title       string
@@ -85,13 +92,20 @@ func ExtractEPUBCover(epubPath, destinationDir string) (*EPUBCover, error) {
 		}
 	}()
 
+	if coverFile.UncompressedSize64 > maxEPUBCoverBytes {
+		return nil, fmt.Errorf("EPUB cover %q is too large", packageDocument.coverPath)
+	}
 	source, err := coverFile.Open()
 	if err != nil {
 		return nil, fmt.Errorf("open EPUB cover: %w", err)
 	}
 	defer source.Close()
-	if _, err := io.Copy(temporaryFile, source); err != nil {
+	written, err := io.Copy(temporaryFile, io.LimitReader(source, maxEPUBCoverBytes+1))
+	if err != nil {
 		return nil, fmt.Errorf("extract EPUB cover: %w", err)
+	}
+	if written > maxEPUBCoverBytes {
+		return nil, fmt.Errorf("EPUB cover %q is too large", packageDocument.coverPath)
 	}
 	if err := temporaryFile.Close(); err != nil {
 		return nil, fmt.Errorf("close extracted EPUB cover: %w", err)
@@ -139,7 +153,7 @@ func parseContainerRootfile(file *zip.File) (string, error) {
 	}
 	defer reader.Close()
 
-	decoder := xml.NewDecoder(reader)
+	decoder := xml.NewDecoder(io.LimitReader(reader, maxEPUBXMLBytes))
 	for {
 		token, err := decoder.Token()
 		if err == io.EOF {
@@ -175,7 +189,7 @@ func parsePackageDocument(file *zip.File, packagePath string) (*epubPackageDocum
 	var metadata EPUBMetadata
 	var coverID string
 	var manifest []epubManifestItem
-	decoder := xml.NewDecoder(reader)
+	decoder := xml.NewDecoder(io.LimitReader(reader, maxEPUBXMLBytes))
 	inMetadata := false
 	inManifest := false
 	for {

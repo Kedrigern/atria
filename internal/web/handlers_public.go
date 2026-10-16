@@ -25,7 +25,7 @@ func (s *Server) handlePublicArticle(c *gin.Context) {
 
 	var content template.HTML
 	if article.HTMLContent != nil {
-		content = template.HTML(*article.HTMLContent)
+		content = template.HTML(core.SanitizeHTML(*article.HTMLContent))
 	}
 
 	s.render(c, "public_detail.html", gin.H{

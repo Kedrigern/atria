@@ -94,15 +94,26 @@ func saveEbookImportUpload(file *multipart.FileHeader) (string, func(), error) {
 		return "", func() {}, fmt.Errorf("create import temporary directory: %w", err)
 	}
 
+	tempPath, cleanup, err := saveUploadToTemp(file, tempDir, "ebook-import-*")
+	if err != nil {
+		return "", func() {}, fmt.Errorf("save uploaded EPUB: %w", err)
+	}
+	return tempPath, cleanup, nil
+}
+
+// saveUploadToTemp copies an uploaded file into a new, uniquely named temp
+// file in dir ("" = system temp dir). Unlike gin's SaveUploadedFile it never
+// touches the permissions of dir.
+func saveUploadToTemp(file *multipart.FileHeader, dir, pattern string) (string, func(), error) {
 	source, err := file.Open()
 	if err != nil {
-		return "", func() {}, fmt.Errorf("open uploaded EPUB: %w", err)
+		return "", func() {}, err
 	}
 	defer source.Close()
 
-	temp, err := os.CreateTemp(tempDir, "ebook-import-*")
+	temp, err := os.CreateTemp(dir, pattern)
 	if err != nil {
-		return "", func() {}, fmt.Errorf("create temporary EPUB: %w", err)
+		return "", func() {}, err
 	}
 	tempPath := temp.Name()
 	cleanup := func() { _ = os.Remove(tempPath) }
@@ -110,11 +121,11 @@ func saveEbookImportUpload(file *multipart.FileHeader) (string, func(), error) {
 	if _, err := io.Copy(temp, source); err != nil {
 		_ = temp.Close()
 		cleanup()
-		return "", func() {}, fmt.Errorf("copy uploaded EPUB: %w", err)
+		return "", func() {}, err
 	}
 	if err := temp.Close(); err != nil {
 		cleanup()
-		return "", func() {}, fmt.Errorf("close temporary EPUB: %w", err)
+		return "", func() {}, err
 	}
 	return tempPath, cleanup, nil
 }
@@ -309,18 +320,9 @@ func saveEbookCover(c *gin.Context) (string, string, func(), error) {
 		return "", "", func() {}, nil
 	}
 
-	temp, err := os.CreateTemp("", "atria-ebook-cover-*")
+	tempPath, cleanup, err := saveUploadToTemp(file, "", "atria-ebook-cover-*")
 	if err != nil {
 		return "", "", func() {}, err
 	}
-	tempPath := temp.Name()
-	if err := temp.Close(); err != nil {
-		os.Remove(tempPath)
-		return "", "", func() {}, err
-	}
-	if err := c.SaveUploadedFile(file, tempPath); err != nil {
-		os.Remove(tempPath)
-		return "", "", func() {}, err
-	}
-	return tempPath, file.Filename, func() { _ = os.Remove(tempPath) }, nil
+	return tempPath, file.Filename, cleanup, nil
 }

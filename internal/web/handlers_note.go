@@ -191,6 +191,9 @@ func (s *Server) handleEntityLinkAdd(c *gin.Context) {
 		s.renderError(c, http.StatusBadRequest, "Invalid source ID")
 		return
 	}
+	if !s.requireOwnedEntity(c, user, sourceID) {
+		return
+	}
 
 	targetStr := c.PostForm("target_identifier")
 	if targetStr == "" {
@@ -220,7 +223,7 @@ func (s *Server) handleEntityLinkAdd(c *gin.Context) {
 		c.Status(http.StatusOK)
 		return
 	}
-	c.Redirect(http.StatusSeeOther, c.Request.Referer())
+	c.Redirect(http.StatusSeeOther, localRedirectTarget(c, "/"))
 }
 
 func (s *Server) handleNoteDelete(c *gin.Context) {

@@ -4,6 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"html"
+	"html/template"
+	"regexp"
 	"strings"
 
 	"github.com/gofrs/uuid/v5"
@@ -14,12 +17,33 @@ type SearchResult struct {
 	ID       uuid.UUID
 	Type     string // "note", "article", "rss_item"
 	Title    string
-	Headline string // ts_headline snippet
+	Headline string // ts_headline snippet; raw text, render via HeadlineHTML
 	Rank     float64
 	OwnerID  uuid.UUID
 }
 
-const tsHeadlineOpts = `MaxWords=35, MinWords=15, ShortWord=3, HighlightAll=false, MaxFragments=2, FragmentDelimiter=" … "`
+// Highlight markers emitted by ts_headline. They are swapped for <mark> only
+// after the snippet has been HTML-escaped, so indexed content can never inject
+// markup into the results page.
+const (
+	headlineStartSel = "⟦"
+	headlineStopSel  = "⟧"
+)
+
+const tsHeadlineOpts = `StartSel=` + headlineStartSel + `, StopSel=` + headlineStopSel + `, MaxWords=35, MinWords=15, ShortWord=3, HighlightAll=false, MaxFragments=2, FragmentDelimiter=" … "`
+
+var headlineTagRe = regexp.MustCompile(`<[^>]*>`)
+
+// HeadlineHTML renders a ts_headline snippet as safe HTML. Markup in the
+// source content (RSS HTML, raw HTML in markdown) is stripped, the remaining
+// text is escaped and only the highlight markers become <mark> elements.
+func HeadlineHTML(headline string) template.HTML {
+	text := html.UnescapeString(headlineTagRe.ReplaceAllString(headline, ""))
+	escaped := html.EscapeString(text)
+	escaped = strings.ReplaceAll(escaped, headlineStartSel, "<mark>")
+	escaped = strings.ReplaceAll(escaped, headlineStopSel, "</mark>")
+	return template.HTML(escaped)
+}
 
 // notesSubquery is a sub-SELECT for notes.
 // $1 = search query string, $2 = ownerID.

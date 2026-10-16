@@ -9,6 +9,8 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strings"
 	"time"
 
 	"atria/internal/core"
@@ -57,10 +59,7 @@ func AddAttachment(ctx context.Context, db *sql.DB, ownerID uuid.UUID, localPath
 
 	now := time.Now().UTC()
 	yearMonth := now.Format("2006/01")
-	extension := filepath.Ext(localPath)
-	if extension == "" {
-		extension = mtype.Extension() // Fallback to detected extension
-	}
+	extension := storageExtension(originalFilename, localPath, mtype.Extension())
 
 	relDiskPath := filepath.Join(yearMonth, fileHash+extension)
 	absDiskPath := filepath.Join(storagePath, relDiskPath)
@@ -121,6 +120,21 @@ func AddAttachment(ctx context.Context, db *sql.DB, ownerID uuid.UUID, localPath
 	}
 
 	return attachment, nil
+}
+
+var safeExtensionRe = regexp.MustCompile(`^\.[a-z0-9]{1,10}$`)
+
+// storageExtension picks the on-disk extension: the original filename's
+// extension if it is a plain alphanumeric one, else the local path's, else the
+// one implied by the sniffed MIME type. The extension is cosmetic only; the
+// stored MIME type decides how the file is served.
+func storageExtension(originalFilename, localPath, detected string) string {
+	for _, candidate := range []string{filepath.Ext(originalFilename), filepath.Ext(localPath)} {
+		if ext := strings.ToLower(candidate); safeExtensionRe.MatchString(ext) {
+			return ext
+		}
+	}
+	return detected
 }
 
 // LinkAttachment associates an existing attachment with an entity (article, note).
@@ -244,7 +258,13 @@ func DeleteAttachment(ctx context.Context, db *sql.DB, ownerID, attachmentID uui
 		return err
 	}
 
-	// 2. Delete from disk.
+	// 2. Delete from disk, unless another user's attachment row still points
+	// at the same content-addressed file.
+	var stillReferenced bool
+	if err := db.QueryRowContext(ctx, `SELECT EXISTS (SELECT 1 FROM attachments WHERE disk_path = $1)`, diskPath).Scan(&stillReferenced); err != nil || stillReferenced {
+		return nil
+	}
+
 	storagePath := os.Getenv("STORAGE_PATH")
 	if storagePath == "" {
 		storagePath = "./data/attachments"

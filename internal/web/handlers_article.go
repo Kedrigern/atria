@@ -80,7 +80,7 @@ func (s *Server) handleArticleDetail(c *gin.Context) {
 
 	var htmlContent template.HTML
 	if article.HTMLContent != nil {
-		htmlContent = template.HTML(*article.HTMLContent)
+		htmlContent = template.HTML(core.SanitizeHTML(*article.HTMLContent))
 	}
 
 	var userNote string

@@ -3,6 +3,7 @@ package netutil
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"strings"
@@ -36,6 +37,65 @@ func (t *BrowserTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 	return t.Transport.RoundTrip(reqClone)
 }
 
+// blockedNetworks lists address ranges that must never be reached from
+// server-side fetches: loopback, private, link-local (incl. cloud metadata at
+// 169.254.169.254), CGNAT, NAT64, documentation, benchmarking, multicast and
+// reserved ranges.
+var blockedNetworks = mustParseCIDRs(
+	"0.0.0.0/8",
+	"10.0.0.0/8",
+	"100.64.0.0/10",
+	"127.0.0.0/8",
+	"169.254.0.0/16",
+	"172.16.0.0/12",
+	"192.0.0.0/24",
+	"192.0.2.0/24",
+	"192.168.0.0/16",
+	"198.18.0.0/15",
+	"198.51.100.0/24",
+	"203.0.113.0/24",
+	"224.0.0.0/4",
+	"240.0.0.0/4",
+	"::/128",
+	"::1/128",
+	"64:ff9b::/96",
+	"64:ff9b:1::/48",
+	"100::/64",
+	"2001:db8::/32",
+	"fc00::/7",
+	"fe80::/10",
+	"ff00::/8",
+)
+
+func mustParseCIDRs(cidrs ...string) []*net.IPNet {
+	nets := make([]*net.IPNet, 0, len(cidrs))
+	for _, cidr := range cidrs {
+		_, n, err := net.ParseCIDR(cidr)
+		if err != nil {
+			panic(err)
+		}
+		nets = append(nets, n)
+	}
+	return nets
+}
+
+// IsBlockedIP reports whether ip belongs to a range that server-side fetches
+// must not reach. IPv4-mapped IPv6 addresses are checked as IPv4.
+func IsBlockedIP(ip net.IP) bool {
+	if ip == nil {
+		return true
+	}
+	if v4 := ip.To4(); v4 != nil {
+		ip = v4
+	}
+	for _, n := range blockedNetworks {
+		if n.Contains(ip) {
+			return true
+		}
+	}
+	return false
+}
+
 // SafeHTTPClient create client that block private and internals IPs.
 func SafeHTTPClient() *http.Client {
 	dialer := &net.Dialer{
@@ -55,11 +115,15 @@ func SafeHTTPClient() *http.Client {
 				return nil, err
 			}
 
+			if len(ips) == 0 {
+				return nil, fmt.Errorf("no IP addresses found for %s", host)
+			}
+
 			allowLocal, _ := ctx.Value(AllowLocalKey).(bool)
 
 			if !allowLocal {
 				for _, ip := range ips {
-					if ip.IP.IsPrivate() || ip.IP.IsLoopback() || ip.IP.IsUnspecified() {
+					if IsBlockedIP(ip.IP) {
 						return nil, errors.New("SSRF blocked: access to internal IP address is not allowed")
 					}
 				}

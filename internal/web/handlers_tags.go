@@ -84,6 +84,9 @@ func (s *Server) handleTagAttach(c *gin.Context) {
 		s.renderError(c, http.StatusBadRequest, "Neplatné ID entity")
 		return
 	}
+	if !s.requireOwnedEntity(c, user, entityID) {
+		return
+	}
 
 	tagName := c.PostForm("tag_name")
 	err = core.AttachTagByTitle(c.Request.Context(), s.db, user.ID, entityID, tagName)
@@ -106,7 +109,7 @@ func (s *Server) handleTagAttach(c *gin.Context) {
 		return
 	}
 
-	c.Redirect(http.StatusSeeOther, c.Request.Referer())
+	c.Redirect(http.StatusSeeOther, localRedirectTarget(c, "/"))
 }
 
 func (s *Server) handleTagAttachUniversal(c *gin.Context) {
