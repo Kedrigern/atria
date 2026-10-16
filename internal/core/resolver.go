@@ -67,7 +67,7 @@ func FindUser(ctx context.Context, db *sql.DB, identifier string) (*User, error)
 		arg = id
 	} else {
 		query = `SELECT id, email, display_name, role, preferences, password_hash, created_at, last_login_at FROM users WHERE email = $1`
-		arg = identifier
+		arg = NormalizeEmail(identifier)
 	}
 
 	var user User

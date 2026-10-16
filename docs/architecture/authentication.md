@@ -23,8 +23,10 @@ Atria synchronizes user roles dynamically based on the group headers provided by
 
 ## 4. Local Password Login & Sessions
 * `POST /login` checks the bcrypt password hash and sets the `atria_session` cookie (`HttpOnly`, `SameSite=Strict`, `Secure` outside development).
-* Cookie format: `v1.<base64url(email)>.<expiry unix>.<HMAC-SHA256>`. The HMAC covers the email, the expiry (30 days) and the user's current password hash, so changing a password invalidates all existing sessions.
-* **`SESSION_SECRET` is mandatory** outside `development`/`test`: the server refuses to start without it (or with the `.env.example` placeholder). Generate one with `openssl rand -hex 32`. In development a fixed fallback secret is used.
+* Sessions are stored server-side in the `sessions` table. The cookie (`v2.<token>`) carries 32 random bytes; the database stores only their SHA-256, so a database leak does not yield usable sessions. Sessions expire after 30 days.
+* Logout deletes the session row, so a copied cookie stops working immediately. Deleting a user removes all of their sessions (`ON DELETE CASCADE`); `users.DeleteUserSessions` ends all sessions of a user.
+* Emails are matched case-insensitively: they are stored trimmed and lowercased (enforced by a CHECK constraint), and lookups normalize the input, so `Alice@x.cz` from the proxy finds `alice@x.cz`.
+* **`SESSION_SECRET` is mandatory** outside `development`/`test`: the server refuses to start without it (or with the `.env.example` placeholder). It signs CSRF tokens. Generate one with `openssl rand -hex 32`. In development a fixed fallback secret is used.
 * Failed logins are throttled per client IP (10 failures per 15 minutes). Unknown emails still run a bcrypt comparison so response timing does not reveal which accounts exist. Cross-site login posts (`Sec-Fetch-Site: cross-site`) are refused.
 * CSRF: every state-changing request in the authenticated group must carry `X-CSRF-Token` or `_csrf` equal to `HMAC(SESSION_SECRET, "csrf", email)`.
 

@@ -3,15 +3,13 @@ package web
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
+	"database/sql"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"strconv"
 	"strings"
 	"testing"
-	"time"
 
 	"atria/internal/core"
 	"atria/internal/notes"
@@ -71,73 +69,94 @@ func TestSessionLifecycle(t *testing.T) {
 	srv := NewServer(db)
 	r := newTestRouter(t, srv)
 
-	w := postLogin(r, user.Email, "pass", nil)
-	require.Equal(t, http.StatusFound, w.Code)
-	cookie := sessionCookieFrom(w)
-	require.NotNil(t, cookie, "login must set a session cookie")
+	login := func(t *testing.T) *http.Cookie {
+		t.Helper()
+		w := postLogin(r, user.Email, "pass", nil)
+		require.Equal(t, http.StatusFound, w.Code)
+		cookie := sessionCookieFrom(w)
+		require.NotNil(t, cookie, "login must set a session cookie")
+		return cookie
+	}
+
+	cookie := login(t)
 	assert.True(t, cookie.HttpOnly)
 	assert.True(t, cookie.Secure)
 
 	t.Run("valid cookie authenticates", func(t *testing.T) {
-		w := getWithCookie(r, "/profile", cookie)
-		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Equal(t, http.StatusOK, getWithCookie(r, "/profile", cookie).Code)
 	})
 
-	t.Run("tampered email is rejected", func(t *testing.T) {
-		parts := strings.Split(cookie.Value, ".")
-		parts[1] = base64.RawURLEncoding.EncodeToString([]byte("someone-else@atria.local"))
-		forged := &http.Cookie{Name: sessionCookieName, Value: strings.Join(parts, ".")}
+	t.Run("unknown token is rejected", func(t *testing.T) {
+		forged := &http.Cookie{Name: sessionCookieName, Value: sessionCookiePrefix + "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"}
 		assert.Equal(t, http.StatusUnauthorized, getWithCookie(r, "/profile", forged).Code)
 	})
 
-	t.Run("legacy email|hmac cookie is rejected", func(t *testing.T) {
-		legacy := &http.Cookie{Name: sessionCookieName, Value: user.Email + "|deadbeef"}
-		assert.Equal(t, http.StatusUnauthorized, getWithCookie(r, "/profile", legacy).Code)
+	t.Run("old signed cookie formats are rejected", func(t *testing.T) {
+		for _, value := range []string{user.Email + "|deadbeef", "v1.YWRtaW4.9999999999.deadbeef"} {
+			legacy := &http.Cookie{Name: sessionCookieName, Value: value}
+			assert.Equal(t, http.StatusUnauthorized, getWithCookie(r, "/profile", legacy).Code, value)
+		}
 	})
 
-	t.Run("expired cookie is rejected", func(t *testing.T) {
-		expires := time.Now().Add(-time.Minute).Unix()
-		value := strings.Join([]string{
-			"v1",
-			base64.RawURLEncoding.EncodeToString([]byte(user.Email)),
-			strconv.FormatInt(expires, 10),
-			signSession([]byte(testSecret), user.Email, expires, user.PasswordHash),
-		}, ".")
-		expired := &http.Cookie{Name: sessionCookieName, Value: value}
-		assert.Equal(t, http.StatusUnauthorized, getWithCookie(r, "/profile", expired).Code)
+	t.Run("only a hash of the token is stored", func(t *testing.T) {
+		token := strings.TrimPrefix(cookie.Value, sessionCookiePrefix)
+		var plain int
+		require.NoError(t, db.QueryRow(`SELECT COUNT(*) FROM sessions WHERE token_hash = $1`, []byte(token)).Scan(&plain))
+		assert.Zero(t, plain)
 	})
 
-	t.Run("cookie signed with another secret is rejected", func(t *testing.T) {
-		t.Setenv("SESSION_SECRET", "a-completely-different-secret-value-xx")
-		assert.Equal(t, http.StatusUnauthorized, getWithCookie(r, "/profile", cookie).Code)
-	})
-
-	t.Run("password change invalidates existing sessions", func(t *testing.T) {
-		_, err := db.ExecContext(context.Background(),
-			`UPDATE users SET password_hash = $1 WHERE id = $2`, user.PasswordHash+"x", user.ID)
+	t.Run("expired session is rejected", func(t *testing.T) {
+		c := login(t)
+		_, err := db.Exec(`UPDATE sessions SET expires_at = NOW() - INTERVAL '1 minute'
+			WHERE created_at = (SELECT MAX(created_at) FROM sessions)`)
 		require.NoError(t, err)
+		assert.Equal(t, http.StatusUnauthorized, getWithCookie(r, "/profile", c).Code)
+	})
+
+	t.Run("logout revokes the session on the server", func(t *testing.T) {
+		c := login(t)
+		require.Equal(t, http.StatusOK, getWithCookie(r, "/profile", c).Code)
+
+		w := getWithCookie(r, "/logout", c)
+		require.Equal(t, http.StatusFound, w.Code)
+
+		// Replaying the cookie captured before logout must not work.
+		assert.Equal(t, http.StatusUnauthorized, getWithCookie(r, "/profile", c).Code)
+		// Other sessions of the same user stay valid.
+		assert.Equal(t, http.StatusOK, getWithCookie(r, "/profile", cookie).Code)
+	})
+
+	t.Run("login records last_login_at", func(t *testing.T) {
+		var lastLogin sql.NullTime
+		require.NoError(t, db.QueryRow(`SELECT last_login_at FROM users WHERE id = $1`, user.ID).Scan(&lastLogin))
+		assert.True(t, lastLogin.Valid)
+	})
+
+	t.Run("deleting the user ends their sessions", func(t *testing.T) {
+		require.NoError(t, users.DeleteUser(context.Background(), db, user.Email))
 		assert.Equal(t, http.StatusUnauthorized, getWithCookie(r, "/profile", cookie).Code)
 	})
 }
 
-func TestSessionRejectedWithoutSecretInProduction(t *testing.T) {
+func TestEmailsAreCaseInsensitive(t *testing.T) {
 	db, user := testutil.SetupTestDB(t)
-	t.Setenv("ATRIA_ENV", "development")
-	t.Setenv("SESSION_SECRET", "")
-	t.Setenv("ATRIA_USER", "")
-
-	srv := NewServer(db)
-	r := newTestRouter(t, srv)
-
-	// A cookie minted with the development fallback secret...
-	w := postLogin(r, user.Email, "pass", nil)
-	cookie := sessionCookieFrom(w)
-	require.NotNil(t, cookie)
-
-	// ...must not be accepted once the server runs in production.
 	t.Setenv("ATRIA_ENV", "production")
-	assert.Equal(t, http.StatusUnauthorized, getWithCookie(r, "/profile", cookie).Code)
-	assert.Error(t, ValidateSecurityConfig())
+	t.Setenv("SESSION_SECRET", testSecret)
+
+	r := newTestRouter(t, NewServer(db))
+
+	w := postLogin(r, "  "+strings.ToUpper(user.Email)+" ", "pass", nil)
+	assert.NotNil(t, sessionCookieFrom(w), "login with differently cased email must work")
+
+	created, err := users.CreateUser(context.Background(), db, "Mixed.Case@Atria.Local", "Mixed", "pass", core.RoleUser)
+	require.NoError(t, err)
+	assert.Equal(t, "mixed.case@atria.local", created.Email, "emails are stored normalized")
+
+	_, err = users.CreateUser(context.Background(), db, "MIXED.case@atria.local", "Dup", "pass", core.RoleUser)
+	assert.Error(t, err, "an email differing only in case is a duplicate")
+
+	_, err = db.Exec(`INSERT INTO users (id, email, display_name, password_hash, role) VALUES ($1, 'Raw@X.cz', 'x', 'x', 'user')`, core.NewUUID())
+	assert.Error(t, err, "the database rejects non-normalized emails")
 }
 
 func TestValidateSecurityConfig(t *testing.T) {
