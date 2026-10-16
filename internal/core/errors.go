@@ -1,6 +1,7 @@
 package core
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 )
@@ -32,4 +33,18 @@ func UserMessage(err error) (string, bool) {
 		return userErr.msg, true
 	}
 	return "", false
+}
+
+// RequireAffected turns an UPDATE/DELETE that matched no rows into a
+// user-facing "not found" error, so callers do not report success for a
+// wrong, foreign or deleted ID.
+func RequireAffected(result sql.Result, notFound string) error {
+	n, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("check affected rows: %w", err)
+	}
+	if n == 0 {
+		return NewUserError("%s", notFound)
+	}
+	return nil
 }

@@ -77,13 +77,13 @@ var articleShowCmd = &cobra.Command{
 
 		switch articleShowFormat {
 		case "html":
-			content, fetchErr = articles.GetArticleHTML(app.Ctx, app.DB, targetArticle.ID)
+			content, fetchErr = articles.GetArticleHTML(app.Ctx, app.DB, app.Owner.ID, targetArticle.ID)
 		case "plain":
-			content, fetchErr = articles.GetArticleText(app.Ctx, app.DB, targetArticle.ID)
+			content, fetchErr = articles.GetArticleText(app.Ctx, app.DB, app.Owner.ID, targetArticle.ID)
 		case "md":
 			fallthrough
 		default:
-			content, fetchErr = articles.GetArticleMarkdown(app.Ctx, app.DB, targetArticle.ID)
+			content, fetchErr = articles.GetArticleMarkdown(app.Ctx, app.DB, app.Owner.ID, targetArticle.ID)
 		}
 
 		if fetchErr != nil {

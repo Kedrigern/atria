@@ -83,7 +83,7 @@ func TestTagLifecycle(t *testing.T) {
 	}
 
 	// 6. Verify Tags Retrieval
-	tags, err := core.GetEntityTags(ctx, db, note.ID)
+	tags, err := core.GetEntityTags(ctx, db, user.ID, note.ID)
 	if err != nil {
 		t.Fatalf("GetEntityTags failed: %v", err)
 	}

@@ -26,15 +26,16 @@ type EbookMetadata struct {
 }
 
 // ExportEPUB bundles multiple articles and notes into a single EPUB file.
-func ExportEPUB(ctx context.Context, db *sql.DB, items []core.EntitySummary, outPath string) error {
-	return ExportEbookEPUB(ctx, db, items, outPath, EbookMetadata{
+func ExportEPUB(ctx context.Context, db *sql.DB, ownerID uuid.UUID, items []core.EntitySummary, outPath string) error {
+	return ExportEbookEPUB(ctx, db, ownerID, items, outPath, EbookMetadata{
 		Title:  "Atria Export",
 		Author: "Atria Mind Palace",
 	})
 }
 
-// ExportEbookEPUB bundles article and note snapshots into an EPUB with custom metadata.
-func ExportEbookEPUB(ctx context.Context, db *sql.DB, items []core.EntitySummary, outPath string, metadata EbookMetadata) error {
+// ExportEbookEPUB bundles article and note snapshots into an EPUB with custom
+// metadata. Items not owned by ownerID are skipped.
+func ExportEbookEPUB(ctx context.Context, db *sql.DB, ownerID uuid.UUID, items []core.EntitySummary, outPath string, metadata EbookMetadata) error {
 	title := strings.TrimSpace(metadata.Title)
 	if title == "" {
 		return fmt.Errorf("e-book title is required")
@@ -64,14 +65,15 @@ func ExportEbookEPUB(ctx context.Context, db *sql.DB, items []core.EntitySummary
 
 		switch item.Type {
 		case core.TypeArticle:
-			content, err := articles.GetArticleHTML(ctx, db, item.ID)
+			content, err := articles.GetArticleHTML(ctx, db, ownerID, item.ID)
 			if err != nil {
 				fmt.Printf("⚠️ Skipping '%s': %v\n", item.Title, err)
 				continue
 			}
-			htmlBody = content
+			// Saved pages are third-party HTML; e-readers may run scripts.
+			htmlBody = core.SanitizeHTML(content)
 		case core.TypeNote:
-			content, err := notes.GetNoteContent(ctx, db, item.ID)
+			content, err := notes.GetNoteContent(ctx, db, ownerID, item.ID)
 			if err != nil {
 				fmt.Printf("⚠️ Skipping '%s': %v\n", item.Title, err)
 				continue
@@ -88,7 +90,7 @@ func ExportEbookEPUB(ctx context.Context, db *sql.DB, items []core.EntitySummary
 
 		metadataHTML := ""
 		if metadata.IncludeChapterTags {
-			metadataHTML = chapterTags(ctx, db, item.ID)
+			metadataHTML = chapterTags(ctx, db, ownerID, item.ID)
 		}
 		sectionHTML := fmt.Sprintf("<h1>%s</h1>%s<div>%s</div>", html.EscapeString(item.Title), metadataHTML, htmlBody)
 		if _, err := e.AddSection(sectionHTML, item.Title, "", ""); err != nil {
@@ -104,8 +106,8 @@ func ExportEbookEPUB(ctx context.Context, db *sql.DB, items []core.EntitySummary
 	return e.Write(outPath)
 }
 
-func chapterTags(ctx context.Context, db *sql.DB, entityID uuid.UUID) string {
-	tags, err := core.GetEntityTags(ctx, db, entityID)
+func chapterTags(ctx context.Context, db *sql.DB, ownerID, entityID uuid.UUID) string {
+	tags, err := core.GetEntityTags(ctx, db, ownerID, entityID)
 	if err != nil || len(tags) == 0 {
 		return ""
 	}

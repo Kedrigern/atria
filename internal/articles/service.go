@@ -437,10 +437,10 @@ func GetArticle(ctx context.Context, db *sql.DB, id, ownerID uuid.UUID) (*core.A
 }
 
 // GetArticleText retrieves the plain text content of a saved article.
-func GetArticleText(ctx context.Context, db *sql.DB, articleID uuid.UUID) (string, error) {
+func GetArticleText(ctx context.Context, db *sql.DB, ownerID, articleID uuid.UUID) (string, error) {
 	var content sql.NullString
-	query := `SELECT text_content FROM articles WHERE id = $1`
-	err := db.QueryRowContext(ctx, query, articleID).Scan(&content)
+	query := `SELECT a.text_content FROM articles a JOIN entities e ON e.id = a.id WHERE a.id = $1 AND e.owner_id = $2`
+	err := db.QueryRowContext(ctx, query, articleID, ownerID).Scan(&content)
 	if err == sql.ErrNoRows {
 		return "", core.NewUserError("article content not found")
 	}
@@ -451,10 +451,10 @@ func GetArticleText(ctx context.Context, db *sql.DB, articleID uuid.UUID) (strin
 }
 
 // GetArticleHTML retrieves the raw HTML content of a saved article.
-func GetArticleHTML(ctx context.Context, db *sql.DB, articleID uuid.UUID) (string, error) {
+func GetArticleHTML(ctx context.Context, db *sql.DB, ownerID, articleID uuid.UUID) (string, error) {
 	var htmlContent sql.NullString
-	query := `SELECT html_content FROM articles WHERE id = $1`
-	err := db.QueryRowContext(ctx, query, articleID).Scan(&htmlContent)
+	query := `SELECT a.html_content FROM articles a JOIN entities e ON e.id = a.id WHERE a.id = $1 AND e.owner_id = $2`
+	err := db.QueryRowContext(ctx, query, articleID, ownerID).Scan(&htmlContent)
 	if err == sql.ErrNoRows {
 		return "", core.NewUserError("article content not found")
 	}
@@ -465,10 +465,10 @@ func GetArticleHTML(ctx context.Context, db *sql.DB, articleID uuid.UUID) (strin
 }
 
 // GetArticleMarkdown retrieves the HTML content and converts it to beautiful Markdown.
-func GetArticleMarkdown(ctx context.Context, db *sql.DB, articleID uuid.UUID) (string, error) {
+func GetArticleMarkdown(ctx context.Context, db *sql.DB, ownerID, articleID uuid.UUID) (string, error) {
 	var htmlContent sql.NullString
-	query := `SELECT html_content FROM articles WHERE id = $1`
-	err := db.QueryRowContext(ctx, query, articleID).Scan(&htmlContent)
+	query := `SELECT a.html_content FROM articles a JOIN entities e ON e.id = a.id WHERE a.id = $1 AND e.owner_id = $2`
+	err := db.QueryRowContext(ctx, query, articleID, ownerID).Scan(&htmlContent)
 	if err == sql.ErrNoRows {
 		return "", core.NewUserError("article content not found")
 	}
@@ -509,7 +509,7 @@ func ListArticles(ctx context.Context, db *sql.DB, ownerID uuid.UUID, limit, off
 		}
 		articlesList = append(articlesList, a)
 	}
-	return articlesList, nil
+	return articlesList, rows.Err()
 }
 
 // DeleteArticle marks an active article as deleted without removing it from the database.
@@ -543,11 +543,11 @@ func ArchiveArticle(ctx context.Context, db *sql.DB, ownerID, articleID uuid.UUI
 			WHERE id = $1 AND owner_id = $2 AND type = $3 AND deleted_at IS NULL
 		)
 	`
-	_, err := db.ExecContext(ctx, query, articleID, ownerID, core.TypeArticle)
+	result, err := db.ExecContext(ctx, query, articleID, ownerID, core.TypeArticle)
 	if err != nil {
 		return fmt.Errorf("failed to archive article: %w", err)
 	}
-	return nil
+	return core.RequireAffected(result, "article not found")
 }
 
 // RefetchArticle re-fetches the article content from its original URL and updates the database.
@@ -597,12 +597,12 @@ func UpdateUserNote(ctx context.Context, db *sql.DB, ownerID, articleID uuid.UUI
 		UPDATE articles
 		SET user_note = $1
 		WHERE id IN (
-			SELECT id FROM entities WHERE id = $2 AND owner_id = $3 AND type = $4
+			SELECT id FROM entities WHERE id = $2 AND owner_id = $3 AND type = $4 AND deleted_at IS NULL
 		)
 	`
-	_, err := db.ExecContext(ctx, query, userNote, articleID, ownerID, core.TypeArticle)
+	result, err := db.ExecContext(ctx, query, userNote, articleID, ownerID, core.TypeArticle)
 	if err != nil {
 		return fmt.Errorf("failed to update user note: %w", err)
 	}
-	return nil
+	return core.RequireAffected(result, "article not found")
 }

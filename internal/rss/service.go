@@ -140,7 +140,7 @@ func ListFeeds(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]core.FeedS
 		}
 		feeds = append(feeds, f)
 	}
-	return feeds, nil
+	return feeds, rows.Err()
 }
 
 // ListItemsToRead retrieves unread items using the database view.
@@ -170,7 +170,7 @@ func ListItemsToRead(ctx context.Context, db *sql.DB, ownerID uuid.UUID, limit, 
 		}
 		items = append(items, i)
 	}
-	return items, nil
+	return items, rows.Err()
 }
 
 // SaveItemAsArticle converts an RSS item into a full article and marks it as read.
@@ -218,11 +218,14 @@ func SaveItemAsArticle(ctx context.Context, db *sql.DB, ownerID, itemID uuid.UUI
 func MarkAsRead(ctx context.Context, db *sql.DB, ownerID, itemID uuid.UUID) error {
 	query := `
 		UPDATE rss_items
-		SET read_at = NOW()
+		SET read_at = COALESCE(read_at, NOW())
 		WHERE id = $1 AND feed_id IN (SELECT id FROM entities WHERE owner_id = $2)
 	`
-	_, err := db.ExecContext(ctx, query, itemID, ownerID)
-	return err
+	result, err := db.ExecContext(ctx, query, itemID, ownerID)
+	if err != nil {
+		return fmt.Errorf("failed to mark item as read: %w", err)
+	}
+	return core.RequireAffected(result, "rss item not found")
 }
 
 // ListFeedTags returns all distinct non-system tags attached to any of the user's RSS feeds.
@@ -252,7 +255,7 @@ func ListFeedTags(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]core.Ta
 		}
 		tags = append(tags, t)
 	}
-	return tags, nil
+	return tags, rows.Err()
 }
 
 // ListItemsToReadByTag retrieves unread items from feeds tagged with the given tag name.
@@ -287,7 +290,7 @@ func ListItemsToReadByTag(ctx context.Context, db *sql.DB, ownerID uuid.UUID, ta
 		}
 		items = append(items, i)
 	}
-	return items, nil
+	return items, rows.Err()
 }
 
 // MarkBatchAsRead marks a specific list of RSS items as read.
@@ -388,6 +391,9 @@ func GetFeedDetail(ctx context.Context, db *sql.DB, ownerID, feedID uuid.UUID, i
 			return nil, fmt.Errorf("failed to scan feed item: %w", err)
 		}
 		fd.Items = append(fd.Items, item)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 
 	if len(fd.Items) > limit {

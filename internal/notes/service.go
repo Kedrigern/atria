@@ -204,7 +204,7 @@ func FindNotes(ctx context.Context, db *sql.DB, ownerID uuid.UUID, identifier st
 		}
 		results = append(results, n)
 	}
-	return results, nil
+	return results, rows.Err()
 }
 
 // ListNotes retrieves notes for the authenticated user, optimized for tree view display.
@@ -284,10 +284,10 @@ func DeleteEntity(ctx context.Context, db *sql.DB, ownerID uuid.UUID, entityID u
 }
 
 // GetNoteContent retrieves the raw markdown content of a specific note.
-func GetNoteContent(ctx context.Context, db *sql.DB, noteID uuid.UUID) (string, error) {
+func GetNoteContent(ctx context.Context, db *sql.DB, ownerID, noteID uuid.UUID) (string, error) {
 	var content string
-	query := `SELECT markdown_content FROM notes WHERE id = $1`
-	err := db.QueryRowContext(ctx, query, noteID).Scan(&content)
+	query := `SELECT n.markdown_content FROM notes n JOIN entities e ON e.id = n.id WHERE n.id = $1 AND e.owner_id = $2`
+	err := db.QueryRowContext(ctx, query, noteID, ownerID).Scan(&content)
 	if err == sql.ErrNoRows {
 		return "", core.NewUserError("note content not found")
 	}

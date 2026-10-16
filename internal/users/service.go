@@ -102,7 +102,10 @@ func DeleteUser(ctx context.Context, db *sql.DB, email string) error {
 	if err != nil {
 		return fmt.Errorf("failed to delete user: %w", err)
 	}
-	rows, _ := result.RowsAffected()
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to confirm user deletion: %w", err)
+	}
 	if rows == 0 {
 		return core.NewUserError("user not found: %s", email)
 	}
@@ -118,10 +121,10 @@ func UpdatePreferences(ctx context.Context, db *sql.DB, userID uuid.UUID, prefs 
 	// Assumes a `preferences` JSON column in the users table.
 	query := `UPDATE users SET preferences = $1 WHERE id = $2`
 
-	_, err = db.ExecContext(ctx, query, string(prefsJSON), userID)
+	result, err := db.ExecContext(ctx, query, string(prefsJSON), userID)
 	if err != nil {
 		return fmt.Errorf("failed to update user preferences in db: %w", err)
 	}
 
-	return nil
+	return core.RequireAffected(result, "user not found")
 }

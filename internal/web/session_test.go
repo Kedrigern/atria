@@ -260,7 +260,7 @@ func TestCrossUserWritesAreRejected(t *testing.T) {
 	t.Run("tag attach", func(t *testing.T) {
 		w := postForm(r, noteURL+"/tags", attacker, url.Values{"tag_name": {"pwned"}})
 		assert.Equal(t, http.StatusNotFound, w.Code)
-		tags, err := core.GetEntityTags(ctx, db, note.ID)
+		tags, err := core.GetEntityTags(ctx, db, owner.ID, note.ID)
 		require.NoError(t, err)
 		assert.Empty(t, tags)
 	})

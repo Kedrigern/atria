@@ -167,19 +167,19 @@ func ListAttachments(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]core
 		}
 		list = append(list, a)
 	}
-	return list, nil
+	return list, rows.Err()
 }
 
 // GetEntityAttachments returns a list of attachments associated with a specific entity.
-func GetEntityAttachments(ctx context.Context, db *sql.DB, entityID uuid.UUID) ([]core.Attachment, error) {
+func GetEntityAttachments(ctx context.Context, db *sql.DB, ownerID, entityID uuid.UUID) ([]core.Attachment, error) {
 	query := `
 		SELECT a.id, a.filename, a.mime_type, a.size_bytes, a.disk_path, a.created_at
 		FROM attachments a
 		JOIN rel_entity_attachments rel ON a.id = rel.attachment_id
-		WHERE rel.entity_id = $1
+		WHERE rel.entity_id = $1 AND a.owner_id = $2
 		ORDER BY a.created_at DESC
 	`
-	rows, err := db.QueryContext(ctx, query, entityID)
+	rows, err := db.QueryContext(ctx, query, entityID, ownerID)
 	if err != nil {
 		return nil, err
 	}
@@ -193,7 +193,7 @@ func GetEntityAttachments(ctx context.Context, db *sql.DB, entityID uuid.UUID) (
 		}
 		list = append(list, a)
 	}
-	return list, nil
+	return list, rows.Err()
 }
 
 // FindAttachments resolves an attachment by full UUID, short UUID suffix, or exact filename.
@@ -223,14 +223,17 @@ func FindAttachments(ctx context.Context, db *sql.DB, ownerID uuid.UUID, identif
 		}
 		results = append(results, a)
 	}
-	return results, nil
+	return results, rows.Err()
 }
 
 // RenameAttachment updates the filename of an attachment in the database.
 func RenameAttachment(ctx context.Context, db *sql.DB, ownerID, attachmentID uuid.UUID, newName string) error {
 	query := `UPDATE attachments SET filename = $1, updated_at = NOW() WHERE id = $2 AND owner_id = $3`
-	_, err := db.ExecContext(ctx, query, newName, attachmentID, ownerID)
-	return err
+	result, err := db.ExecContext(ctx, query, newName, attachmentID, ownerID)
+	if err != nil {
+		return fmt.Errorf("failed to rename attachment: %w", err)
+	}
+	return core.RequireAffected(result, "attachment not found")
 }
 
 // DeleteAttachment removes an orphaned attachment from both the database and disk.
