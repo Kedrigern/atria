@@ -249,7 +249,7 @@ func DeleteAttachment(ctx context.Context, db *sql.DB, ownerID, attachmentID uui
 	}
 
 	if linkCount > 0 {
-		return fmt.Errorf("attachment cannot be deleted: still linked to %d entities", linkCount)
+		return core.NewUserError("attachment cannot be deleted: still linked to %d entities", linkCount)
 	}
 
 	// 1. Delete from database.

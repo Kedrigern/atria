@@ -23,7 +23,7 @@ func (s *Server) handleAttachments(c *gin.Context) {
 
 	list, err := attachments.ListAttachments(c.Request.Context(), s.db, user.ID)
 	if err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Chyba při načítání příloh: "+err.Error())
+		s.respondError(c, http.StatusInternalServerError, "Chyba při načítání příloh", err)
 		return
 	}
 
@@ -76,7 +76,7 @@ func (s *Server) handleEntityAttachmentUpload(c *gin.Context) {
 
 	att, err := attachments.AddAttachment(c.Request.Context(), s.db, user.ID, tempPath, file.Filename)
 	if err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Upload failed: "+err.Error())
+		s.respondError(c, http.StatusInternalServerError, "Upload failed", err)
 		return
 	}
 
@@ -192,7 +192,7 @@ func (s *Server) handleAttachmentRename(c *gin.Context) {
 	if newName != "" {
 		err = attachments.RenameAttachment(c.Request.Context(), s.db, user.ID, attID, newName)
 		if err != nil {
-			s.renderError(c, http.StatusInternalServerError, "Failed to rename: "+err.Error())
+			s.respondError(c, http.StatusInternalServerError, "Failed to rename", err)
 			return
 		}
 	}
@@ -219,7 +219,7 @@ func (s *Server) handleAttachmentDelete(c *gin.Context) {
 
 	err = attachments.DeleteAttachment(c.Request.Context(), s.db, user.ID, attID)
 	if err != nil {
-		s.setFlash(c, "error", "Nepodařilo se smazat: "+err.Error())
+		s.flashError(c, "Nepodařilo se smazat", err)
 	} else {
 		s.setFlash(c, "success", "Příloha byla trvale smazána z disku.")
 	}

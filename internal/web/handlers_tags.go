@@ -16,7 +16,7 @@ func (s *Server) handleTagList(c *gin.Context) {
 
 	tags, err := core.ListTags(c.Request.Context(), s.db, user.ID)
 	if err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Chyba při načítání tagů: "+err.Error())
+		s.respondError(c, http.StatusInternalServerError, "Chyba při načítání tagů", err)
 		return
 	}
 
@@ -37,7 +37,7 @@ func (s *Server) handleTagDetail(c *gin.Context) {
 
 	entities, err := core.GetTagEntities(c.Request.Context(), s.db, user.ID, tagName)
 	if err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Chyba při načítání entit tagu: "+err.Error())
+		s.respondError(c, http.StatusInternalServerError, "Chyba při načítání entit tagu", err)
 		return
 	}
 
@@ -58,7 +58,7 @@ func (s *Server) handleTagCreate(c *gin.Context) {
 
 	_, err := core.CreateTag(c.Request.Context(), s.db, user.ID, name, false)
 	if err != nil {
-		s.renderError(c, http.StatusBadRequest, err.Error())
+		s.respondError(c, http.StatusBadRequest, "Failed to create tag", err)
 		return
 	}
 
@@ -91,14 +91,14 @@ func (s *Server) handleTagAttach(c *gin.Context) {
 	tagName := c.PostForm("tag_name")
 	err = core.AttachTagByTitle(c.Request.Context(), s.db, user.ID, entityID, tagName)
 	if err != nil {
-		s.renderError(c, http.StatusBadRequest, "Nepodařilo se připojit tag: "+err.Error())
+		s.respondError(c, http.StatusBadRequest, "Nepodařilo se připojit tag", err)
 		return
 	}
 
 	if c.GetHeader("HX-Request") == "true" {
 		tags, err := core.GetEntityTags(c.Request.Context(), s.db, entityID)
 		if err != nil {
-			s.renderError(c, http.StatusInternalServerError, "Nepodařilo se načíst tagy: "+err.Error())
+			s.respondError(c, http.StatusInternalServerError, "Nepodařilo se načíst tagy", err)
 			return
 		}
 
@@ -129,7 +129,7 @@ func (s *Server) handleTagAttachUniversal(c *gin.Context) {
 
 	entities, err := core.FindEntities(c.Request.Context(), s.db, user.ID, "", entityIdentifier, false)
 	if err != nil {
-		s.setFlash(c, "error", "Chyba databáze při vyhledávání: "+err.Error())
+		s.flashError(c, "Chyba databáze při vyhledávání", err)
 		c.Redirect(http.StatusSeeOther, "/settings/tags")
 		return
 	}
@@ -150,7 +150,7 @@ func (s *Server) handleTagAttachUniversal(c *gin.Context) {
 
 	err = core.AttachTagByTitle(c.Request.Context(), s.db, user.ID, targetEntity.ID, tagName)
 	if err != nil {
-		s.setFlash(c, "error", "Nepodařilo se připojit tag: "+err.Error())
+		s.flashError(c, "Nepodařilo se připojit tag", err)
 		c.Redirect(http.StatusSeeOther, "/settings/tags")
 		return
 	}

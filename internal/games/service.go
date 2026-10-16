@@ -295,7 +295,7 @@ func Hint(ctx context.Context, db *sql.DB, userID, cryptogramID uuid.UUID) error
 		return err
 	}
 	if !found || completedAt != nil {
-		return fmt.Errorf("cryptogram is not available for hints")
+		return core.NewUserError("cryptogram is not available for hints")
 	}
 
 	codes := make([]int, 0)
@@ -308,7 +308,7 @@ func Hint(ctx context.Context, db *sql.DB, userID, cryptogramID uuid.UUID) error
 		codes = append(codes, parsedCode)
 	}
 	if len(codes) == 0 {
-		return fmt.Errorf("no unresolved letters remain")
+		return core.NewUserError("no unresolved letters remain")
 	}
 	sort.Ints(codes)
 	codeKey := fmt.Sprintf("%d", codes[0])
@@ -340,7 +340,7 @@ func Reset(ctx context.Context, db *sql.DB, userID, cryptogramID uuid.UUID) erro
 		return fmt.Errorf("reset cryptogram: %w", err)
 	}
 	if rows, err := result.RowsAffected(); err != nil || rows == 0 {
-		return fmt.Errorf("cryptogram attempt not found")
+		return core.NewUserError("cryptogram attempt not found")
 	}
 	return nil
 }

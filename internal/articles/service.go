@@ -33,7 +33,7 @@ type DuplicateArticleError struct {
 }
 
 // ErrArticleNotFound is returned when an active article is not owned by the requested user.
-var ErrArticleNotFound = errors.New("article not found")
+var ErrArticleNotFound = core.NewUserError("article not found")
 
 func (e *DuplicateArticleError) Error() string {
 	return fmt.Sprintf("an entity titled %q already exists", e.ExistingTitle)
@@ -271,6 +271,7 @@ func processArticleHTML(htmlStr string, parsedURL *url.URL) (*readability.Articl
 	if title == "" {
 		title = "Untitled Article"
 	}
+	title = core.LimitRunes(title, core.MaxTitleLength)
 
 	return &parsedArticle, title, nil
 }
@@ -299,9 +300,7 @@ func CreateArticle(ctx context.Context, db *sql.DB, ownerID uuid.UUID, urlStr st
 	slug := strings.ToLower(strings.ReplaceAll(title, " ", "-"))
 	slug = strings.ReplaceAll(slug, "/", "-")
 	slug = strings.ReplaceAll(slug, "\\", "-")
-	if len(slug) > 100 {
-		slug = slug[:100]
-	}
+	slug = core.LimitRunes(slug, core.MaxSlugLength)
 
 	entityID := core.NewUUID()
 	now := time.Now().UTC()
@@ -385,7 +384,7 @@ func FindArticleByURL(ctx context.Context, db *sql.DB, ownerID uuid.UUID, urlStr
 		&e.ID, &e.OwnerID, &e.Type, &e.Title, &e.Slug, &e.CreatedAt,
 	)
 	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("article not found for url: %s", urlStr)
+		return nil, core.NewUserError("article not found for url: %s", urlStr)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to find article by url: %w", err)
@@ -407,7 +406,7 @@ func GetPublicArticle(ctx context.Context, db *sql.DB, id uuid.UUID) (*core.Arti
 		&a.OriginalURL, &a.Domain, &a.IsArchived, &a.UserNote, &a.HTMLContent, &a.TextContent,
 	)
 	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("public article not found")
+		return nil, core.NewUserError("public article not found")
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch public article: %w", err)
@@ -429,7 +428,7 @@ func GetArticle(ctx context.Context, db *sql.DB, id, ownerID uuid.UUID) (*core.A
 		&a.OriginalURL, &a.Domain, &a.IsArchived, &a.UserNote, &a.HTMLContent, &a.TextContent,
 	)
 	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("article not found")
+		return nil, core.NewUserError("article not found")
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch article: %w", err)
@@ -443,7 +442,7 @@ func GetArticleText(ctx context.Context, db *sql.DB, articleID uuid.UUID) (strin
 	query := `SELECT text_content FROM articles WHERE id = $1`
 	err := db.QueryRowContext(ctx, query, articleID).Scan(&content)
 	if err == sql.ErrNoRows {
-		return "", fmt.Errorf("article content not found")
+		return "", core.NewUserError("article content not found")
 	}
 	if err != nil {
 		return "", fmt.Errorf("failed to fetch article content: %w", err)
@@ -457,7 +456,7 @@ func GetArticleHTML(ctx context.Context, db *sql.DB, articleID uuid.UUID) (strin
 	query := `SELECT html_content FROM articles WHERE id = $1`
 	err := db.QueryRowContext(ctx, query, articleID).Scan(&htmlContent)
 	if err == sql.ErrNoRows {
-		return "", fmt.Errorf("article content not found")
+		return "", core.NewUserError("article content not found")
 	}
 	if err != nil {
 		return "", fmt.Errorf("failed to fetch article HTML: %w", err)
@@ -471,7 +470,7 @@ func GetArticleMarkdown(ctx context.Context, db *sql.DB, articleID uuid.UUID) (s
 	query := `SELECT html_content FROM articles WHERE id = $1`
 	err := db.QueryRowContext(ctx, query, articleID).Scan(&htmlContent)
 	if err == sql.ErrNoRows {
-		return "", fmt.Errorf("article content not found")
+		return "", core.NewUserError("article content not found")
 	}
 	if err != nil {
 		return "", fmt.Errorf("failed to fetch article content: %w", err)
@@ -561,7 +560,7 @@ func RefetchArticle(ctx context.Context, db *sql.DB, ownerID, articleID uuid.UUI
 		WHERE a.id = $1 AND e.owner_id = $2 AND e.deleted_at IS NULL`,
 		articleID, ownerID).Scan(&originalURL)
 	if err == sql.ErrNoRows {
-		return fmt.Errorf("article not found")
+		return core.NewUserError("article not found")
 	}
 	if err != nil {
 		return fmt.Errorf("failed to find original URL: %w", err)

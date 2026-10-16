@@ -408,12 +408,12 @@ func (s *Server) renderSnippet(c *gin.Context, snippetName string, data any) {
 	t := template.New("").Funcs(s.getTemplateFuncs())
 	t, err := t.ParseFS(TemplatesFS, "templates/partials.html")
 	if err != nil {
-		c.String(http.StatusInternalServerError, "Template parse error: %v", err)
+		s.respondError(c, http.StatusInternalServerError, "Failed to render page", err)
 		return
 	}
 
 	if err := t.ExecuteTemplate(c.Writer, snippetName, data); err != nil {
-		c.String(http.StatusInternalServerError, "Template execution error: %v", err)
+		s.respondError(c, http.StatusInternalServerError, "Failed to render page", err)
 	}
 }
 
@@ -466,7 +466,7 @@ func (s *Server) render(c *gin.Context, tmplName string, data gin.H) {
 	}
 
 	if err != nil {
-		c.String(http.StatusInternalServerError, "Template error: %v", err)
+		s.respondError(c, http.StatusInternalServerError, "Failed to render page", err)
 	}
 }
 
@@ -528,11 +528,9 @@ func (s *Server) getFlash(c *gin.Context) *FlashMessage {
 	return flash
 }
 
+// renderError responds with a plain-text message. Callers with an underlying
+// error should use respondError, which logs it and keeps details private.
 func (s *Server) renderError(c *gin.Context, status int, message string) {
-	if c.GetHeader("HX-Request") == "true" {
-		c.String(status, message)
-		return
-	}
 	c.String(status, message)
 }
 
@@ -546,19 +544,19 @@ func (s *Server) handleHome(c *gin.Context) {
 
 	rssItems, err := rss.ListItemsToRead(ctx, s.db, user.ID, 100, 0)
 	if err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Failed to load RSS items: "+err.Error())
+		s.respondError(c, http.StatusInternalServerError, "Failed to load RSS items", err)
 		return
 	}
 
 	articlesList, err := articles.ListArticles(ctx, s.db, user.ID, 100, 0)
 	if err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Failed to load articles: "+err.Error())
+		s.respondError(c, http.StatusInternalServerError, "Failed to load articles", err)
 		return
 	}
 
 	notesList, err := notes.ListNotes(ctx, s.db, user.ID)
 	if err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Failed to load notes: "+err.Error())
+		s.respondError(c, http.StatusInternalServerError, "Failed to load notes", err)
 		return
 	}
 

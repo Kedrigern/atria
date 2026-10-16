@@ -35,13 +35,13 @@ func (s *Server) handleRSSItemList(c *gin.Context) {
 		items, err = rss.ListItemsToRead(c.Request.Context(), s.db, user.ID, limit+1, offset)
 	}
 	if err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Failed to load RSS items: "+err.Error())
+		s.respondError(c, http.StatusInternalServerError, "Failed to load RSS items", err)
 		return
 	}
 
 	tags, err := rss.ListFeedTags(c.Request.Context(), s.db, user.ID)
 	if err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Failed to load feed tags: "+err.Error())
+		s.respondError(c, http.StatusInternalServerError, "Failed to load feed tags", err)
 		return
 	}
 
@@ -88,7 +88,7 @@ func (s *Server) handleRSSFeedAdd(c *gin.Context) {
 
 	_, err := rss.CreateFeed(c.Request.Context(), s.db, user.ID, title, urlStr)
 	if err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Failed to add feed: "+err.Error())
+		s.respondError(c, http.StatusInternalServerError, "Failed to add feed", err)
 		return
 	}
 
@@ -117,7 +117,7 @@ func (s *Server) handleRSSFeedUpdate(c *gin.Context) {
 
 	_, err = rss.SaveItemAsArticle(c.Request.Context(), s.db, user.ID, id)
 	if err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Failed to save: "+err.Error())
+		s.respondError(c, http.StatusInternalServerError, "Failed to save", err)
 		return
 	}
 
@@ -139,7 +139,7 @@ func (s *Server) handleRSSFetchAll(c *gin.Context) {
 	// Triggers the parallel worker pool to fetch the user's due feeds
 	err := rss.FetchActiveFeedsForOwner(c.Request.Context(), s.db, user.ID)
 	if err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Fetch failed: "+err.Error())
+		s.respondError(c, http.StatusInternalServerError, "Fetch failed", err)
 		return
 	}
 
@@ -162,7 +162,7 @@ func (s *Server) handleRSSFeedList(c *gin.Context) {
 
 	feeds, err := rss.ListFeeds(c.Request.Context(), s.db, user.ID)
 	if err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Failed to list feeds: "+err.Error())
+		s.respondError(c, http.StatusInternalServerError, "Failed to list feeds", err)
 		return
 	}
 	s.render(c, "settings_rss.html", gin.H{
@@ -185,7 +185,7 @@ func (s *Server) handleRSSItemArchive(c *gin.Context) {
 
 	err = rss.MarkAsRead(c.Request.Context(), s.db, user.ID, id)
 	if err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Failed to archive RSS item: "+err.Error())
+		s.respondError(c, http.StatusInternalServerError, "Failed to archive RSS item", err)
 		return
 	}
 
@@ -224,7 +224,7 @@ func (s *Server) handleRSSFeedDetail(c *gin.Context) {
 
 	detail, err := rss.GetFeedDetail(c.Request.Context(), s.db, user.ID, feedID, includeRead, limit, offset)
 	if err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Failed to load feed: "+err.Error())
+		s.respondError(c, http.StatusInternalServerError, "Failed to load feed", err)
 		return
 	}
 
@@ -266,7 +266,7 @@ func (s *Server) handleRSSItemArchiveBatch(c *gin.Context) {
 	if len(ids) > 0 {
 		err := rss.MarkBatchAsRead(c.Request.Context(), s.db, user.ID, ids)
 		if err != nil {
-			s.renderError(c, http.StatusInternalServerError, "Failed to archive batch: "+err.Error())
+			s.respondError(c, http.StatusInternalServerError, "Failed to archive batch", err)
 			return
 		}
 	}
@@ -284,7 +284,7 @@ func (s *Server) handleRSSItemArchiveBatch(c *gin.Context) {
 
 	items, err := rss.ListItemsToRead(c.Request.Context(), s.db, user.ID, limit+1, offset)
 	if err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Failed to refresh RSS items: "+err.Error())
+		s.respondError(c, http.StatusInternalServerError, "Failed to refresh RSS items", err)
 		return
 	}
 
@@ -293,7 +293,7 @@ func (s *Server) handleRSSItemArchiveBatch(c *gin.Context) {
 		offset = (page - 1) * limit
 		items, err = rss.ListItemsToRead(c.Request.Context(), s.db, user.ID, limit+1, offset)
 		if err != nil {
-			s.renderError(c, http.StatusInternalServerError, "Failed to refresh RSS items: "+err.Error())
+			s.respondError(c, http.StatusInternalServerError, "Failed to refresh RSS items", err)
 			return
 		}
 	}
@@ -334,7 +334,7 @@ func (s *Server) handleRSSFeedArchiveAll(c *gin.Context) {
 	}
 
 	if err := rss.MarkFeedAsRead(c.Request.Context(), s.db, user.ID, feedID); err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Failed to mark feed as read: "+err.Error())
+		s.respondError(c, http.StatusInternalServerError, "Failed to mark feed as read", err)
 		return
 	}
 
@@ -368,7 +368,7 @@ func (s *Server) handleRSSFeedFetch(c *gin.Context) {
 	}
 
 	if err := rss.FetchFeed(c.Request.Context(), s.db, feedID); err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Fetch failed: "+err.Error())
+		s.respondError(c, http.StatusInternalServerError, "Fetch failed", err)
 		return
 	}
 

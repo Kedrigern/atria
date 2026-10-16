@@ -24,12 +24,12 @@ func (s *Server) handleEbookList(c *gin.Context) {
 	author := c.Query("author")
 	books, err := ebooks.List(c.Request.Context(), s.db, user.ID, author)
 	if err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Failed to load e-books: "+err.Error())
+		s.respondError(c, http.StatusInternalServerError, "Failed to load e-books", err)
 		return
 	}
 	authors, err := ebooks.Authors(c.Request.Context(), s.db, user.ID)
 	if err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Failed to load e-book authors: "+err.Error())
+		s.respondError(c, http.StatusInternalServerError, "Failed to load e-book authors", err)
 		return
 	}
 	s.render(c, "ebook_list.html", gin.H{"Ebooks": books, "Authors": authors, "SelectedAuthor": author})
@@ -56,7 +56,7 @@ func (s *Server) handleEbookImport(c *gin.Context) {
 	}
 	tempPath, cleanup, err := saveEbookImportUpload(file)
 	if err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Failed to save imported EPUB: "+err.Error())
+		s.respondError(c, http.StatusInternalServerError, "Failed to save imported EPUB", err)
 		return
 	}
 	defer cleanup()
@@ -70,7 +70,7 @@ func (s *Server) handleEbookImport(c *gin.Context) {
 		Filename:    file.Filename,
 	})
 	if err != nil {
-		s.renderError(c, http.StatusBadRequest, "Failed to import EPUB: "+err.Error())
+		s.respondError(c, http.StatusBadRequest, "Failed to import EPUB", err)
 		return
 	}
 
@@ -144,7 +144,7 @@ func (s *Server) handleEbookCreate(c *gin.Context) {
 
 	sources, skipped, err := s.resolveEbookSources(c, user.ID, c.PostForm("source_ids"))
 	if err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Failed to resolve sources: "+err.Error())
+		s.respondError(c, http.StatusInternalServerError, "Failed to resolve sources", err)
 		return
 	}
 	if len(sources) == 0 {
@@ -154,7 +154,7 @@ func (s *Server) handleEbookCreate(c *gin.Context) {
 
 	coverPath, coverName, cleanup, err := saveEbookCover(c)
 	if err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Failed to save cover image: "+err.Error())
+		s.respondError(c, http.StatusInternalServerError, "Failed to save cover image", err)
 		return
 	}
 	defer cleanup()
@@ -170,7 +170,7 @@ func (s *Server) handleEbookCreate(c *gin.Context) {
 		Sources:     sources,
 	})
 	if err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Failed to generate e-book: "+err.Error())
+		s.respondError(c, http.StatusInternalServerError, "Failed to generate e-book", err)
 		return
 	}
 
@@ -237,7 +237,7 @@ func (s *Server) handleEbookUpdate(c *gin.Context) {
 	}
 	err = ebooks.UpdateMetadata(c.Request.Context(), s.db, user.ID, id, c.PostForm("title"), c.PostForm("description"), c.PostForm("author"), c.PostForm("language"))
 	if err != nil {
-		s.renderError(c, http.StatusBadRequest, "Failed to update e-book: "+err.Error())
+		s.respondError(c, http.StatusBadRequest, "Failed to update e-book", err)
 		return
 	}
 	c.Redirect(http.StatusSeeOther, "/ebooks/"+id.String())

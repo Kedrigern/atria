@@ -22,7 +22,7 @@ func (s *Server) handleUserList(c *gin.Context) {
 
 	usersList, err := users.ListUsers(c.Request.Context(), s.db)
 	if err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Failed to list users: "+err.Error())
+		s.respondError(c, http.StatusInternalServerError, "Failed to list users", err)
 		return
 	}
 
@@ -60,7 +60,7 @@ func (s *Server) handleUserCreate(c *gin.Context) {
 
 	_, err := users.CreateUser(c.Request.Context(), s.db, email, displayName, password, role)
 	if err != nil {
-		s.setFlash(c, "error", "Failed to create user: "+err.Error())
+		s.flashError(c, "Failed to create user", err)
 		c.Redirect(http.StatusSeeOther, "/settings/users")
 		return
 	}
@@ -93,7 +93,7 @@ func (s *Server) handleUserRoleUpdate(c *gin.Context) {
 	}
 
 	if err := users.UpdateUserRole(c.Request.Context(), s.db, targetEmail, newRole); err != nil {
-		s.setFlash(c, "error", "Failed to update role: "+err.Error())
+		s.flashError(c, "Failed to update role", err)
 		c.Redirect(http.StatusSeeOther, "/settings/users")
 		return
 	}
@@ -121,7 +121,7 @@ func (s *Server) handleUserDelete(c *gin.Context) {
 	}
 
 	if err := users.DeleteUser(c.Request.Context(), s.db, targetEmail); err != nil {
-		s.setFlash(c, "error", "Failed to delete user: "+err.Error())
+		s.flashError(c, "Failed to delete user", err)
 		c.Redirect(http.StatusSeeOther, "/settings/users")
 		return
 	}

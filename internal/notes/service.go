@@ -37,7 +37,7 @@ func GetPublicNote(ctx context.Context, db *sql.DB, id uuid.UUID) (*core.Note, e
 		&n.Icon, &n.MarkdownContent,
 	)
 	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("public note not found")
+		return nil, core.NewUserError("public note not found")
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch public note: %w", err)
@@ -59,7 +59,7 @@ func GetNote(ctx context.Context, db *sql.DB, id, ownerID uuid.UUID) (*core.Note
 		&n.Icon, &n.MarkdownContent,
 	)
 	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("note not found")
+		return nil, core.NewUserError("note not found")
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch note: %w", err)
@@ -80,7 +80,7 @@ func EnsurePath(ctx context.Context, tx *sql.Tx, ownerID uuid.UUID, path string)
 
 	for _, part := range parts {
 		var folderID uuid.UUID
-		slug := strings.ToLower(strings.ReplaceAll(part, " ", "-"))
+		slug := core.LimitRunes(strings.ToLower(strings.ReplaceAll(part, " ", "-")), core.MaxSlugLength)
 		folderUUID := core.NewUUID()
 
 		queryInsert := `
@@ -245,18 +245,18 @@ func DeleteEntity(ctx context.Context, db *sql.DB, ownerID uuid.UUID, entityID u
 	queryType := `SELECT type, deleted_at FROM entities WHERE id = $1 AND owner_id = $2`
 	err := db.QueryRowContext(ctx, queryType, entityID, ownerID).Scan(&entityType, &deletedAt)
 	if err == sql.ErrNoRows {
-		return fmt.Errorf("entity not found or you don't have permission")
+		return core.NewUserError("entity not found or you don't have permission")
 	}
 	if err != nil {
 		return fmt.Errorf("failed to verify entity: %w", err)
 	}
 
 	if entityType == string(core.TypeFolder) && !recursive {
-		return fmt.Errorf("target is a folder. You must use the --recursive flag to delete it and all its contents")
+		return core.NewUserError("target is a folder. You must use the --recursive flag to delete it and all its contents")
 	}
 
 	if !hard && deletedAt.Valid {
-		return fmt.Errorf("entity is already in the trash. Use --hard to permanently delete it")
+		return core.NewUserError("entity is already in the trash. Use --hard to permanently delete it")
 	}
 
 	if hard {
@@ -289,7 +289,7 @@ func GetNoteContent(ctx context.Context, db *sql.DB, noteID uuid.UUID) (string, 
 	query := `SELECT markdown_content FROM notes WHERE id = $1`
 	err := db.QueryRowContext(ctx, query, noteID).Scan(&content)
 	if err == sql.ErrNoRows {
-		return "", fmt.Errorf("note content not found")
+		return "", core.NewUserError("note content not found")
 	}
 	if err != nil {
 		return "", fmt.Errorf("failed to fetch note content: %w", err)
@@ -323,7 +323,7 @@ func UpdateNote(ctx context.Context, db *sql.DB, ownerID, noteID uuid.UUID, titl
 		return fmt.Errorf("failed to verify note update: %w", err)
 	}
 	if rowsAffected == 0 {
-		return fmt.Errorf("note not found")
+		return core.NewUserError("note not found")
 	}
 
 	if _, err := tx.ExecContext(ctx, `UPDATE notes SET markdown_content = $1 WHERE id = $2`, content, noteID); err != nil {
@@ -340,9 +340,5 @@ func noteSlug(title string) string {
 	slug := strings.ToLower(strings.ReplaceAll(title, " ", "-"))
 	slug = strings.ReplaceAll(slug, "/", "-")
 	slug = strings.ReplaceAll(slug, "\\", "-")
-	chars := []rune(slug)
-	if len(chars) > 100 {
-		return string(chars[:100])
-	}
-	return slug
+	return core.LimitRunes(slug, core.MaxSlugLength)
 }

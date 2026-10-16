@@ -94,6 +94,19 @@ func MigrateDown(db *sql.DB) error {
 	return nil
 }
 
+// MigrateDownAll rolls back every migration, in reverse order.
+// Used by tests to verify that all Down sections work.
+func MigrateDownAll(db *sql.DB) error {
+	goose.SetBaseFS(embedMigrations)
+	if err := goose.SetDialect("postgres"); err != nil {
+		return err
+	}
+	if err := goose.DownTo(db, "migrations", 0); err != nil {
+		return fmt.Errorf("failed to roll back migrations: %w", err)
+	}
+	return nil
+}
+
 // ResetDB performs a "nuclear" wipe of the entire database (drops the public schema).
 // This is intended ONLY for development and testing!
 func ResetDB(db *sql.DB) error {

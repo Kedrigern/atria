@@ -93,7 +93,7 @@ func GetDownload(ctx context.Context, db *sql.DB, ownerID, ebookID uuid.UUID) (*
 		WHERE e.id = $1 AND e.owner_id = $2 AND e.type = $3 AND e.deleted_at IS NULL
 	`, ebookID, ownerID, core.TypeEbook).Scan(&download.Filename, &download.DiskPath)
 	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("e-book not found")
+		return nil, core.NewUserError("e-book not found")
 	}
 	if err != nil {
 		return nil, fmt.Errorf("get e-book download: %w", err)
@@ -157,7 +157,7 @@ func Authors(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]string, erro
 // Generate creates an immutable EPUB snapshot, stores its attachments, and creates the e-book entity.
 func Generate(ctx context.Context, db *sql.DB, ownerID uuid.UUID, input GenerateInput) (*core.Ebook, error) {
 	if len(input.Sources) == 0 {
-		return nil, fmt.Errorf("at least one source entity is required")
+		return nil, core.NewUserError("at least one source entity is required")
 	}
 
 	tempDir, err := os.MkdirTemp("", "atria-ebook-*")
@@ -219,7 +219,7 @@ func Import(ctx context.Context, db *sql.DB, ownerID uuid.UUID, input ImportInpu
 		return nil, fmt.Errorf("detect imported file type: %w", err)
 	}
 	if mimeType.String() != "application/epub+zip" {
-		return nil, fmt.Errorf("uploaded file must be an EPUB, got %s", mimeType.String())
+		return nil, core.NewUserError("uploaded file must be an EPUB, got %s", mimeType.String())
 	}
 
 	metadata, _ := ReadEPUBMetadata(input.Path)
@@ -273,7 +273,7 @@ func GetDetail(ctx context.Context, db *sql.DB, ownerID, ebookID uuid.UUID) (*De
 		&detail.ID, &detail.Title, &detail.Description, &detail.Author, &detail.Language, &detail.Filename, &detail.CoverDiskPath, &detail.GeneratedAt,
 	)
 	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("e-book not found")
+		return nil, core.NewUserError("e-book not found")
 	}
 	if err != nil {
 		return nil, fmt.Errorf("get e-book: %w", err)
@@ -307,7 +307,7 @@ func GetDetail(ctx context.Context, db *sql.DB, ownerID, ebookID uuid.UUID) (*De
 func UpdateMetadata(ctx context.Context, db *sql.DB, ownerID, ebookID uuid.UUID, title, description, author, language string) error {
 	title = strings.TrimSpace(title)
 	if title == "" {
-		return fmt.Errorf("e-book title is required")
+		return core.NewUserError("e-book title is required")
 	}
 	result, err := db.ExecContext(ctx, `
 		UPDATE entities e
@@ -320,7 +320,7 @@ func UpdateMetadata(ctx context.Context, db *sql.DB, ownerID, ebookID uuid.UUID,
 	}
 	rows, err := result.RowsAffected()
 	if err != nil || rows == 0 {
-		return fmt.Errorf("e-book not found")
+		return core.NewUserError("e-book not found")
 	}
 	_, err = db.ExecContext(ctx, `UPDATE ebooks SET description = NULLIF($1, ''), author = NULLIF($2, ''), language = NULLIF($3, '') WHERE id = $4`, description, author, language, ebookID)
 	if err != nil {
@@ -344,7 +344,7 @@ func Delete(ctx context.Context, db *sql.DB, ownerID, ebookID uuid.UUID) error {
 		return fmt.Errorf("confirm e-book deletion: %w", err)
 	}
 	if rows == 0 {
-		return fmt.Errorf("e-book not found")
+		return core.NewUserError("e-book not found")
 	}
 	return nil
 }
@@ -353,10 +353,10 @@ func Delete(ctx context.Context, db *sql.DB, ownerID, ebookID uuid.UUID) error {
 func Create(ctx context.Context, db *sql.DB, ownerID uuid.UUID, input CreateInput) (*core.Ebook, error) {
 	title := strings.TrimSpace(input.Title)
 	if title == "" {
-		return nil, fmt.Errorf("e-book title is required")
+		return nil, core.NewUserError("e-book title is required")
 	}
 	if input.EPUBAttachmentID == uuid.Nil {
-		return nil, fmt.Errorf("EPUB attachment is required")
+		return nil, core.NewUserError("EPUB attachment is required")
 	}
 
 	tx, err := db.BeginTx(ctx, nil)
@@ -444,7 +444,7 @@ func verifyAttachmentOwner(ctx context.Context, tx *sql.Tx, ownerID, attachmentI
 		return err
 	}
 	if !exists {
-		return fmt.Errorf("attachment not found")
+		return core.NewUserError("attachment not found")
 	}
 	return nil
 }
@@ -475,10 +475,7 @@ func ebookFilename(title, filename string) string {
 func ebookSlug(title string) string {
 	slug := strings.ToLower(strings.Join(strings.Fields(title), "-"))
 	slug = strings.NewReplacer("/", "-", "\\", "-").Replace(slug)
-	if len(slug) > 100 {
-		slug = slug[:100]
-	}
-	return slug
+	return core.LimitRunes(slug, core.MaxSlugLength)
 }
 
 func firstNonEmpty(value, fallback string) string {

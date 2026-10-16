@@ -81,7 +81,7 @@ func FindUser(ctx context.Context, db *sql.DB, identifier string) (*User, error)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("user not found")
+			return nil, NewUserError("user not found")
 		}
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
