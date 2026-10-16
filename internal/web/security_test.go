@@ -77,7 +77,7 @@ func buildProxyRouter(t *testing.T, allowlist string) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 	// Disable gin's trusted-proxy magic so RemoteAddr is used directly.
-	r.SetTrustedProxies(nil)
+	_ = r.SetTrustedProxies(nil)
 
 	r.GET("/check", func(c *gin.Context) {
 		c.JSON(http.StatusOK, proxyAllowedResult{Allowed: isProxyAllowed(c)})

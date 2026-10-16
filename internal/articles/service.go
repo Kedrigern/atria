@@ -310,7 +310,7 @@ func CreateArticle(ctx context.Context, db *sql.DB, ownerID uuid.UUID, urlStr st
 	if err != nil {
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	// ParentID is intentionally NULL - the article goes directly to the "Inbox"
 	queryEntity := `
@@ -575,7 +575,7 @@ func RefetchArticle(ctx context.Context, db *sql.DB, ownerID, articleID uuid.UUI
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	_, err = tx.ExecContext(ctx, "UPDATE entities SET title = $1, updated_at = NOW() WHERE id = $2 AND owner_id = $3", title, articleID, ownerID)
 	if err != nil {

@@ -363,7 +363,7 @@ func Create(ctx context.Context, db *sql.DB, ownerID uuid.UUID, input CreateInpu
 	if err != nil {
 		return nil, fmt.Errorf("begin e-book transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	if err := verifyAttachmentOwner(ctx, tx, ownerID, input.EPUBAttachmentID); err != nil {
 		return nil, fmt.Errorf("EPUB attachment: %w", err)

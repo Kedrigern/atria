@@ -115,7 +115,7 @@ func CreateNote(ctx context.Context, db *sql.DB, ownerID uuid.UUID, title, path,
 	if err != nil {
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer tx.Rollback() // Safe to call even if committed
+	defer func() { _ = tx.Rollback() }() // Safe to call even if committed
 
 	// 1. Resolve or create the folder structure
 	parentID, err := EnsurePath(ctx, tx, ownerID, path)
@@ -303,7 +303,7 @@ func UpdateNote(ctx context.Context, db *sql.DB, ownerID, noteID uuid.UUID, titl
 	if err != nil {
 		return fmt.Errorf("failed to begin note update transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	parentID, err := EnsurePath(ctx, tx, ownerID, path)
 	if err != nil {

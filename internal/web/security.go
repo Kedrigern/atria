@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -77,6 +78,9 @@ func sessionSecret() []byte {
 // run outside development/test without a real SESSION_SECRET, because a known
 // secret lets anyone forge a session for any user.
 func ValidateSecurityConfig() error {
+	if err := validateTrustedProxies(); err != nil {
+		return err
+	}
 	if isDevelopmentEnv() {
 		return nil
 	}
@@ -88,6 +92,29 @@ func ValidateSecurityConfig() error {
 		return errors.New("SESSION_SECRET still has the placeholder value from .env.example; generate one with: openssl rand -hex 32")
 	case len(secret) < 32:
 		log.Printf("WARNING: SESSION_SECRET is shorter than 32 characters; use: openssl rand -hex 32")
+	}
+	return nil
+}
+
+// trustedProxies parses TRUSTED_PROXIES (comma-separated IPs or CIDRs,
+// spaces allowed). nil means no proxy is trusted.
+func trustedProxies() []string {
+	var proxies []string
+	for _, p := range strings.Split(os.Getenv("TRUSTED_PROXIES"), ",") {
+		if p = strings.TrimSpace(p); p != "" {
+			proxies = append(proxies, p)
+		}
+	}
+	return proxies
+}
+
+func validateTrustedProxies() error {
+	for _, p := range trustedProxies() {
+		if net.ParseIP(p) == nil {
+			if _, _, err := net.ParseCIDR(p); err != nil {
+				return fmt.Errorf("TRUSTED_PROXIES: %q is not an IP address or CIDR range", p)
+			}
+		}
 	}
 	return nil
 }

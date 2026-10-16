@@ -86,7 +86,7 @@ func CreateFeed(ctx context.Context, db *sql.DB, ownerID uuid.UUID, title, feedU
 	if err != nil {
 		return nil, err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	entityID := core.NewUUID()
 	slug := core.LimitRunes(strings.ToLower(strings.ReplaceAll(title, " ", "-")), core.MaxSlugLength)
@@ -300,7 +300,7 @@ func MarkBatchAsRead(ctx context.Context, db *sql.DB, ownerID uuid.UUID, itemIDs
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	query := `
 		UPDATE rss_items

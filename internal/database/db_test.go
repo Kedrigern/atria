@@ -1,21 +1,14 @@
 package database_test
 
 import (
-	"os"
 	"testing"
 
-	"github.com/joho/godotenv"
-
 	"atria/internal/database"
+	"atria/internal/testutil"
 )
 
 func TestDBInitialization(t *testing.T) {
-	_ = godotenv.Load("../../.env")
-
-	dsn := os.Getenv("TEST_DATABASE_URL")
-	if dsn == "" {
-		t.Skip("TEST_DATABASE_URL is not set in .env or environment. Skipping database integration test.")
-	}
+	dsn := testutil.TestDatabaseURL(t)
 
 	db, err := database.InitDB(dsn)
 	if err != nil {
@@ -33,12 +26,7 @@ func TestDBInitialization(t *testing.T) {
 }
 
 func TestMigrationsRoundTrip(t *testing.T) {
-	_ = godotenv.Load("../../.env")
-
-	dsn := os.Getenv("TEST_DATABASE_URL")
-	if dsn == "" {
-		t.Skip("TEST_DATABASE_URL is not set in .env or environment. Skipping database integration test.")
-	}
+	dsn := testutil.TestDatabaseURL(t)
 
 	db, err := database.InitDB(dsn)
 	if err != nil {

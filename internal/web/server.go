@@ -146,12 +146,12 @@ func (s *Server) SetupRouter() *gin.Engine {
 	r.Use(SecurityHeadersMiddleware())
 	r.Use(BodyLimitMiddleware(maxUploadBytes()))
 
-	trustedProxiesRaw := os.Getenv("TRUSTED_PROXIES")
-	if trustedProxiesRaw != "" {
-		proxies := strings.Split(trustedProxiesRaw, ",")
-		r.SetTrustedProxies(proxies)
-	} else {
-		r.SetTrustedProxies(nil)
+	// On error gin keeps trusting every proxy, which would let any client
+	// spoof its IP via X-Forwarded-For; fall back to trusting none.
+	// ValidateSecurityConfig rejects an invalid TRUSTED_PROXIES at startup.
+	if err := r.SetTrustedProxies(trustedProxies()); err != nil {
+		log.Printf("ERROR: invalid TRUSTED_PROXIES, trusting no proxies: %v", err)
+		_ = r.SetTrustedProxies(nil)
 	}
 
 	subFS, err := fs.Sub(StaticFS, "static")

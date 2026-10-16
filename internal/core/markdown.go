@@ -21,7 +21,7 @@ func (s *headingShifter) Transform(node *ast.Document, reader text.Reader, pc pa
 	hasH1 := false
 
 	// Pass 1: Check whether any H1 heading exists.
-	ast.Walk(node, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
+	_ = ast.Walk(node, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
 		if entering && n.Kind() == ast.KindHeading {
 			heading := n.(*ast.Heading)
 			if heading.Level == 1 {
@@ -37,7 +37,7 @@ func (s *headingShifter) Transform(node *ast.Document, reader text.Reader, pc pa
 	}
 
 	// Pass 2: Shift all headings down one level.
-	ast.Walk(node, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
+	_ = ast.Walk(node, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
 		if entering && n.Kind() == ast.KindHeading {
 			heading := n.(*ast.Heading)
 			if heading.Level < 6 {
@@ -79,7 +79,7 @@ func RenderMarkdown(source []byte) (string, map[string]interface{}, error) {
 type calloutTransformer struct{}
 
 func (s *calloutTransformer) Transform(node *ast.Document, reader text.Reader, pc parser.Context) {
-	ast.Walk(node, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
+	_ = ast.Walk(node, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
 		if entering && n.Kind() == ast.KindBlockquote {
 			bq := n.(*ast.Blockquote)
 
