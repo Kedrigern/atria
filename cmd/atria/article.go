@@ -44,6 +44,7 @@ var articleAddCmd = &cobra.Command{
 				sem <- struct{}{}
 				defer func() { <-sem }()
 
+				fmt.Printf("⏳ Fetching: %s\n", urlStr)
 				entity, err := articles.CreateArticle(app.Ctx, app.DB, app.Owner.ID, urlStr, articleNote)
 				if err != nil {
 					fmt.Printf("❌ Failed: %s\n   Error: %v\n", urlStr, err)
