@@ -2,6 +2,7 @@ package web
 
 import (
 	"atria/internal/core"
+	"atria/internal/storage"
 	"atria/internal/users"
 	"net/http"
 
@@ -128,4 +129,55 @@ func (s *Server) handleUserDelete(c *gin.Context) {
 
 	s.setFlash(c, "success", "User deleted.")
 	c.Redirect(http.StatusSeeOther, "/settings/users")
+}
+
+// handleStorage shows how much space the user's data takes; admins also see
+// a per-user overview and the database size.
+func (s *Server) handleStorage(c *gin.Context) {
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+	ctx := c.Request.Context()
+
+	usage, err := storage.ForUser(ctx, s.db, user.ID)
+	if err != nil {
+		s.respondError(c, http.StatusInternalServerError, "Failed to load storage usage", err)
+		return
+	}
+
+	data := gin.H{
+		"SettingsTab": "storage",
+		"Usage":       usage,
+		"IsAdmin":     user.Role == core.RoleAdmin,
+	}
+
+	if user.Role == core.RoleAdmin {
+		all, err := storage.ForAllUsers(ctx, s.db)
+		if err != nil {
+			s.respondError(c, http.StatusInternalServerError, "Failed to load storage usage", err)
+			return
+		}
+		var total storage.Usage
+		for _, u := range all {
+			total.AttachmentCount += u.AttachmentCount
+			total.AttachmentBytes += u.AttachmentBytes
+			total.ArticleCount += u.ArticleCount
+			total.ArticleBytes += u.ArticleBytes
+			total.NoteCount += u.NoteCount
+			total.NoteBytes += u.NoteBytes
+			total.RSSItemCount += u.RSSItemCount
+			total.RSSBytes += u.RSSBytes
+		}
+		dbSize, err := storage.DatabaseSize(ctx, s.db)
+		if err != nil {
+			s.respondError(c, http.StatusInternalServerError, "Failed to load database size", err)
+			return
+		}
+		data["AllUsage"] = all
+		data["TotalUsage"] = total
+		data["DatabaseSize"] = dbSize
+	}
+
+	s.render(c, "settings_storage.html", data)
 }
