@@ -150,41 +150,102 @@ Computed columns are just expressions in the `SELECT` (`price * qty AS total`),
 so one language covers formulas, filters, grouping and joins. Optional
 per-view display settings (column formats, footer totals) live next to the SQL.
 
-### 5.2 Query engine: embedded DuckDB
+### 5.2 Query engine: DuckDB in a separate process (decided)
 
-Views run in [DuckDB](https://duckdb.org) embedded in the Atria process — not
-in the main Postgres:
+Views run in the official [DuckDB](https://duckdb.org) command-line program,
+started as a **separate process per query** — not linked into Atria and not in
+the main Postgres:
 
-1. Parse the view SQL to find referenced table names (DuckDB's
-   `json_serialize_sql` / prepared-statement metadata); reject unknown names.
-2. Open a **fresh in-memory DuckDB** for this one query.
-3. Load **only the referenced tables of the view's owner** from Postgres
-   (typed per §4.2; a 5k-row table loads in milliseconds).
-4. Run the query with limits (§7); return columns + rows; discard the database.
+1. Atria writes the referenced tables of the view's owner to a fresh private
+   temporary directory as CSV, plus the view SQL as `query.sql`.
+2. It starts `duckdb -bail :memory:` with a **fixed script on stdin**,
+   generated only from Atria's own identifiers and types (the user's SQL and
+   cell values are never part of it, see §5.3):
+   * create each table with **explicit column types** from §4.2 and load it
+     with `read_csv(..., columns={...})` (without explicit types DuckDB infers
+     `DOUBLE` and money sums turn into `28961.270000000004`);
+   * `SET VARIABLE q = (SELECT json_serialize_sql(content) FROM read_text('query.sql'))`
+     — DuckDB parses the user's SQL as a *value*; anything but `SELECT` fails
+     with "Only SELECT statements can be serialized";
+   * lock the sandbox (§5.3);
+   * `SELECT * FROM json_execute_serialized_sql(getvariable('q'))` with JSON
+     output — guarded so that it raises an error unless exactly one statement
+     was serialized.
+3. Atria reads the JSON result (or the error) and deletes the directory.
+4. The process is killed on timeout; it never outlives the request.
 
-Running user SQL in the main Postgres was rejected: it would share the
-database with every other user's data and with the application itself
-(permissions, CPU, locks).
+Why a separate process (measured with a prototype, DuckDB 1.5.6, 5,000 + 50
+rows, join + group by):
+
+| | linked into Atria (static) | shared `libduckdb.so` | **separate `duckdb` process** |
+|---|---|---|---|
+| Atria binary | 82 MiB (2.9×) | 29 MiB | **28 MiB, pure Go (no cgo)** |
+| Build needs | Go + C++ toolchain | Go + C compiler | **Go only** |
+| One view | ~16 ms | ~16 ms | **~40 ms** (12 ms process start) |
+| DuckDB missing | — | Atria does not start | **Atria works, views report "unavailable"** |
+| DuckDB crash / runaway query | takes Atria down | takes Atria down | **only that query fails** |
+| Upgrading DuckDB | rebuild Atria | rebuild Atria | **replace one file** |
+
+The ~24 ms extra per view is invisible for opening a view; notes embedding
+several views may use a short-lived result cache (keyed by view ID and the
+`updated_at` of the view and its tables).
+
+Configuration: `DUCKDB_PATH` (default: `duckdb` on `PATH`). When it is not
+found, tables keep working and views show "the view engine is not installed".
 
 ### 5.3 Sandbox (mandatory)
 
-User SQL is untrusted. Every query connection is configured before the user's
-statement runs:
+User SQL is untrusted. Defences, in order:
 
-* `SET enable_external_access = false` — no file, URL or database access
-  (`read_csv('/etc/passwd')`, `httpfs`, `ATTACH`, `COPY … TO` all fail).
-* `SET autoinstall_known_extensions = false`, `SET autoload_known_extensions = false`.
-* `SET lock_configuration = true` — the user statement cannot undo the above.
-* `SET memory_limit = '256MB'`, `SET threads = 2`.
-* Only one statement, and it must be a `SELECT` (checked on the parsed
-  statement type, not by string matching).
-* Context timeout (5 s) interrupts the query; results are capped (§7).
-* Isolation between users is structural: another user's tables are never
-  loaded into the in-memory database, so they cannot be referenced.
+* **No user text ever reaches the CLI script.** The DuckDB CLI executes
+  dot-commands such as `.shell`, so user text on stdin could run shell
+  commands. The script on stdin is generated only from Atria's identifiers
+  and types; the user's SQL is written to `query.sql` and cell values to the
+  CSV files, both read by DuckDB as *data*. Only the serialized `SELECT` is
+  executed. `-bail` stops at the first error.
+  (`-safe` is not usable: it locks the configuration and disables file access
+  from the start, so the sandbox settings could not be applied and the tables
+  could not be loaded. It is also unnecessary, because the script is fixed.)
+* **Only one `SELECT`**: `json_serialize_sql` rejects anything that is not a
+  `SELECT` ("Only SELECT statements can be serialized"); Atria additionally
+  requires exactly one serialized statement.
+  (Lesson from the prototype: Go's `database/sql` `PrepareContext` executes
+  every statement of a multi-statement string except the last *before* any
+  check can run — never use it for untrusted SQL.)
+* Before the user's statement runs, the fixed script sets:
+  * `SET temp_directory = ''` — **first**: otherwise DuckDB spills to
+    `<cwd>/.tmp` (up to 90 % of free disk) and automatically allows that
+    directory even with external access disabled; with it, memory pressure
+    ends in "Out of Memory" instead of disk writes.
+  * `SET enable_external_access = false` — no file, URL or database access
+    (`read_csv('/etc/passwd')`, `httpfs`, `ATTACH` of files, `COPY … TO`,
+    `EXPORT DATABASE`: "file system operations are disabled by configuration").
+  * `SET autoinstall_known_extensions = false`, `SET autoload_known_extensions = false`.
+  * `SET memory_limit = '256MB'`, `SET threads = 2`.
+  * `SET lock_configuration = true` — later `SET`/`PRAGMA`/`RESET` fail with
+    "the configuration has been locked".
+* **Process limits**: 5 s wall-clock timeout (the process is killed), CPU and
+  address-space limits on the child process, output size cap; results capped
+  at 10,000 rows (§7).
+* **Isolation between users is structural**: only the owner's referenced
+  tables are written to the temporary directory, so another user's data is
+  never present (an unknown table gives "Table … does not exist").
+* The temporary directory is private (0700), unique per query and removed
+  afterwards; the process runs with that directory as its working directory.
 
-A dedicated test suite tries each escape (file read, URL, `ATTACH`, `COPY`,
-`INSTALL`, `SET` after lock, multiple statements, huge cross joins) and must
-see every one fail.
+Verified with the CLI (DuckDB 1.5.6): correct exact results; `read_text`,
+`glob` and URL reads fail with "file system operations are disabled by
+configuration"; non-`SELECT`, multiple statements, a `.shell` line and a
+quote-breakout attempt in `query.sql` are rejected by the parser; cell values
+containing `.shell` are inert data; another user's table does not exist; a
+runaway cross join is killed by the timeout.
+
+Measured with the prototype (in-process variant, same engine and settings):
+file and URL reads, `glob`, `COPY … TO`, `EXPORT DATABASE`, `ATTACH`,
+`INSTALL`/`LOAD`, changing locked settings, multiple statements and other
+users' tables were all blocked; a triple cross join hit the timeout and a
+memory-heavy query hit the memory limit. The views step repeats this suite
+against the CLI process, plus dot-command and quoting attacks on `query.sql`.
 
 ### 5.4 Views are standalone entities (decided)
 
@@ -192,14 +253,12 @@ A view is its own entity (type `view`): own title, tags, visibility (e.g. a
 public summary over private data) and embeddable by ID like notes. It lists the
 tables it reads; a view over two tables does not "belong" to either of them.
 
-### 5.5 Dependency cost
+### 5.5 Dependency
 
-The official Go driver (`github.com/duckdb/duckdb-go/v2`, successor of
-`marcboeker/go-duckdb`) uses cgo: the binary grows considerably (estimate:
-tens of MB — to be measured by the prototype) and builds need a C toolchain (present on Fedora and GitHub
-runners); cross-compiling gets harder. Alternative without cgo:
-`dolthub/go-mysql-server` (pure Go, MySQL dialect) — slower and less complete
-for analytics. To be validated by the prototype (§11).
+Only the official `duckdb` CLI binary (~62 MB, single static file, no
+runtime libraries beyond libc) is needed on the server, and only for views.
+Atria itself stays pure Go. The DuckDB version is checked at startup
+(`duckdb --version`) and logged; a minimum version is enforced.
 
 ## 6. Embedding in notes
 
@@ -224,7 +283,7 @@ replaced **on the server** by a plain HTML `<table>`:
 | Stored data per table | 10 MB | |
 | Cell text | 6,000 characters | |
 | Tables joined in one view | 8 | |
-| View runtime | 5 s | DuckDB interrupt via context |
+| View runtime | 5 s | the DuckDB process is killed |
 | View result | 10,000 rows (UI pages it), 200 in embeds | |
 | DuckDB memory | 256 MB per query | |
 
@@ -280,9 +339,8 @@ atria view edit|rm <view>
 
 ## 11. Delivery plan
 
-0. **Prototype (throwaway)** — DuckDB in Go: sandbox escape tests (§5.3),
-   binary size and CI build with cgo, load + join timing on 10k rows.
-   Go/no-go for §5.2.
+0. **Prototype (done)** — measured linking DuckDB statically, as a shared
+   library and as a separate process (§5.2); sandbox escape suite (§5.3).
 1. **Raw tables: backend + CLI** — migration, service (types, validation,
    ordering, versions), CSV import/export, tests.
 2. **Web editor** — list page, Tabulator editor, per-row autosave with 409
@@ -298,5 +356,6 @@ Steps 1–3 do not depend on the outcome of the prototype.
 1. Views are standalone entities (§5.4).
 2. Limits lowered for personal reading tables (§7): 5,000 rows, 80 columns,
    6,000 characters per cell.
-3. DuckDB (§5.5): decided after the prototype measurements.
+3. Views run in the official `duckdb` CLI as a separate process per query
+   (§5.2): Atria stays pure Go, DuckDB is optional and isolated.
 4. Number columns without `decimals`: open.
