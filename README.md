@@ -28,11 +28,14 @@ Available Commands:
   attachment  File uploads and attachment management
   completion  Generate the autocompletion script for the specified shell
   db          System and database administration
+  ebook       Create and manage immutable e-book snapshots
   export      Bulk export functionalities
   help        Help about any command
   link        Knowledge graph and entity relations management
   note        Knowledge base and markdown notes management
   rss         RSS feed management and triage
+  search      Full-text search across notes, articles and RSS items
+  server      Starts the Atria web server
   tag         Tag management for all entities
   user        User management
 

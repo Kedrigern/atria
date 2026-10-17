@@ -19,9 +19,22 @@ var rssCmd = &cobra.Command{
 }
 
 var rssFetchCmd = &cobra.Command{
-	Use:   "fetch",
-	Short: "Manually triggers background fetching for all pending feeds",
+	Use:   "fetch [feed]",
+	Short: "Fetches all pending feeds, or one feed immediately",
+	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if len(args) == 1 {
+			feed, err := resolveEntity(app.Ctx, app.DB, app.Owner.ID, core.TypeRSS, args[0], false)
+			if err != nil {
+				return err
+			}
+			if err := rss.FetchFeed(app.Ctx, app.DB, feed.ID); err != nil {
+				return fmt.Errorf("fetching %q failed: %w", feed.Title, err)
+			}
+			fmt.Printf("✅ Fetched %q.\n", feed.Title)
+			return nil
+		}
+
 		err := rss.FetchAllActiveFeeds(app.Ctx, app.DB)
 		if err != nil {
 			return fmt.Errorf("RSS update failed: %w", err)
@@ -154,12 +167,13 @@ var rssSaveCmd = &cobra.Command{
 	Short: "Converts an RSS item to a Read-it-Later article",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		itemID, err := core.ParseUUID(args[0])
+		// Accepts the short ID printed by `rss show` as well as a full UUID.
+		item, err := resolveRSSItem(app.Ctx, app.DB, app.Owner.ID, args[0])
 		if err != nil {
-			return fmt.Errorf("invalid UUID format: %w", err)
+			return err
 		}
 
-		article, err := rss.SaveItemAsArticle(app.Ctx, app.DB, app.Owner.ID, itemID)
+		article, err := rss.SaveItemAsArticle(app.Ctx, app.DB, app.Owner.ID, item.ID)
 		if err != nil {
 			return fmt.Errorf("failed to save article: %w", err)
 		}

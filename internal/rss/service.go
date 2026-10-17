@@ -425,3 +425,38 @@ func MarkFeedAsRead(ctx context.Context, db *sql.DB, ownerID, feedID uuid.UUID) 
 	_, err := db.ExecContext(ctx, query, feedID, ownerID)
 	return err
 }
+
+// ItemSummary identifies an RSS item for lookups.
+type ItemSummary struct {
+	ID     uuid.UUID
+	FeedID uuid.UUID
+	Title  string
+}
+
+// FindItems resolves an RSS item of ownerID by full UUID or by the last 8
+// characters that `atria rss show` prints. More than one result means the
+// short ID is ambiguous.
+func FindItems(ctx context.Context, db *sql.DB, ownerID uuid.UUID, identifier string) ([]ItemSummary, error) {
+	identifier = strings.ToLower(strings.TrimSpace(identifier))
+	rows, err := db.QueryContext(ctx, `
+		SELECT ri.id, ri.feed_id, ri.title
+		FROM rss_items ri
+		JOIN entities e ON e.id = ri.feed_id
+		WHERE e.owner_id = $1 AND e.deleted_at IS NULL
+		  AND (ri.id::text = $2 OR RIGHT(ri.id::text, 8) = $2)
+		LIMIT 10`, ownerID, identifier)
+	if err != nil {
+		return nil, fmt.Errorf("find rss item: %w", err)
+	}
+	defer rows.Close()
+
+	var items []ItemSummary
+	for rows.Next() {
+		var it ItemSummary
+		if err := rows.Scan(&it.ID, &it.FeedID, &it.Title); err != nil {
+			return nil, err
+		}
+		items = append(items, it)
+	}
+	return items, rows.Err()
+}

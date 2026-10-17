@@ -18,6 +18,16 @@ import (
 func runCLI(t *testing.T, args ...string) (string, error) {
 	t.Helper()
 	listFormat, usageUser, userRmForce, pruneDays, pruneDryRun = "table", "", false, 0, false
+	showLong, searchIn, searchAll = false, "", false
+	noteEditFile, noteEditTitle, noteEditPath = "", "", ""
+	for _, name := range []string{"title", "path", "file"} {
+		noteEditCmd.Flags().Lookup(name).Changed = false
+	}
+	for _, name := range []string{"title", "author", "description", "language"} {
+		f := ebookEditCmd.Flags().Lookup(name)
+		_ = f.Value.Set("")
+		f.Changed = false
+	}
 	var out bytes.Buffer
 	rootCmd.SetOut(&out)
 	rootCmd.SetErr(&out)
