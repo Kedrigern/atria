@@ -62,6 +62,19 @@ Dev run app:
 go run ./cmd/atria server
 ```
 
+Check how a page is extracted (nothing is saved, no database needed):
+
+```console
+go run ./cmd/atria article parse https://example.com/post             # Markdown
+go run ./cmd/atria article parse https://example.com/post -f json     # metadata + HTML + text
+go run ./cmd/atria article parse https://example.com/post --save-html post.html
+go run ./cmd/atria article parse --file post.html --url https://example.com/post
+```
+
+`--save-html` keeps the downloaded page, so a problematic site can be turned
+into an offline test fixture and re-parsed with `--file` while tuning the
+extraction. `--sanitized` shows the HTML exactly as the web UI displays it.
+
 Build app:
 
 ```console

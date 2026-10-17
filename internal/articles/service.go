@@ -184,37 +184,46 @@ func looksLikeSiteName(title, domain string) bool {
 	return false
 }
 
-// fetchAndParseArticle fetches urlStr, strips known lazy-loaded image and
-// comment-section markup, then extracts the article with readability. If
-// readability's title looks like just the site name (a common failure mode
-// on pages whose <title> tag is "SiteName - Headline" but lack a matching
-// <h1>), it falls back to the page's Open Graph / Twitter Card title.
+// fetchAndParseArticle fetches urlStr and runs processArticleHTML on it.
 func fetchAndParseArticle(ctx context.Context, urlStr string) (*readability.Article, string, error) {
+	body, parsedURL, err := fetchPage(ctx, urlStr)
+	if err != nil {
+		return nil, "", err
+	}
+	return processArticleHTML(body, parsedURL)
+}
+
+// maxPageBytes caps how much of a page is downloaded for extraction.
+const maxPageBytes = 6 * 1024 * 1024
+
+// fetchPage downloads urlStr through the SSRF-safe client. Non-2xx responses
+// are errors, so an error page is never stored as the article.
+func fetchPage(ctx context.Context, urlStr string) (string, *url.URL, error) {
 	parsedURL, err := url.Parse(urlStr)
 	if err != nil {
-		return nil, "", fmt.Errorf("invalid URL: %w", err)
+		return "", nil, core.NewUserError("invalid URL: %v", err)
 	}
-
-	client := netutil.SafeHTTPClient()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, urlStr, nil)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to create request: %w", err)
+		return "", nil, core.NewUserError("invalid URL: %v", err)
 	}
 
-	resp, err := client.Do(req)
+	resp, err := netutil.SafeHTTPClient().Do(req)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to fetch URL: %w", err)
+		return "", nil, core.NewUserError("failed to fetch URL: %v", err)
 	}
 	defer resp.Body.Close()
 
-	limitReader := io.LimitReader(resp.Body, 6*1024*1024) // 6MB limit
-	bodyBytes, err := io.ReadAll(limitReader)
-	if err != nil {
-		return nil, "", fmt.Errorf("failed to read response body: %w", err)
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		return "", nil, core.NewUserError("failed to fetch URL: server responded %s", resp.Status)
 	}
 
-	return processArticleHTML(string(bodyBytes), parsedURL)
+	bodyBytes, err := io.ReadAll(io.LimitReader(resp.Body, maxPageBytes))
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+	return string(bodyBytes), parsedURL, nil
 }
 
 // processArticleHTML strips known lazy-loaded image and comment-section
@@ -476,12 +485,16 @@ func GetArticleMarkdown(ctx context.Context, db *sql.DB, ownerID, articleID uuid
 		return "", fmt.Errorf("failed to fetch article content: %w", err)
 	}
 
+	return HTMLToMarkdown(htmlContent.String)
+}
+
+// HTMLToMarkdown converts extracted article HTML to Markdown.
+func HTMLToMarkdown(htmlContent string) (string, error) {
 	converter := htmltomarkdown.NewConverter("", true, nil)
-	markdown, err := converter.ConvertString(htmlContent.String)
+	markdown, err := converter.ConvertString(htmlContent)
 	if err != nil {
 		return "", fmt.Errorf("failed to convert HTML to Markdown: %w", err)
 	}
-
 	return markdown, nil
 }
 
