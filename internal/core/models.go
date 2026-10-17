@@ -187,6 +187,9 @@ type RSSItem struct {
 	PublishedAt time.Time  `json:"published_at"`
 	CreatedAt   time.Time  `json:"created_at"`
 	ReadAt      *time.Time `json:"read_at,omitempty"`
+	// ContentPrunedAt is set once the retention job cleared Content and
+	// Description of this read item.
+	ContentPrunedAt *time.Time `json:"content_pruned_at,omitempty"`
 }
 
 // NOTE
