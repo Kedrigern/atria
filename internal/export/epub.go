@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"html"
+	"log"
 	"strings"
 
 	"atria/internal/articles"
@@ -67,7 +68,7 @@ func ExportEbookEPUB(ctx context.Context, db *sql.DB, ownerID uuid.UUID, items [
 		case core.TypeArticle:
 			content, err := articles.GetArticleHTML(ctx, db, ownerID, item.ID)
 			if err != nil {
-				fmt.Printf("⚠️ Skipping '%s': %v\n", item.Title, err)
+				log.Printf("WARNING: EPUB export: Skipping '%s': %v", item.Title, err)
 				continue
 			}
 			// Saved pages are third-party HTML; e-readers may run scripts.
@@ -75,12 +76,12 @@ func ExportEbookEPUB(ctx context.Context, db *sql.DB, ownerID uuid.UUID, items [
 		case core.TypeNote:
 			content, err := notes.GetNoteContent(ctx, db, ownerID, item.ID)
 			if err != nil {
-				fmt.Printf("⚠️ Skipping '%s': %v\n", item.Title, err)
+				log.Printf("WARNING: EPUB export: Skipping '%s': %v", item.Title, err)
 				continue
 			}
 			htmlStr, _, err := core.RenderMarkdown([]byte(content))
 			if err != nil {
-				fmt.Printf("⚠️ Skipping '%s': markdown render failed: %v\n", item.Title, err)
+				log.Printf("WARNING: EPUB export: Skipping '%s': markdown render failed: %v", item.Title, err)
 				continue
 			}
 			htmlBody = htmlStr
@@ -94,7 +95,7 @@ func ExportEbookEPUB(ctx context.Context, db *sql.DB, ownerID uuid.UUID, items [
 		}
 		sectionHTML := fmt.Sprintf("<h1>%s</h1>%s<div>%s</div>", html.EscapeString(item.Title), metadataHTML, htmlBody)
 		if _, err := e.AddSection(sectionHTML, item.Title, "", ""); err != nil {
-			fmt.Printf("⚠️ Failed to process section '%s': %v\n", item.Title, err)
+			log.Printf("WARNING: EPUB export: Failed to process section '%s': %v", item.Title, err)
 			continue
 		}
 		chapterCount++
