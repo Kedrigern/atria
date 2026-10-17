@@ -45,6 +45,15 @@ func HeadlineHTML(headline string) template.HTML {
 	return template.HTML(escaped)
 }
 
+// HeadlineText renders a ts_headline snippet as plain text for terminals:
+// markup is stripped and highlighted words are wrapped in *asterisks*.
+func HeadlineText(headline string) string {
+	text := html.UnescapeString(headlineTagRe.ReplaceAllString(headline, ""))
+	text = strings.ReplaceAll(text, headlineStartSel, "*")
+	text = strings.ReplaceAll(text, headlineStopSel, "*")
+	return strings.Join(strings.Fields(text), " ")
+}
+
 // notesSubquery is a sub-SELECT for notes.
 // $1 = search query string, $2 = ownerID.
 const notesSubquery = `
@@ -77,7 +86,7 @@ const articlesSubqueryBase = `
       e.id,
       'article'                                                                              AS type,
       e.title,
-      ts_headline('english', COALESCE(a.text_content, a.user_note, ''), q, '` + tsHeadlineOpts + `') AS headline,
+      ts_headline('english', COALESCE(NULLIF(a.text_content, ''), a.user_note, ''), q, '` + tsHeadlineOpts + `') AS headline,
       ts_rank(
           a.search_vector ||
           setweight(to_tsvector('english', COALESCE((SELECT string_agg(replace(t.name, '-', ' '), ' ') FROM tags t JOIN rel_entity_tags ret ON t.id = ret.tag_id WHERE ret.entity_id = e.id), '')), 'A') ||
@@ -102,7 +111,7 @@ const rssItemsSubqueryBase = `
         ri.id,
         'rss_item'                                                                           AS type,
         ri.title,
-        ts_headline('english', COALESCE(ri.content, ri.description, ''), q, '` + tsHeadlineOpts + `') AS headline,
+        ts_headline('english', COALESCE(NULLIF(ri.content, ''), ri.description, ''), q, '` + tsHeadlineOpts + `') AS headline,
         ts_rank(
             ri.search_vector ||
             setweight(to_tsvector('english', COALESCE((SELECT string_agg(replace(t.name, '-', ' '), ' ') FROM tags t JOIN rel_entity_tags ret ON t.id = ret.tag_id WHERE ret.entity_id = f_entity.id), '')), 'A'),

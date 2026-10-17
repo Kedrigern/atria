@@ -15,18 +15,30 @@ import (
 // attachment sizes are the stored file sizes. Items in the trash count too:
 // they still occupy space until purged.
 type Usage struct {
-	UserID      uuid.UUID
-	Email       string
-	DisplayName string
+	UserID      uuid.UUID `json:"user_id"`
+	Email       string    `json:"email"`
+	DisplayName string    `json:"display_name"`
 
-	AttachmentCount int64
-	AttachmentBytes int64
-	ArticleCount    int64
-	ArticleBytes    int64
-	NoteCount       int64
-	NoteBytes       int64
-	RSSItemCount    int64
-	RSSBytes        int64
+	AttachmentCount int64 `json:"attachment_count"`
+	AttachmentBytes int64 `json:"attachment_bytes"`
+	ArticleCount    int64 `json:"article_count"`
+	ArticleBytes    int64 `json:"article_bytes"`
+	NoteCount       int64 `json:"note_count"`
+	NoteBytes       int64 `json:"note_bytes"`
+	RSSItemCount    int64 `json:"rss_item_count"`
+	RSSBytes        int64 `json:"rss_bytes"`
+}
+
+// Add accumulates other into u (for instance-wide totals).
+func (u *Usage) Add(other Usage) {
+	u.AttachmentCount += other.AttachmentCount
+	u.AttachmentBytes += other.AttachmentBytes
+	u.ArticleCount += other.ArticleCount
+	u.ArticleBytes += other.ArticleBytes
+	u.NoteCount += other.NoteCount
+	u.NoteBytes += other.NoteBytes
+	u.RSSItemCount += other.RSSItemCount
+	u.RSSBytes += other.RSSBytes
 }
 
 // DatabaseBytes is the text stored in the database (everything but files).

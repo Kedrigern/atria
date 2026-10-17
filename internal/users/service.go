@@ -5,8 +5,10 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log"
 	"time"
 
+	"atria/internal/attachments"
 	"atria/internal/core"
 
 	"github.com/gofrs/uuid/v5"
@@ -97,17 +99,47 @@ func UpdateUserRole(ctx context.Context, db *sql.DB, identifier string, newRole 
 	return nil
 }
 
+// DeleteUser removes a user and, through ON DELETE CASCADE, all of their
+// data (entities, tags, attachments, sessions, game progress). Attachment
+// files that no other user references are removed from disk afterwards.
 func DeleteUser(ctx context.Context, db *sql.DB, email string) error {
-	result, err := db.ExecContext(ctx, `DELETE FROM users WHERE email = $1`, core.NormalizeEmail(email))
+	email = core.NormalizeEmail(email)
+
+	var diskPaths []string
+	rows, err := db.QueryContext(ctx, `
+		SELECT a.disk_path FROM attachments a JOIN users u ON u.id = a.owner_id WHERE u.email = $1`, email)
+	if err != nil {
+		return fmt.Errorf("failed to list user's attachments: %w", err)
+	}
+	for rows.Next() {
+		var p string
+		if err := rows.Scan(&p); err != nil {
+			rows.Close()
+			return fmt.Errorf("failed to list user's attachments: %w", err)
+		}
+		diskPaths = append(diskPaths, p)
+	}
+	if err := rows.Err(); err != nil {
+		rows.Close()
+		return fmt.Errorf("failed to list user's attachments: %w", err)
+	}
+	rows.Close()
+
+	result, err := db.ExecContext(ctx, `DELETE FROM users WHERE email = $1`, email)
 	if err != nil {
 		return fmt.Errorf("failed to delete user: %w", err)
 	}
-	rows, err := result.RowsAffected()
+	n, err := result.RowsAffected()
 	if err != nil {
 		return fmt.Errorf("failed to confirm user deletion: %w", err)
 	}
-	if rows == 0 {
+	if n == 0 {
 		return core.NewUserError("user not found: %s", email)
+	}
+
+	// The user is gone; failing to clean up files only leaves orphans behind.
+	if _, err := attachments.RemoveUnreferencedFiles(ctx, db, diskPaths); err != nil {
+		log.Printf("WARNING: user %s deleted, but removing their attachment files failed: %v", email, err)
 	}
 	return nil
 }
