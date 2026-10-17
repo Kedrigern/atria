@@ -367,7 +367,7 @@ func GetFeedDetail(ctx context.Context, db *sql.DB, ownerID, feedID uuid.UUID, i
 		       ri.title, ri.link,
 		       COALESCE(ri.description, '') AS description,
 		       COALESCE(ri.content, '') AS content,
-		       ri.published_at, ri.created_at, ri.read_at
+		       ri.published_at, ri.created_at, ri.read_at, ri.content_pruned_at
 		FROM rss_items ri
 		WHERE ri.feed_id = $1 %s
 		ORDER BY ri.published_at DESC
@@ -385,7 +385,7 @@ func GetFeedDetail(ctx context.Context, db *sql.DB, ownerID, feedID uuid.UUID, i
 		err := rows.Scan(
 			&item.ID, &item.FeedID, &item.SourceName,
 			&item.Title, &item.Link, &item.Description, &item.Content,
-			&item.PublishedAt, &item.CreatedAt, &item.ReadAt,
+			&item.PublishedAt, &item.CreatedAt, &item.ReadAt, &item.ContentPrunedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan feed item: %w", err)

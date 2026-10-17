@@ -31,16 +31,33 @@ func startRSSWorker(ctx context.Context, db *sql.DB, interval time.Duration) {
 				log.Printf("RSS Worker: fetch error: %v", err)
 			}
 		}
+		retention := rss.RetentionFromEnv()
+		prune := func() {
+			n, err := rss.PruneReadItems(ctx, db, retention)
+			if err != nil {
+				log.Printf("RSS Worker: retention error: %v", err)
+				return
+			}
+			if n > 0 {
+				log.Printf("RSS Worker: cleared content of %d read items older than %d days", n, int(retention.Hours()/24))
+			}
+		}
+
 		// Catch up on feeds that became due while the server was down instead
 		// of waiting a full interval.
 		fetch()
+		prune()
 
 		ticker := time.NewTicker(interval)
 		defer ticker.Stop()
+		retentionTicker := time.NewTicker(24 * time.Hour)
+		defer retentionTicker.Stop()
 		for {
 			select {
 			case <-ticker.C:
 				fetch()
+			case <-retentionTicker.C:
+				prune()
 			case <-ctx.Done():
 				log.Println("RSS Worker: stopped.")
 				return
