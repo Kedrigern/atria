@@ -160,14 +160,7 @@ func (s *Server) handleStorage(c *gin.Context) {
 		}
 		var total storage.Usage
 		for _, u := range all {
-			total.AttachmentCount += u.AttachmentCount
-			total.AttachmentBytes += u.AttachmentBytes
-			total.ArticleCount += u.ArticleCount
-			total.ArticleBytes += u.ArticleBytes
-			total.NoteCount += u.NoteCount
-			total.NoteBytes += u.NoteBytes
-			total.RSSItemCount += u.RSSItemCount
-			total.RSSBytes += u.RSSBytes
+			total.Add(u)
 		}
 		dbSize, err := storage.DatabaseSize(ctx, s.db)
 		if err != nil {

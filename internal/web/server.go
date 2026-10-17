@@ -427,25 +427,11 @@ func (s *Server) getTemplateFuncs() template.FuncMap {
 			}
 			return a / b
 		},
-		"formatBytes": formatBytes,
+		"formatBytes": core.FormatBytes,
 		"isImage": func(mimeType string) bool {
 			return strings.HasPrefix(mimeType, "image/")
 		},
 	}
-}
-
-// formatBytes renders a byte count for humans (1024-based units).
-func formatBytes(n int64) string {
-	const unit = 1024
-	if n < unit {
-		return fmt.Sprintf("%d B", n)
-	}
-	div, exp := int64(unit), 0
-	for m := n / unit; m >= unit; m /= unit {
-		div *= unit
-		exp++
-	}
-	return fmt.Sprintf("%.1f %ciB", float64(n)/float64(div), "KMGTPE"[exp])
 }
 
 func (s *Server) renderSnippet(c *gin.Context, snippetName string, data any) {

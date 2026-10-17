@@ -1,6 +1,9 @@
 package core
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
 // Column limits from the entities table.
 const (
@@ -26,4 +29,18 @@ func LimitRunes(s string, n int) string {
 // email addresses are matched case-insensitively.
 func NormalizeEmail(email string) string {
 	return strings.ToLower(strings.TrimSpace(email))
+}
+
+// FormatBytes renders a byte count for humans (1024-based units).
+func FormatBytes(n int64) string {
+	const unit = 1024
+	if n < unit {
+		return fmt.Sprintf("%d B", n)
+	}
+	div, exp := int64(unit), 0
+	for m := n / unit; m >= unit; m /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %ciB", float64(n)/float64(div), "KMGTPE"[exp])
 }

@@ -25,6 +25,25 @@ func RetentionFromEnv() time.Duration {
 	return DefaultRetention
 }
 
+// prunableCondition selects read items past retention ($1 = seconds) that
+// still have their content.
+const prunableCondition = `read_at IS NOT NULL
+	AND content_pruned_at IS NULL
+	AND read_at < NOW() - make_interval(secs => $1)`
+
+// CountPrunable reports how many items PruneReadItems would shrink and how
+// many bytes of stored content that would free.
+func CountPrunable(ctx context.Context, db *sql.DB, retention time.Duration) (items, bytes int64, err error) {
+	err = db.QueryRowContext(ctx, `
+		SELECT COUNT(*), COALESCE(SUM(COALESCE(pg_column_size(content), 0) + COALESCE(pg_column_size(description), 0)), 0)
+		FROM rss_items WHERE `+prunableCondition,
+		retention.Seconds()).Scan(&items, &bytes)
+	if err != nil {
+		return 0, 0, fmt.Errorf("count prunable RSS items: %w", err)
+	}
+	return items, bytes, nil
+}
+
 // PruneReadItems shrinks read items that were read longer than retention ago:
 // content and description (nearly all of the stored size) are cleared, while
 // title, link, GUID and read time stay. Keeping the row matters: deleting it
@@ -35,9 +54,7 @@ func PruneReadItems(ctx context.Context, db *sql.DB, retention time.Duration) (i
 	result, err := db.ExecContext(ctx, `
 		UPDATE rss_items
 		SET content = NULL, description = NULL, content_pruned_at = NOW()
-		WHERE read_at IS NOT NULL
-		  AND content_pruned_at IS NULL
-		  AND read_at < NOW() - make_interval(secs => $1)`,
+		WHERE `+prunableCondition,
 		retention.Seconds())
 	if err != nil {
 		return 0, fmt.Errorf("prune read RSS items: %w", err)

@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"html"
 	"io"
 	"strings"
 	"text/tabwriter"
@@ -36,7 +37,7 @@ func Render(w io.Writer, format string, headers []string, rows [][]string, rawDa
 		fmt.Fprintln(w, "  <thead>")
 		fmt.Fprintln(w, "    <tr>")
 		for _, h := range headers {
-			fmt.Fprintf(w, "      <th>%s</th>", h)
+			fmt.Fprintf(w, "      <th>%s</th>", html.EscapeString(h))
 		}
 		fmt.Fprintln(w, "\n    </tr>")
 		fmt.Fprintln(w, "  </thead>")
@@ -44,8 +45,7 @@ func Render(w io.Writer, format string, headers []string, rows [][]string, rawDa
 		for _, row := range rows {
 			fmt.Fprintln(w, "    <tr>")
 			for _, col := range row {
-				// Basic HTML escaping could be added here, but for simple CLI output this is sufficient
-				fmt.Fprintf(w, "      <td>%s</td>\n", col)
+				fmt.Fprintf(w, "      <td>%s</td>\n", html.EscapeString(col))
 			}
 			fmt.Fprintln(w, "    </tr>")
 		}

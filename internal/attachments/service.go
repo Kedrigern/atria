@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -278,4 +279,31 @@ func DeleteAttachment(ctx context.Context, db *sql.DB, ownerID, attachmentID uui
 	_ = os.Remove(absPath)
 
 	return nil
+}
+
+// RemoveUnreferencedFiles deletes the stored files for diskPaths that no
+// attachment row references any more (files are content-addressed and can be
+// shared by several users). It returns how many files were removed.
+func RemoveUnreferencedFiles(ctx context.Context, db *sql.DB, diskPaths []string) (int, error) {
+	storagePath := os.Getenv("STORAGE_PATH")
+	if storagePath == "" {
+		storagePath = "./data/attachments"
+	}
+
+	removed := 0
+	for _, diskPath := range diskPaths {
+		var referenced bool
+		if err := db.QueryRowContext(ctx, `SELECT EXISTS (SELECT 1 FROM attachments WHERE disk_path = $1)`, diskPath).Scan(&referenced); err != nil {
+			return removed, fmt.Errorf("check attachment references: %w", err)
+		}
+		if referenced {
+			continue
+		}
+		if err := os.Remove(filepath.Join(storagePath, diskPath)); err == nil {
+			removed++
+		} else if !errors.Is(err, os.ErrNotExist) {
+			return removed, fmt.Errorf("remove attachment file: %w", err)
+		}
+	}
+	return removed, nil
 }

@@ -38,6 +38,24 @@ var rootCmd = &cobra.Command{
 	SilenceErrors: true,
 }
 
+// openDatabase connects to DATABASE_URL for commands that work on the whole
+// instance and therefore need no user context.
+func openDatabase() (*sql.DB, error) {
+	dsn := os.Getenv("DATABASE_URL")
+	if dsn == "" {
+		return nil, fmt.Errorf("DATABASE_URL environment variable is not set")
+	}
+	db, err := database.InitDB(dsn)
+	if err != nil {
+		return nil, fmt.Errorf("database connection failed: %w", err)
+	}
+	return db, nil
+}
+
+// noUserContext overrides a parent's RequireUserContext for instance-wide
+// admin commands.
+func noUserContext(cmd *cobra.Command, args []string) error { return nil }
+
 // RequireUserContext is an opt-in PreRun function for commands needing DB and User.
 func RequireUserContext(cmd *cobra.Command, args []string) error {
 	db, err := database.InitDB(os.Getenv("DATABASE_URL"))

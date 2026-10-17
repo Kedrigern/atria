@@ -45,6 +45,18 @@ Use "atria [command] --help" for more information about a command.
 
 </details>
 
+## Administration
+
+The CLI talks to the database directly (`DATABASE_URL`), so these commands
+cover the whole instance:
+
+```console
+atria db usage                  # storage per user (largest first) + database size
+atria db usage -u alice@x.cz    # one user; -f json|csv for scripts
+atria user rm alice@x.cz        # shows what would be deleted; add --force to delete
+atria rss prune --dry-run       # what RSS retention would free; drop --dry-run to run it now
+```
+
 ## Dev and compilation
 
 Go package: `golang` (Fedora 43)
