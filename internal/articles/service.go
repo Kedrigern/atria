@@ -296,8 +296,6 @@ func CreateArticle(ctx context.Context, db *sql.DB, ownerID uuid.UUID, urlStr st
 	domain = strings.TrimPrefix(domain, "www.")
 
 	// 2. Fetch and parse the article
-	fmt.Printf("Fetching and parsing: %s\n", urlStr)
-
 	parsedArticle, title, err := fetchAndParseArticle(ctx, urlStr)
 	if err != nil {
 		return nil, err
