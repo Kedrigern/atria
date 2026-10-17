@@ -1,6 +1,6 @@
 # Tables & Views — Design
 
-> Status: **proposal** (supersedes the earlier JSONB-blob design of this file).
+> Status: **accepted** (supersedes the earlier JSONB-blob design of this file).
 > UI name: *Tables*. Internal entity type: `spreadsheet` (already allowed by the
 > `entities.type` check constraint).
 
@@ -186,17 +186,11 @@ A dedicated test suite tries each escape (file read, URL, `ATTACH`, `COPY`,
 `INSTALL`, `SET` after lock, multiple statements, huge cross joins) and must
 see every one fail.
 
-### 5.4 Open question: views inside tables, or standalone entities?
+### 5.4 Views are standalone entities (decided)
 
-* **Inside tables** (`spreadsheet_views.spreadsheet_id`): simplest; a view
-  inherits its table's visibility and is deleted with it. Awkward for joins —
-  which table "owns" a view over two tables?
-* **Standalone entities** (type `view`): own title, tags, visibility (e.g. a
-  public summary over private data), natural home for multi-table views,
-  embeddable by ID like notes.
-
-Because views can join several tables, **standalone entities are the better
-fit**; a view simply lists the tables it reads. Decision pending.
+A view is its own entity (type `view`): own title, tags, visibility (e.g. a
+public summary over private data) and embeddable by ID like notes. It lists the
+tables it reads; a view over two tables does not "belong" to either of them.
 
 ### 5.5 Dependency cost
 
@@ -225,10 +219,10 @@ replaced **on the server** by a plain HTML `<table>`:
 
 | Limit | Value | Why |
 |---|---|---|
-| Rows per table | 20,000 | Keeps view loading in memory cheap |
-| Columns per table | 100 | |
+| Rows per table | 5,000 | Tables are for a person to read; keeps view loading cheap |
+| Columns per table | 80 | |
 | Stored data per table | 10 MB | |
-| Cell text | 10,000 characters | |
+| Cell text | 6,000 characters | |
 | Tables joined in one view | 8 | |
 | View runtime | 5 s | DuckDB interrupt via context |
 | View result | 10,000 rows (UI pages it), 200 in embeds | |
@@ -299,10 +293,10 @@ atria view edit|rm <view>
 
 Steps 1–3 do not depend on the outcome of the prototype.
 
-## 12. Open questions
+## 12. Decisions
 
-1. Views as standalone entities (recommended, §5.4) or inside tables?
-2. Is the DuckDB cgo dependency acceptable (§5.5), pending the prototype?
-3. Are the limits in §7 right for your use?
-4. Should number columns default to exact decimals (`DECIMAL`) or floats
-   (`DOUBLE`) when the user does not set `decimals`?
+1. Views are standalone entities (§5.4).
+2. Limits lowered for personal reading tables (§7): 5,000 rows, 80 columns,
+   6,000 characters per cell.
+3. DuckDB (§5.5): decided after the prototype measurements.
+4. Number columns without `decimals`: open.
