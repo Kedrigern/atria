@@ -101,13 +101,17 @@
                 Object.assign(def, { editor: "list", editorParams: { values: ["", ...(column.options || [])], clearable: true } });
                 break;
             case "url":
-                Object.assign(def, { editor: "input", formatter: linkFormatter });
+                Object.assign(def, { editor: "input", formatter: linkFormatter, maxInitialWidth: 260, variableHeight: true, cssClass: "atria-wrap" });
                 break;
             default:
                 Object.assign(def, {
                     editor: "input", // Enter commits, like in a spreadsheet
                     formatter: (cell) => renderInlineMarkdown(cell.getValue()),
-                    widthGrow: 2,
+                    // Long text wraps into several lines instead of widening the
+                    // column; the user can still drag the column wider.
+                    maxInitialWidth: 360,
+                    variableHeight: true,
+                    cssClass: "atria-wrap",
                 });
         }
         return def;
@@ -136,7 +140,8 @@
 
         if (grid) {
             grid.setColumns(columns);
-            grid.replaceData(data.rows.map(toGridRow));
+            await grid.replaceData(data.rows.map(toGridRow));
+            updateRowCount();
         } else {
             grid = new Tabulator(root, {
                 data: data.rows.map(toGridRow),
@@ -147,9 +152,10 @@
                 placeholder: "No rows yet — add one with “+ Row”.",
             });
             grid.on("cellEdited", saveCell);
+            // The row count is only known once Tabulator has built the table.
+            grid.on("tableBuilt", updateRowCount);
             grid.on("dataLoaded", updateRowCount);
         }
-        updateRowCount();
         renderColumnsDialog();
     }
 
@@ -184,6 +190,7 @@
                 values: { [cell.getField()]: value },
             });
             row.update({ _version: result.version });
+            row.normalizeHeight(); // re-wrap after the text changed
             status("Saved");
         } catch (error) {
             if (error.status === 409) {
