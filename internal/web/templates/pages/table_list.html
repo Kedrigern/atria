@@ -1,20 +1,59 @@
 {{define "content"}}
-
 <div class="centered-view" data-mobile-title="ATRIA: Tables">
-    <h2 class="hide-mobile">Spreadsheets</h2>
+    {{template "flash_message" .}}
+    <div class="page-header-row mb-3">
+        <h2 class="hide-mobile">Tables</h2>
+    </div>
 
-    <div
-        style="text-align: center; padding: 50px 20px; color: var(--text-muted)"
-    >
-        <span
-            class="icon icon-table"
-            style="width: 48px; height: 48px; margin-bottom: 15px; opacity: 0.5"
-        ></span>
-        <h3 style="color: var(--text-heading)">Work in Progress</h3>
-        <p>
-            Tabulky (Spreadsheets) jsou naplánovány do budoucích verzí.<br />Zatím
-            se soustředíme na perfektní ekosystém pro čtení a poznámky!
-        </p>
+    {{if .Tables}}
+    <table class="data-list">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>SQL name</th>
+                <th class="num">Columns</th>
+                <th class="num">Rows</th>
+                <th>Updated</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Tables}}
+            <tr>
+                <td><a href="/tables/{{.ID}}"><strong>{{.Title}}</strong></a></td>
+                <td><code>{{.SQLName}}</code></td>
+                <td class="num">{{len .Columns}}</td>
+                <td class="num">{{.RowCount}}</td>
+                <td>{{formatDate .UpdatedAt}}</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+    {{else}}
+    <p class="page-empty-hint">No tables yet. Create an empty one or import a CSV file.</p>
+    {{end}}
+
+    <div class="table-create-forms mt-3">
+        <form method="post" action="/api/tables/create" class="meta-section">
+            <strong class="meta-section-title">New table</strong>
+            <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
+            <label>Title <input type="text" name="title" required maxlength="255" placeholder="Expenses 2026" /></label>
+            <label>SQL name <small class="text-muted">(optional, used in views)</small>
+                <input type="text" name="sql_name" pattern="[a-z_][a-z0-9_]*" maxlength="63" placeholder="expenses_2026" />
+            </label>
+            <button type="submit" class="btn-primary">Create</button>
+        </form>
+
+        <form method="post" action="/api/tables/import" enctype="multipart/form-data" class="meta-section">
+            <strong class="meta-section-title">Import CSV</strong>
+            <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
+            <label>File <input type="file" name="csv" accept=".csv,text/csv" required /></label>
+            <label>Title <small class="text-muted">(optional, defaults to the file name)</small>
+                <input type="text" name="title" maxlength="255" />
+            </label>
+            <button type="submit" class="outline">Import</button>
+            <small class="text-muted">The first line is the header. Comma, semicolon or tab; column types are detected.
+                Up to {{.MaxRows}} rows and {{.MaxCols}} columns.</small>
+        </form>
     </div>
 </div>
 {{end}}

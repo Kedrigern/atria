@@ -205,7 +205,9 @@ func (s *Server) SetupRouter() *gin.Engine {
 	// 1. BASIC PAGES
 	// ==========================================
 	auth.GET("/", s.handleHome)
-	auth.GET("/tables", s.makeHandler("table_list.html", nil))
+	auth.GET("/tables", s.handleTableList)
+	auth.GET("/tables/:id", s.handleTableDetail)
+	auth.GET("/tables/:id/export.csv", s.handleTableExportCSV)
 	auth.GET("/settings", s.makeHandler("settings.html", nil))
 	auth.GET("/settings/users", s.handleUserList)
 	auth.GET("/settings/rss", s.handleRSSFeedList)
@@ -323,6 +325,19 @@ func (s *Server) SetupRouter() *gin.Engine {
 			apiGames.POST("/guesses", s.handleCryptogramGuess)
 			apiGames.POST("/hint", s.handleCryptogramHint)
 			apiGames.POST("/reset", s.handleCryptogramReset)
+		}
+
+		// API: Tables (JSON for static/tables.js; forms for create/import/delete)
+		apiTables := api.Group("/tables")
+		{
+			apiTables.POST("/create", s.handleTableCreate)
+			apiTables.POST("/import", s.handleTableImport)
+			apiTables.GET("/:id", s.handleTableData)
+			apiTables.POST("/:id/delete", s.handleTableDelete)
+			apiTables.POST("/:id/rows", s.handleTableRowCreate)
+			apiTables.PATCH("/:id/rows/:row", s.handleTableRowUpdate)
+			apiTables.DELETE("/:id/rows/:row", s.handleTableRowDelete)
+			apiTables.PUT("/:id/columns", s.handleTableColumnsUpdate)
 		}
 
 		// API: E-books
