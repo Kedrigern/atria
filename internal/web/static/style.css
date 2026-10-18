@@ -158,6 +158,9 @@ body {
 
 main {
     flex-grow: 1;
+    /* Flex items default to min-width: auto, which lets wide content (e.g. a
+       table grid) stretch main past the viewport, where body clips it. */
+    min-width: 0;
     height: 100vh;
     display: flex;
     flex-direction: column;
@@ -174,6 +177,11 @@ main {
 }
 .centered-view.wide {
     max-width: 1100px;
+}
+
+/* Data-heavy pages (table editor) use the whole width of the main column. */
+.centered-view.full {
+    max-width: none;
 }
 
 button,
@@ -1075,3 +1083,22 @@ form.htmx-request button[type="submit"] {
 #table-editor .tabulator-row.tabulator-row-even { background-color: var(--background-alt); }
 #table-editor .tabulator-row .tabulator-cell { border-color: var(--border); }
 #table-editor .tabulator-row.tabulator-selectable:hover { background-color: var(--button-hover, var(--background-alt)); }
+
+/* Table editor: long text wraps; scrollbars always visible (Linux/macOS
+   browsers otherwise show auto-hiding overlay scrollbars). */
+#table-editor { max-width: 100%; }
+#table-editor .tabulator-cell.atria-wrap { white-space: pre-wrap; overflow-wrap: anywhere; }
+/* Firefox: standard properties (water.css sets a thin, low-contrast one on
+   the root, which is inherited). */
+#table-editor .tabulator-tableholder { scrollbar-width: auto; scrollbar-color: var(--text-muted) var(--background-alt); }
+/* Chromium ignores ::-webkit-scrollbar while scrollbar-width/color are not
+   "auto" — including values inherited from water.css — so reset them. */
+@supports selector(::-webkit-scrollbar) {
+    #table-editor .tabulator-tableholder { scrollbar-width: auto; scrollbar-color: auto; }
+}
+#table-editor .tabulator-tableholder::-webkit-scrollbar { width: 12px; height: 12px; }
+#table-editor .tabulator-tableholder::-webkit-scrollbar-track, #table-editor .tabulator-tableholder::-webkit-scrollbar-corner { background: var(--background-alt); }
+#table-editor .tabulator-tableholder::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 6px; border: 2px solid var(--background-alt); }
+@media (max-width: 600px) {
+    .table-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+}

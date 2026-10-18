@@ -1,8 +1,8 @@
 {{define "content"}}
 <link rel="stylesheet" href="/static/tabulator.min.css" />
-<div class="centered-view wide" data-mobile-title="ATRIA: {{.Table.Title}}">
+<div class="centered-view full" data-mobile-title="ATRIA: {{.Table.Title}}">
     {{template "flash_message" .}}
-    <div class="page-header-row mb-3">
+    <div class="page-header-row mb-3 table-header">
         <div>
             <h2 style="margin-bottom: 0">{{.Table.Title}}</h2>
             <small class="text-muted">SQL name <code>{{.Table.SQLName}}</code> · <span data-table-rowcount>{{.Table.RowCount}}</span> rows</small>
@@ -52,5 +52,5 @@
     </dialog>
 </div>
 <script src="/static/tabulator.min.js"></script>
-<script src="/static/tables.js?v=2"></script>
+<script src="/static/tables.js?v=3"></script>
 {{end}}
