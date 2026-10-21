@@ -3,6 +3,8 @@ package games
 import (
 	"context"
 	"errors"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -149,4 +151,18 @@ func TestImportKeepsUnchangedAndNeedsReplaceForChanges(t *testing.T) {
 	var progress int
 	require.NoError(t, db.QueryRow(`SELECT COUNT(*) FROM game_cryptogram_progress WHERE user_id = $1`, user.ID).Scan(&progress))
 	assert.Equal(t, 0, progress, "--replace removes the progress on the changed campaign")
+}
+
+// The campaign files in the repository must pass the same checks as an import.
+func TestShippedCampaignFilesAreValid(t *testing.T) {
+	paths, err := filepath.Glob("../../campaigns/*.json")
+	require.NoError(t, err)
+	require.NotEmpty(t, paths)
+	for _, path := range paths {
+		f, err := os.Open(path)
+		require.NoError(t, err)
+		_, err = ReadImportFile(f)
+		f.Close()
+		assert.NoError(t, err, path)
+	}
 }

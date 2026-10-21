@@ -1,0 +1,96 @@
+{
+  "book": {
+    "slug": "fifty-famous-stories-retold",
+    "title": "Fifty Famous Stories Retold",
+    "author": "James Baldwin",
+    "source_url": "https://www.gutenberg.org/ebooks/18442",
+    "license": "Public domain in the USA",
+    "topics": []
+  },
+  "campaigns": [
+    {
+      "slug": "king-alfred-and-the-cakes",
+      "title": "King Alfred and the Cakes",
+      "reviewed": true,
+      "topics": [
+        "history"
+      ],
+      "passages": [
+        "Many years ago there lived in England a wise and good king whose name was Alfred.",
+        "A fierce, rude people, called the Danes, had come from over the sea, and were fighting the English. There were so many of them, and they were so bold and strong, that for a long time they gained every battle.",
+        "At last, after a great battle, the English army was broken up and scattered. Every man had to save himself in the best way he could. King Alfred fled alone, in great haste, through the woods and swamps.",
+        "Late in the day the king came to the hut of a woodcutter. He was very tired and hungry, and he begged the woodcutter's wife to give him something to eat and a place to sleep in her hut.",
+        "The woman was baking some cakes upon the hearth, and she looked with pity upon the poor, ragged fellow who seemed so hungry. She had no thought that he was the king.",
+        "King Alfred was very willing to watch the cakes, but he had far greater things to think about. How was he going to get his army together again?",
+        "In a little while the woman came back. The cakes were smoking on the hearth. They were burned to a crisp.",
+        "But it was not many days until he had gathered his men together again, and had beaten the Danes in a great battle."
+      ]
+    },
+    {
+      "slug": "bruce-and-the-spider",
+      "title": "Bruce and the Spider",
+      "reviewed": true,
+      "topics": [
+        "history"
+      ],
+      "passages": [
+        "There was once a king of Scotland whose name was Robert Bruce.",
+        "He had need to be both brave and wise, for the times in which he lived were wild and rude. The King of England was at war with him, and had led a great army into Scotland to drive him out of the land.",
+        "As he lay thinking, he saw a spider over his head, making ready to weave her web. He watched her as she toiled slowly and with great care. Six times she tried to throw her frail thread from one beam to another, and six times it fell short.",
+        "Would she fail again? No! The thread was carried safely to the beam, and fastened there.",
+        "Soon there was an army of brave Scotchmen around him. Another battle was fought, and the King of England was glad to go back into his own country.",
+        "I have heard it said, that, after that day, no one by the name of Bruce would ever hurt a spider. The lesson which the little creature had taught the king was never forgotten."
+      ]
+    },
+    {
+      "slug": "androclus-and-the-lion",
+      "title": "Androclus and the Lion",
+      "reviewed": true,
+      "topics": [
+        "legends"
+      ],
+      "passages": [
+        "In Rome there was once a poor slave whose name was Androclus. His master was a cruel man, and so unkind to him that at last Androclus ran away.",
+        "He hid himself in a wild wood for many days; but there was no food to be found, and he grew so weak and sick that he thought he should die. So one day he crept into a cave and lay down, and soon he was fast asleep.",
+        "After a while a great noise woke him up. A lion had come into the cave, and was roaring loudly.",
+        "Androclus lifted the paw from the ground, and saw that it was a long, sharp thorn which hurt the lion so much. He took the end of the thorn in his fingers; then he gave a strong, quick pull, and out it came.",
+        "For a long time, the lion brought food to Androclus every day; and the two became such good friends, that Androclus found his new life a very happy one.",
+        "One day some soldiers who were passing through the wood found Androclus in the cave. They knew who he was, and so took him back to Rome.",
+        "It was the law at that time that every slave who ran away from his master should be made to fight a hungry lion.",
+        "Then the hungry lion rushed in. With a single bound he reached the poor slave. Androclus gave a great cry, not of fear, but of gladness.",
+        "And so Androclus was set free, and the lion was given to him for his own. And they lived together in Rome for many years."
+      ]
+    },
+    {
+      "slug": "the-sword-of-damocles",
+      "title": "The Sword of Damocles",
+      "reviewed": true,
+      "topics": [
+        "legends"
+      ],
+      "passages": [
+        "There was once a king whose name was Dionysius. He was so unjust and cruel that he won for himself the name of tyrant.",
+        "But he was very rich, and he lived in a fine palace where there were many beautiful and costly things, and he was waited upon by a host of servants who were always ready to do his bidding.",
+        "\"How happy you must be! You have here everything that any man could wish.\"",
+        "And so, the next day, Damocles was led into the palace, and all the servants were bidden to treat him as their master. He sat down at a table in the banquet hall, and rich foods were placed before him.",
+        "Then he chanced to raise his eyes toward the ceiling. What was it that was dangling above him, with its point almost touching his head? It was a sharp sword, and it was hung by only a single horse-hair.",
+        "\"Let me go,\" said Damocles. \"I now see that I was mistaken, and that the rich and powerful are not so happy as they seem. Let me go back to my old home in the poor little cottage among the mountains.\"",
+        "And so long as he lived, he never again wanted to be rich, or to change places, even for a moment, with the king."
+      ]
+    },
+    {
+      "slug": "the-blind-men-and-the-elephant",
+      "title": "The Blind Men and the Elephant",
+      "reviewed": true,
+      "topics": [
+        "fables"
+      ],
+      "passages": [
+        "There were once six blind men who stood by the roadside every day, and begged from the people who passed.",
+        "It so happened one morning that an elephant was driven down the road where they stood. When they were told that the great beast was before them, they asked the driver to let him stop so that they might see him.",
+        "Of course they could not see him with their eyes; but they thought that by touching him they could learn just what kind of animal he was.",
+        "Each believed that he knew just how the animal looked; and each called the others hard names because they did not agree with him. People who have eyes sometimes act as foolishly."
+      ]
+    }
+  ]
+}

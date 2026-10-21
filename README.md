@@ -88,6 +88,19 @@ To take screenshots of the main pages after a change of the interface, run the s
 uv run scripts/ui-screenshots.py
 ```
 
+Cryptogram campaigns are stories told in a series of cryptograms. The campaign files are in `campaigns/`. To import them into the database in `DATABASE_URL`, run this command:
+
+```console
+atria games import campaigns/fifty-famous-stories-retold.json
+```
+
+To make a draft of a new campaign file from a Project Gutenberg book, use the script below. It downloads the book once and marks each story as not reviewed. Read the draft and correct the passages before you set `"reviewed": true`. The format is in `docs/architecture/cryptogram-campaigns.md`.
+
+```console
+uv run scripts/cryptogram-campaign.py 18442 --list
+uv run scripts/cryptogram-campaign.py 18442 --story "Bruce and the Spider" --out draft.json
+```
+
 To build the binary:
 
 ```console
