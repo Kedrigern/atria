@@ -6,9 +6,6 @@ The name comes from the *atrium*, the central hall of a Roman house. Light came 
 
 Atria is online-first: you edit on the server. You can also read saved content offline.
 
-> [!WARNING]
-> Atria is in active development. Its features and its data format can change.
-
 ## Usage
 
 <details>
