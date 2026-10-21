@@ -1,25 +1,28 @@
 {{define "content"}}
 <div class="centered-view" data-mobile-title="ATRIA: E-books">
     {{template "flash_message" .}}
-    <div class="page-header-row mb-3">
-        <h2 class="hide-mobile">E-books</h2>
-        <div class="action-row">
-            <div class="view-switch" role="group" aria-label="E-book view">
+
+    <header class="page-header">
+        <h1 class="page-title">E-books</h1>
+        <div class="page-actions">
+            <div class="view-switch" role="group" aria-label="View">
                 <button type="button" class="outline btn-sm" data-ebook-view="list">List</button>
                 <button type="button" class="outline btn-sm" data-ebook-view="tiles">Tiles</button>
             </div>
             <a href="/ebooks/import" hx-get="/ebooks/import" hx-target="#main-content" hx-push-url="true" class="button-link outline btn-sm">Import EPUB</a>
-            <a href="/ebooks/new" hx-get="/ebooks/new" hx-target="#main-content" hx-push-url="true" class="button-link btn-primary btn-sm">+ Create e-book</a>
+            <a href="/ebooks/new" hx-get="/ebooks/new" hx-target="#main-content" hx-push-url="true" class="button-link btn-primary btn-sm">Create e-book</a>
         </div>
-    </div>
+    </header>
 
-    <form method="get" action="/ebooks" class="mb-3">
+    {{if .Authors}}
+    <form method="get" action="/ebooks" class="form-group filter-form">
         <label for="ebook-author-filter">Author</label>
-        <select id="ebook-author-filter" name="author" data-auto-submit>
+        <select id="ebook-author-filter" name="author" class="form-control" data-auto-submit>
             <option value="">All authors</option>
             {{range .Authors}}<option value="{{.}}" {{if eq . $.SelectedAuthor}}selected{{end}}>{{.}}</option>{{end}}
         </select>
     </form>
+    {{end}}
 
     <div class="ebook-library" data-ebook-library data-view="list">
         {{range .Ebooks}}
@@ -28,15 +31,29 @@
                 {{if .CoverDiskPath}}<img src="/data/attachments/{{.CoverDiskPath}}" alt="Cover of {{.Title}}" />{{else}}<div class="ebook-cover-placeholder"><strong>{{.Title}}</strong>{{if .Author}}<span>{{.Author}}</span>{{end}}</div>{{end}}
             </div>
             <div class="ebook-card-body">
-                <h4><a href="/ebooks/{{.ID}}" hx-get="/ebooks/{{.ID}}" hx-target="#main-content" hx-push-url="true">{{.Title}}</a>{{if .Description}} <button type="button" class="ebook-description-button" aria-label="Show description for {{.Title}}" data-open-dialog="ebook-description-{{.ID}}">i</button>{{end}}</h4>
-                <div class="text-muted">{{if .Author}}{{.Author}}{{else}}Unknown author{{end}}{{if .Language}} · {{.Language}}{{end}}</div>
-
+                <h2 class="list-item-title"><a href="/ebooks/{{.ID}}" hx-get="/ebooks/{{.ID}}" hx-target="#main-content" hx-push-url="true">{{.Title}}</a></h2>
+                <p class="list-item-meta">{{if .Author}}{{.Author}}{{else}}Unknown author{{end}}{{if .Language}} · {{.Language}}{{end}}</p>
             </div>
-            <a href="/ebooks/{{.ID}}/download" class="button-link outline btn-sm ebook-download" title="Download EPUB"><span class="icon-sm icon-download"></span></a>
-            {{if .Description}}<dialog id="ebook-description-{{.ID}}"><h3>{{.Title}}</h3><p>{{.Description}}</p><form method="dialog"><button class="outline">Close</button></form></dialog>{{end}}
+            <div class="list-item-actions ebook-actions">
+                {{if .Description}}
+                <button type="button" class="outline btn-sm" data-open-dialog="ebook-description-{{.ID}}" title="Description" aria-label="Description of {{.Title}}">
+                    <span class="icon-sm icon-info" aria-hidden="true"></span>
+                </button>
+                {{end}}
+                <a href="/ebooks/{{.ID}}/download" class="button-link outline btn-sm" title="Download EPUB" aria-label="Download EPUB">
+                    <span class="icon-sm icon-download" aria-hidden="true"></span>
+                </a>
+            </div>
+            {{if .Description}}
+            <dialog id="ebook-description-{{.ID}}" class="dialog">
+                <h2>{{.Title}}</h2>
+                <p>{{.Description}}</p>
+                <form method="dialog" class="dialog-actions"><button class="outline">Close</button></form>
+            </dialog>
+            {{end}}
         </article>
         {{else}}
-        <p class="page-empty-hint">No e-books yet. Create one from articles and notes.</p>
+        <p class="page-empty-hint">You have no e-books yet. Create one from your articles and notes, or import an EPUB file.</p>
         {{end}}
     </div>
 </div>
