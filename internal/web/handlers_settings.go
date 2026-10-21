@@ -17,7 +17,7 @@ func (s *Server) handleUserList(c *gin.Context) {
 
 	if user.Role != core.RoleAdmin {
 		s.setFlash(c, "error", "Access denied.")
-		c.Redirect(http.StatusSeeOther, "/settings")
+		c.Redirect(http.StatusSeeOther, "/settings/rss")
 		return
 	}
 
@@ -41,7 +41,7 @@ func (s *Server) handleUserCreate(c *gin.Context) {
 	}
 	if admin.Role != core.RoleAdmin {
 		s.setFlash(c, "error", "Access denied.")
-		c.Redirect(http.StatusSeeOther, "/settings")
+		c.Redirect(http.StatusSeeOther, "/settings/rss")
 		return
 	}
 
@@ -77,7 +77,7 @@ func (s *Server) handleUserRoleUpdate(c *gin.Context) {
 	}
 	if admin.Role != core.RoleAdmin {
 		s.setFlash(c, "error", "Access denied.")
-		c.Redirect(http.StatusSeeOther, "/settings")
+		c.Redirect(http.StatusSeeOther, "/settings/rss")
 		return
 	}
 
@@ -110,7 +110,7 @@ func (s *Server) handleUserDelete(c *gin.Context) {
 	}
 	if admin.Role != core.RoleAdmin {
 		s.setFlash(c, "error", "Access denied.")
-		c.Redirect(http.StatusSeeOther, "/settings")
+		c.Redirect(http.StatusSeeOther, "/settings/rss")
 		return
 	}
 

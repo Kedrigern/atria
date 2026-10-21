@@ -248,7 +248,7 @@ The work is done in small pull requests, in this order:
 1. Fix the two bugs from section 2. This does not depend on this design.
 2. Apply the e-ink rules 1 and 2 from section 8: remove the animations, and load highlight.js, MathJax, and Mermaid only where they are used. This makes all pages faster on e-ink readers at once.
 3. Add the tokens, the components, and the screenshot script. No page changes yet.
-4. Remove the outdated content: the "Proof of Concept" box, the General settings that do not work, and the proxy debug table.
+4. Remove the outdated content: the "Proof of Concept" box, the General settings that do not work, and the proxy debug table. Settings then opens on the RSS tab.
 5. Convert the pages area by area: notes, read-it-later and RSS, e-books, tables, games, search, settings and profile, login. Each pull request also translates the texts of its area into English (section 3).
 6. Add the Go test from section 11. It fails until the last area is converted, so it comes last.
 
