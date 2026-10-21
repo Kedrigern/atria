@@ -1,17 +1,18 @@
 {{define "content"}}
 <div class="centered-view" data-mobile-title="ATRIA: Tables">
     {{template "flash_message" .}}
-    <div class="page-header-row mb-3">
-        <h2 class="hide-mobile">Tables</h2>
-    </div>
+
+    <header class="page-header">
+        <h1 class="page-title">Tables</h1>
+    </header>
 
     {{if .Tables}}
     <table class="data-list">
         <thead>
             <tr>
                 <th>Title</th>
-                <th>SQL name</th>
-                <th class="num">Columns</th>
+                <th class="col-optional">SQL name</th>
+                <th class="num col-optional">Columns</th>
                 <th class="num">Rows</th>
                 <th>Updated</th>
             </tr>
@@ -20,8 +21,8 @@
             {{range .Tables}}
             <tr>
                 <td><a href="/tables/{{.ID}}"><strong>{{.Title}}</strong></a></td>
-                <td><code>{{.SQLName}}</code></td>
-                <td class="num">{{len .Columns}}</td>
+                <td class="col-optional"><code>{{.SQLName}}</code></td>
+                <td class="num col-optional">{{len .Columns}}</td>
                 <td class="num">{{.RowCount}}</td>
                 <td>{{formatDate .UpdatedAt}}</td>
             </tr>
@@ -29,30 +30,43 @@
         </tbody>
     </table>
     {{else}}
-    <p class="page-empty-hint">No tables yet. Create an empty one or import a CSV file.</p>
+    <p class="page-empty-hint">You have no tables yet. Create an empty table or import a CSV file.</p>
     {{end}}
 
     <div class="table-create-forms mt-3">
         <form method="post" action="/api/tables/create" class="meta-section">
-            <strong class="meta-section-title">New table</strong>
+            <h2 class="meta-section-title">New table</h2>
             <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
-            <label>Title <input type="text" name="title" required maxlength="255" placeholder="Expenses 2026" /></label>
-            <label>SQL name <small class="text-muted">(optional, used in views)</small>
-                <input type="text" name="sql_name" pattern="[a-z_][a-z0-9_]*" maxlength="63" placeholder="expenses_2026" />
-            </label>
-            <button type="submit" class="btn-primary">Create</button>
+            <div class="form-group">
+                <label for="new-table-title">Title</label>
+                <input id="new-table-title" type="text" name="title" class="form-control" required maxlength="255" placeholder="Expenses 2026" />
+            </div>
+            <div class="form-group">
+                <label for="new-table-sql-name">SQL name</label>
+                <input id="new-table-sql-name" type="text" name="sql_name" class="form-control" pattern="[a-z_][a-z0-9_]*" maxlength="63" placeholder="expenses_2026" />
+                <p class="form-help">Optional. Views use this name. Use a-z, 0-9 and _.</p>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn-primary">Create table</button>
+            </div>
         </form>
 
         <form method="post" action="/api/tables/import" enctype="multipart/form-data" class="meta-section">
-            <strong class="meta-section-title">Import CSV</strong>
+            <h2 class="meta-section-title">Import CSV</h2>
             <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
-            <label>File <input type="file" name="csv" accept=".csv,text/csv" required /></label>
-            <label>Title <small class="text-muted">(optional, defaults to the file name)</small>
-                <input type="text" name="title" maxlength="255" />
-            </label>
-            <button type="submit" class="outline">Import</button>
-            <small class="text-muted">The first line is the header. Comma, semicolon or tab; column types are detected.
-                Up to {{.MaxRows}} rows and {{.MaxCols}} columns.</small>
+            <div class="form-group">
+                <label for="import-table-file">CSV file</label>
+                <input id="import-table-file" type="file" name="csv" class="form-control" accept=".csv,text/csv" required />
+                <p class="form-help">The first line is the header. The separator can be a comma, a semicolon or a tab. Atria detects the column types. At most {{.MaxRows}} rows and {{.MaxCols}} columns.</p>
+            </div>
+            <div class="form-group">
+                <label for="import-table-title">Title</label>
+                <input id="import-table-title" type="text" name="title" class="form-control" maxlength="255" />
+                <p class="form-help">Optional. The default is the file name.</p>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="outline">Import CSV</button>
+            </div>
         </form>
     </div>
 </div>

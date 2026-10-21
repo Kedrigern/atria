@@ -16,7 +16,8 @@
 
     function status(message, isError = false) {
         if (!statusEl) return;
-        statusEl.textContent = message;
+        // The word "Error" marks an error, so it does not depend on color.
+        statusEl.textContent = isError ? `Error: ${message}` : message;
         statusEl.classList.toggle("table-status-error", isError);
     }
 
@@ -129,11 +130,17 @@
         const data = await request("GET", api);
         meta = data.table;
         const columns = meta.columns.map(columnDefinition);
-        columns.push({
+        // First column, so it does not stretch (fitDataStretch stretches the
+        // last one), and a trash icon, so it does not look like a "no" value.
+        columns.unshift({
             title: "",
-            formatter: "buttonCross",
-            width: 40,
+            formatter: () => '<span class="icon-sm icon-trash" aria-hidden="true"></span>',
+            tooltip: "Delete row permanently",
+            width: 44,
+            resizable: false,
             hozAlign: "center",
+            vertAlign: "middle",
+            cssClass: "table-delete-cell",
             headerSort: false,
             cellClick: (e, cell) => deleteRow(cell.getRow()),
         });
@@ -149,7 +156,7 @@
                 index: "_id",
                 layout: "fitDataStretch",
                 maxHeight: "70vh",
-                placeholder: "No rows yet — add one with “+ Row”.",
+                placeholder: "No rows yet. Use “Add row” to add one.",
             });
             grid.on("cellEdited", saveCell);
             // The row count is only known once Tabulator has built the table.
@@ -215,12 +222,12 @@
     }
 
     async function deleteRow(row) {
-        if (!window.confirm("Delete this row?")) return;
+        if (!window.confirm("Delete this row permanently?")) return;
         try {
             await request("DELETE", `${api}/rows/${row.getData()._id}`);
             row.delete();
             updateRowCount();
-            status("Row deleted");
+            status("Row deleted permanently");
         } catch (error) {
             status(error.message, true);
         }
