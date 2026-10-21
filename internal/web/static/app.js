@@ -152,6 +152,7 @@ document.addEventListener("click", function (evt) {
     } else if (el.hasAttribute("data-ebook-view")) {
         const library = document.querySelector("[data-ebook-library]");
         if (library) library.dataset.view = el.dataset.ebookView;
+        if (typeof markEbookView === "function") markEbookView(el.dataset.ebookView);
         try {
             localStorage.setItem("atria-ebook-view", el.dataset.ebookView);
         } catch (e) {

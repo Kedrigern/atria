@@ -1,39 +1,43 @@
 {{define "content"}}
-<div class="centered-view" data-mobile-title="ATRIA: E-book" style="max-width: 900px">
+<div class="centered-view" data-mobile-title="ATRIA: E-book">
     {{template "flash_message" .}}
-    <div class="page-header-row mb-3">
-        <div>
-            <h2 style="margin: 0">{{.Ebook.Title}}</h2>
-            <small class="text-muted">Generated {{formatDate .Ebook.GeneratedAt}}</small>
-        </div>
-        <div class="action-row">
-            <a href="/ebooks/{{.Ebook.ID}}/edit" class="button-link outline btn-sm">Edit metadata</a>
-            <a href="/ebooks/{{.Ebook.ID}}/download" class="button-link btn-primary btn-sm"><span class="icon-sm icon-download"></span> Download EPUB</a>
-            <form method="post" action="/api/ebooks/{{.Ebook.ID}}/delete" class="inline-action-form" data-confirm="Delete this e-book?">
-                <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
-                <button type="submit" class="outline btn-sm btn-danger" title="Delete e-book"><span class="icon-sm icon-trash"></span></button>
-            </form>
-        </div>
-    </div>
 
-    {{if .Ebook.CoverDiskPath}}<img src="/data/attachments/{{.Ebook.CoverDiskPath}}" alt="Cover of {{.Ebook.Title}}" style="width: 180px; max-height: 280px; object-fit: contain; margin-bottom: 1rem" />{{end}}
+    <header class="page-header">
+        <div>
+            <h1 class="page-title">{{.Ebook.Title}}</h1>
+            <p class="page-subtitle">Generated {{formatDate .Ebook.GeneratedAt}}</p>
+        </div>
+        <div class="page-actions">
+            <a href="/ebooks" hx-get="/ebooks" hx-target="#main-content" hx-push-url="true" class="button-link outline btn-sm">
+                <span class="icon-sm icon-chevron-left" aria-hidden="true"></span> E-books
+            </a>
+            <a href="/ebooks/{{.Ebook.ID}}/edit" class="button-link outline btn-sm">Edit</a>
+            <form method="post" action="/api/ebooks/{{.Ebook.ID}}/delete" class="inline-action-form" data-confirm="Move this e-book to the trash?">
+                <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
+                <button type="submit" class="outline btn-sm btn-danger" title="Move to trash" aria-label="Move to trash"><span class="icon-sm icon-trash" aria-hidden="true"></span></button>
+            </form>
+            <a href="/ebooks/{{.Ebook.ID}}/download" class="button-link btn-primary btn-sm"><span class="icon-sm icon-download" aria-hidden="true"></span> Download EPUB</a>
+        </div>
+    </header>
+
+    {{if .Ebook.CoverDiskPath}}<img src="/data/attachments/{{.Ebook.CoverDiskPath}}" alt="Cover of {{.Ebook.Title}}" class="ebook-detail-cover" />{{end}}
     {{if .Ebook.Description}}<p>{{.Ebook.Description}}</p>{{end}}
-    <dl>
+    <dl class="meta-dl">
         {{if .Ebook.Author}}<dt>Author</dt><dd>{{.Ebook.Author}}</dd>{{end}}
         {{if .Ebook.Language}}<dt>Language</dt><dd>{{.Ebook.Language}}</dd>{{end}}
         <dt>File</dt><dd>{{.Ebook.Filename}}</dd>
     </dl>
 
-    <h3>Source entities</h3>
-    <ul class="meta-list">
+    <h2 class="section-title">Chapters</h2>
+    <ol class="meta-list">
         {{range .Ebook.Sources}}
         <li class="meta-list-item">
             {{if eq .Type "note"}}<a href="/notes/{{.ID}}">{{.Title}}</a>{{else}}<a href="/read/{{.ID}}">{{.Title}}</a>{{end}}
-            <span class="tag">{{.Type}}</span>
+            <span class="badge">{{.Type}}</span>
         </li>
         {{else}}
-        <li class="text-muted">No active source entities remain.</li>
+        <li class="meta-empty">The notes and articles of this e-book no longer exist. The EPUB file still has them.</li>
         {{end}}
-    </ul>
+    </ol>
 </div>
 {{end}}

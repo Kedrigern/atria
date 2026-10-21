@@ -438,6 +438,10 @@ a.button-link.btn-primary:hover,
     -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='12' y1='5' x2='12' y2='19'/%3E%3Cline x1='5' y1='12' x2='19' y2='12'/%3E%3C/svg%3E");
     mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='12' y1='5' x2='12' y2='19'/%3E%3Cline x1='5' y1='12' x2='19' y2='12'/%3E%3C/svg%3E");
 }
+.icon-info {
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cline x1='12' y1='16' x2='12' y2='12'/%3E%3Cline x1='12' y1='8' x2='12.01' y2='8'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cline x1='12' y1='16' x2='12' y2='12'/%3E%3Cline x1='12' y1='8' x2='12.01' y2='8'/%3E%3C/svg%3E");
+}
 .icon-refresh {
     -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='23 4 23 10 17 10'/%3E%3Cpolyline points='1 20 1 14 7 14'/%3E%3Cpath d='M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15'/%3E%3C/svg%3E");
     mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='23 4 23 10 17 10'/%3E%3Cpolyline points='1 20 1 14 7 14'/%3E%3Cpath d='M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15'/%3E%3C/svg%3E");
@@ -1035,14 +1039,12 @@ html[data-theme="dark"] a.dashboard-card:hover {
 }
 .ebook-cover { display: none; }
 .ebook-card-body { flex: 1; min-width: 0; }
-.ebook-card h4 { margin: 0 0 4px; }
-.ebook-description-button { width: 16px; height: 16px; padding: 0; border: 1px solid var(--border); border-radius: 50%; background: transparent; color: inherit; cursor: pointer; font-size: 0.65rem; line-height: 1; vertical-align: middle; }
 .ebook-library[data-view="tiles"] { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
 .ebook-library[data-view="tiles"] .ebook-card { display: block; }
 .ebook-library[data-view="tiles"] .ebook-cover { display: block; height: 260px; margin-bottom: 10px; }
 .ebook-library[data-view="tiles"] .ebook-cover img, .ebook-cover-placeholder { width: 100%; height: 100%; object-fit: contain; }
 .ebook-cover-placeholder { display: flex; flex-direction: column; justify-content: center; gap: 8px; padding: 14px; box-sizing: border-box; text-align: center; background: var(--background-alt); }
-.ebook-library[data-view="tiles"] .ebook-download { margin-top: 10px; }
+.ebook-library[data-view="tiles"] .ebook-actions { margin-top: var(--space-3); }
 .view-switch { display: flex; gap: 4px; }
 
 .meta-list {
@@ -1620,4 +1622,36 @@ details.toc a:focus {
     color: var(--text-muted);
     font-size: var(--text-xs);
     letter-spacing: 1px;
+}
+
+/* E-books */
+.filter-form {
+    max-width: 320px;
+}
+.view-switch .btn-sm[aria-pressed="true"] {
+    border-color: var(--text-main);
+    font-weight: bold;
+    text-decoration: underline;
+}
+.ebook-actions .btn-sm,
+.view-switch .btn-sm {
+    min-height: 40px;
+    min-width: 40px;
+    justify-content: center;
+}
+.ebook-detail-cover {
+    width: 180px;
+    max-height: 280px;
+    object-fit: contain;
+    margin-bottom: var(--space-4);
+}
+.meta-dl dt {
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+}
+.meta-dl dd {
+    margin: 0 0 var(--space-3);
+}
+.section-title {
+    font-size: var(--text-lg);
 }
