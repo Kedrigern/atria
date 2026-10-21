@@ -426,6 +426,18 @@ a.button-link.btn-primary:hover,
     -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='3 6 5 6 21 6'/%3E%3Cpath d='M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6'/%3E%3Cpath d='M10 11v6'/%3E%3Cpath d='M14 11v6'/%3E%3Cpath d='M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2'/%3E%3C/svg%3E");
     mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='3 6 5 6 21 6'/%3E%3Cpath d='M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6'/%3E%3Cpath d='M10 11v6'/%3E%3Cpath d='M14 11v6'/%3E%3Cpath d='M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2'/%3E%3C/svg%3E");
 }
+.icon-link {
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71'/%3E%3Cpath d='M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71'/%3E%3Cpath d='M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71'/%3E%3C/svg%3E");
+}
+.icon-arrow-left {
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='19' y1='12' x2='5' y2='12'/%3E%3Cpolyline points='12 19 5 12 12 5'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='19' y1='12' x2='5' y2='12'/%3E%3Cpolyline points='12 19 5 12 12 5'/%3E%3C/svg%3E");
+}
+.icon-plus {
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='12' y1='5' x2='12' y2='19'/%3E%3Cline x1='5' y1='12' x2='19' y2='12'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='12' y1='5' x2='12' y2='19'/%3E%3Cline x1='5' y1='12' x2='19' y2='12'/%3E%3C/svg%3E");
+}
 .icon-refresh {
     -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='23 4 23 10 17 10'/%3E%3Cpolyline points='1 20 1 14 7 14'/%3E%3Cpath d='M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15'/%3E%3C/svg%3E");
     mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='23 4 23 10 17 10'/%3E%3Cpolyline points='1 20 1 14 7 14'/%3E%3Cpath d='M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15'/%3E%3C/svg%3E");
@@ -516,10 +528,10 @@ a.button-link.btn-primary:hover,
     gap: 4px;
 }
 .note-tree-item-metadata {
-    margin: 4px 0 0 28px;
+    margin: var(--space-1) 0 0 28px;
     color: var(--text-muted);
-    font-size: 0.85rem;
-    gap: 8px;
+    font-size: var(--text-sm);
+    gap: var(--space-2);
 }
 .note-list-tags .tag {
     margin-right: 0;
@@ -1226,4 +1238,172 @@ dialog.dialog > h2 {
     justify-content: flex-end;
     gap: var(--space-2);
     margin-top: var(--space-5);
+}
+
+/* Forms: the buttons at the end, the primary button last. */
+.form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    justify-content: flex-end;
+    margin-top: var(--space-4);
+}
+.markdown-editor {
+    min-height: 300px;
+    font-family: monospace;
+    font-size: var(--text-base);
+    line-height: 1.5;
+}
+.markdown-editor-tall {
+    min-height: 400px;
+}
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+/* Reading pages (note, article). --content-scale comes from the font size
+   setting of the user. */
+.reading-title {
+    margin: 0 0 var(--space-2);
+    color: var(--text-bright);
+    font-size: calc(2rem * var(--content-scale, 1));
+}
+.reading-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0 0 var(--space-5);
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+}
+.reading-body {
+    font-size: calc(1.1rem * var(--content-scale, 1));
+    line-height: 1.7;
+    color: var(--text-main);
+}
+.reading-body > h1:first-child {
+    margin-top: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+    font-size: calc(1.4rem * var(--content-scale, 1));
+    color: var(--text-muted);
+}
+
+/* Note tree */
+.note-tree-list {
+    list-style: none;
+    margin: 0 0 var(--space-3);
+    padding-left: var(--space-5);
+}
+details.note-tree-folder {
+    margin: var(--space-1) 0 var(--space-1) var(--space-2);
+    padding: 0 0 0 var(--space-3);
+    border: none;
+    border-left: 1px dashed var(--border);
+    border-radius: 0;
+    background: transparent;
+}
+.note-tree-folder-summary .icon-folder {
+    margin-right: var(--space-1);
+}
+
+/* Side panel sections (docs/architecture/ui.md, 6.4) */
+h2.meta-section-title {
+    margin-top: 0;
+}
+.meta-section-title label {
+    margin: 0;
+    font: inherit;
+    color: inherit;
+}
+.meta-empty {
+    margin: 0 0 var(--space-2);
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+}
+.meta-form {
+    display: flex;
+    gap: var(--space-2);
+    margin: var(--space-2) 0 0;
+}
+.meta-form .form-control {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+}
+.meta-list-label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 0;
+}
+.meta-list-link {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.meta-list-size {
+    flex-shrink: 0;
+    color: var(--text-muted);
+}
+.meta-section select.form-control {
+    width: 100%;
+    margin: 0;
+}
+button.entity-short-id {
+    margin: 0;
+    color: var(--links);
+    background: transparent;
+}
+
+/* Tap targets of at least 40 px for touch and stylus (docs/architecture/ui.md, 8.4). */
+.toolbar .btn-sm,
+.page-actions .btn-sm,
+.meta-section .btn-sm,
+.meta-form .form-control,
+.meta-section select.form-control,
+.toolbar .entity-short-id {
+    min-height: 40px;
+    min-width: 40px;
+    justify-content: center;
+}
+
+/* Table of contents of a note (built by plugins.js) */
+details.toc {
+    margin-bottom: var(--space-5);
+    padding: var(--space-2) var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--background-alt);
+}
+details.toc > summary {
+    margin: 0;
+    font-weight: bold;
+    color: var(--text-bright);
+}
+details.toc ul {
+    list-style: none;
+    margin: var(--space-3) 0 var(--space-1);
+    padding-left: var(--space-5);
+}
+details.toc li {
+    margin-bottom: var(--space-2);
+}
+details.toc li.toc-sub {
+    margin-left: var(--space-5);
+    font-size: var(--text-sm);
+}
+details.toc a {
+    color: var(--text-main);
+    text-decoration: none;
+}
+details.toc a:hover,
+details.toc a:focus {
+    color: var(--links);
+    text-decoration: underline;
 }

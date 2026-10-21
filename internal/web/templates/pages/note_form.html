@@ -1,44 +1,29 @@
 {{define "content"}}
-<div class="centered-view">
-    <h1 class="mb-3">Nová poznámka</h1>
+<div class="centered-view" data-mobile-title="ATRIA: Notes">
+    <header class="page-header">
+        <h1 class="page-title">New note</h1>
+    </header>
 
     <form hx-post="/api/notes/create" hx-target="#main-content">
         <div class="form-group">
-            <label>Název</label>
-            <input type="text" name="title" class="form-control" />
+            <label for="note-title">Title</label>
+            <input id="note-title" type="text" name="title" class="form-control" required />
         </div>
 
         <div class="form-group">
-            <label>Cesta (např. /projekty/atria)</label>
-            <input
-                type="text"
-                name="path"
-                value="/"
-                placeholder="/"
-                class="form-control"
-            />
+            <label for="note-path">Folder</label>
+            <input id="note-path" type="text" name="path" value="/" class="form-control" />
+            <p class="form-help">For example /projects/atria. Use / for the top level.</p>
         </div>
 
-        <div class="form-group mb-3">
-            <label>Obsah (Markdown)</label>
-            <textarea
-                name="content"
-                class="form-control"
-                style="height: 300px; font-family: monospace"
-            ></textarea>
+        <div class="form-group">
+            <label for="note-content">Content (Markdown)</label>
+            <textarea id="note-content" name="content" class="form-control markdown-editor"></textarea>
         </div>
 
-        <div class="flex-row">
-            <button type="submit">Vytvořit poznámku</button>
-            <button
-                type="button"
-                hx-get="/notes"
-                hx-target="#main-content"
-                hx-push-url="true"
-                class="outline"
-            >
-                Zrušit
-            </button>
+        <div class="form-actions">
+            <a href="/notes" hx-get="/notes" hx-target="#main-content" hx-push-url="true" class="button-link outline">Cancel</a>
+            <button type="submit" class="btn-primary">Create note</button>
         </div>
     </form>
 </div>

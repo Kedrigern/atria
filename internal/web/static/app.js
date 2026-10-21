@@ -81,13 +81,13 @@ document.body.addEventListener(
     "htmx:responseError",
     function (evt) {
         const errorMsg =
-            evt.detail.xhr.responseText || "Neznámá chyba serveru";
+            evt.detail.xhr.responseText || "Unknown server error";
 
-        alert("❌ Oops, něco se pokazilo:\n\n" + errorMsg);
+        alert("Something went wrong:\n\n" + errorMsg);
 
         const el = evt.detail.elt;
         if (el.tagName === "BUTTON") {
-            el.innerText = "Error (Zkusit znovu)";
+            el.innerText = "Error (try again)";
         }
     },
 );
@@ -105,8 +105,8 @@ document.body.addEventListener("click", function (evt) {
 function setNoteEditing(editing) {
     const detail = document.getElementById("note-detail");
     if (detail) detail.classList.toggle("is-editing", editing);
-    document.getElementById("note-view").style.display = editing ? "none" : "block";
-    document.getElementById("note-edit").style.display = editing ? "block" : "none";
+    document.getElementById("note-view").hidden = editing;
+    document.getElementById("note-edit").hidden = !editing;
 
     if (editing) {
         const textarea = document.querySelector("#note-edit textarea");

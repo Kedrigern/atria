@@ -23,7 +23,7 @@ func (s *Server) handleAttachments(c *gin.Context) {
 
 	list, err := attachments.ListAttachments(c.Request.Context(), s.db, user.ID)
 	if err != nil {
-		s.respondError(c, http.StatusInternalServerError, "Chyba při načítání příloh", err)
+		s.respondError(c, http.StatusInternalServerError, "Could not load the attachments", err)
 		return
 	}
 
@@ -141,10 +141,10 @@ func (s *Server) handleProtectedAttachment(c *gin.Context) {
 	var mimeType, filename string
 	err := s.db.QueryRowContext(c.Request.Context(), query, args...).Scan(&mimeType, &filename)
 	if err == sql.ErrNoRows {
-		c.String(http.StatusNotFound, "Příloha nebyla nalezena")
+		c.String(http.StatusNotFound, "Attachment not found")
 		return
 	} else if err != nil {
-		c.String(http.StatusInternalServerError, "Chyba databáze při ověřování přílohy")
+		c.String(http.StatusInternalServerError, "Database error while reading the attachment")
 		return
 	}
 
@@ -155,7 +155,7 @@ func (s *Server) handleProtectedAttachment(c *gin.Context) {
 	absPath := filepath.Join(storagePath, relDiskPath)
 
 	if _, err := os.Stat(absPath); os.IsNotExist(err) {
-		c.String(http.StatusNotFound, "Soubor chybí na úložném disku serveru")
+		c.String(http.StatusNotFound, "The file is missing from the server disk")
 		return
 	}
 
@@ -219,9 +219,9 @@ func (s *Server) handleAttachmentDelete(c *gin.Context) {
 
 	err = attachments.DeleteAttachment(c.Request.Context(), s.db, user.ID, attID)
 	if err != nil {
-		s.flashError(c, "Nepodařilo se smazat", err)
+		s.flashError(c, "Could not delete the attachment", err)
 	} else {
-		s.setFlash(c, "success", "Příloha byla trvale smazána z disku.")
+		s.setFlash(c, "success", "The attachment is deleted permanently.")
 	}
 
 	if c.GetHeader("HX-Request") == "true" {

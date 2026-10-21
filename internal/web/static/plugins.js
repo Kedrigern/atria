@@ -92,9 +92,8 @@ function initPlugins() {
         render().catch((error) => console.warn(error));
     }
 
-    // 4. Dynamické vygenerování Obsahu (TOC) pro poznámky
+    // Table of contents for notes: built from the h2 and h3 headings.
     const noteView = document.getElementById("note-view");
-    // Ujistíme se, že jsme na detailu poznámky a že TOC ještě neexistuje
     if (
         noteView &&
         !document.getElementById("toc-container-mobile")
@@ -103,85 +102,48 @@ function initPlugins() {
 
         if (headings.length > 0) {
             const details = document.createElement("details");
-            details.id = "toc-container";
-            // Nastavíme podobný design jako mají detaily v RSS triage
-            details.style.background = "var(--background-alt)";
-            details.style.padding = "10px 15px";
-            details.style.marginBottom = "25px";
-            details.style.borderRadius = "6px";
-            details.style.border = "1px solid var(--border)";
+            details.className = "toc";
 
             const summary = document.createElement("summary");
-            summary.textContent = "Obsah";
-            summary.style.fontWeight = "bold";
-            summary.style.color = "var(--text-heading)";
-            summary.style.margin = "0";
+            summary.textContent = "Contents";
             details.appendChild(summary);
 
             const ul = document.createElement("ul");
-            ul.style.marginTop = "15px";
-            ul.style.marginBottom = "5px";
-            ul.style.paddingLeft = "20px";
-            ul.style.listStyleType = "none"; // Čistší vzhled bez teček
-
             headings.forEach((h) => {
                 const li = document.createElement("li");
-                li.style.marginBottom = "8px";
-
-                // H3 lehce odsadíme a zmenšíme, aby vznikla vizuální hierarchie
-                if (h.tagName === "H3") {
-                    li.style.marginLeft = "20px";
-                    li.style.fontSize = "0.95em";
-                }
-
+                if (h.tagName === "H3") li.className = "toc-sub";
                 const a = document.createElement("a");
                 a.href = "#" + h.id;
                 a.textContent = h.innerText;
-                a.style.color = "var(--text-main)";
-                a.style.textDecoration = "none";
-
-                // Hover efekt přes JS, ať neplevelíme CSS soubor
-                a.onmouseover = () => {
-                    a.style.textDecoration = "underline";
-                    a.style.color = "var(--links)";
-                };
-                a.onmouseout = () => {
-                    a.style.textDecoration = "none";
-                    a.style.color = "var(--text-main)";
-                };
-
                 li.appendChild(a);
                 ul.appendChild(li);
             });
-
             details.appendChild(ul);
 
             details.removeAttribute("id");
             const desktopTOC = details.cloneNode(true);
             desktopTOC.id = "toc-container-desktop";
             desktopTOC.classList.add("toc-desktop");
-            desktopTOC.open = true; // Na desktopu rovnou rozbaleno
+            desktopTOC.open = true;
 
             const mobileTOC = details.cloneNode(true);
             mobileTOC.id = "toc-container-mobile";
             mobileTOC.classList.add("toc-mobile");
 
-            // 1. Vložíme desktopovou verzi do sidebaru (pokud cíl existuje)
+            // Desktop: in the side panel. Phone: above the note.
             const sidebarTarget =
                 document.getElementById("toc-sidebar-target");
             if (sidebarTarget) {
                 sidebarTarget.appendChild(desktopTOC);
             }
 
-            // 2. Vložíme mobilní verzi těsně nad obsah poznámky
             noteView.parentNode.insertBefore(mobileTOC, noteView);
         }
     }
 }
 
-// Spustíme okamžitě pro první načtení stránky přes tvrdé URL
-// (modul garantuje, že v tento moment je už DOM stránky hotový)
+// Run now for the first page load. A module runs after the DOM is ready.
 initPlugins();
 
-// A navěsíme posluchače na HTMX pro všechna další "měkká" načtení (prokliky v menu)
+// Run again after each htmx page swap.
 document.body.addEventListener("htmx:afterSettle", initPlugins);

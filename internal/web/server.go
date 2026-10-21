@@ -432,10 +432,14 @@ func (s *Server) getTemplateFuncs() template.FuncMap {
 			if pages < 0.1 {
 				return ""
 			}
+			// Decimal comma, as everywhere a number is shown to a person.
 			if pages < 1.0 {
-				return fmt.Sprintf("%.1f NS", pages)
+				return strings.Replace(fmt.Sprintf("%.1f pages", pages), ".", ",", 1)
 			}
-			return fmt.Sprintf("%.0f NS", pages)
+			if pages < 1.5 {
+				return "1 page"
+			}
+			return fmt.Sprintf("%.0f pages", pages)
 		},
 		"divide": func(a, b int) int {
 			if b == 0 {
