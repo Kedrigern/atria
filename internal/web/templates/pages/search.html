@@ -17,6 +17,7 @@
             autofocus
             hx-get="/search"
             hx-target="#search-results"
+            hx-push-url="true"
             hx-trigger="input delay:300ms, search"
             hx-include="#search-filter,#search-archived"
         />
@@ -27,6 +28,7 @@
             style="flex: 0 0 auto;"
             hx-get="/search"
             hx-target="#search-results"
+            hx-push-url="true"
             hx-trigger="change"
             hx-include="#search-input,#search-archived"
         >
@@ -40,6 +42,7 @@
                 {{if .IncludeArchived}}checked{{end}}
                 hx-get="/search"
                 hx-target="#search-results"
+            hx-push-url="true"
                 hx-trigger="change"
                 hx-include="#search-input,#search-filter"
             />
@@ -75,8 +78,6 @@
     </section>
     {{end}}
 
-    <div id="search-results">
-        <p style="color: var(--text-muted)">Enter a search term above to get started.</p>
-    </div>
+    <div id="search-results">{{template "search_results" .}}</div>
 </div>
 {{end}}

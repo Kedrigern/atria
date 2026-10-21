@@ -52,7 +52,7 @@ func UpdateFetchStatus(ctx context.Context, db *sql.DB, id uuid.UUID, status int
 			UPDATE rss_feeds
 			SET last_fetch_at = NOW(),
 			    last_fetch_status = $1,
-			    last_fetch_error = '',
+			    last_fetch_error = NULL,
 			    consecutive_failures = 0,
 			    next_fetch_at = NOW() + make_interval(secs => $2)
 			WHERE id = $3`,
@@ -120,7 +120,7 @@ func CreateFeed(ctx context.Context, db *sql.DB, ownerID uuid.UUID, title, feedU
 // ListFeeds retrieves all RSS subscriptions for a user, including their titles.
 func ListFeeds(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]core.FeedSummary, error) {
 	query := `
-		SELECT id, title, feed_url, site_url, last_fetch_at, last_fetch_status, last_fetch_error
+		SELECT id, title, feed_url, site_url, last_fetch_at, last_fetch_status, NULLIF(last_fetch_error, '')
 		FROM rss_feeds_full_view
 		WHERE owner_id = $1
 		ORDER BY created_at DESC
@@ -341,7 +341,7 @@ func GetFeedDetail(ctx context.Context, db *sql.DB, ownerID, feedID uuid.UUID, i
 	var fd FeedDetail
 
 	queryFeed := `
-		SELECT id, title, feed_url, site_url, last_fetch_at, last_fetch_status, last_fetch_error
+		SELECT id, title, feed_url, site_url, last_fetch_at, last_fetch_status, NULLIF(last_fetch_error, '')
 		FROM rss_feeds_full_view
 		WHERE id = $1 AND owner_id = $2
 	`
