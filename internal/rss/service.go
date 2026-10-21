@@ -191,7 +191,7 @@ func SaveItemAsArticle(ctx context.Context, db *sql.DB, ownerID, itemID uuid.UUI
 		return nil, err
 	}
 
-	autoNote := fmt.Sprintf("Uloženo z RSS: %s", feedTitle)
+	autoNote := fmt.Sprintf("Saved from RSS: %s", feedTitle)
 
 	// 2. Create the article using the articles package
 	// This performs the readability extraction and saves it to the DB.

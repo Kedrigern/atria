@@ -106,7 +106,7 @@ func FetchFeed(ctx context.Context, db *sql.DB, feedID uuid.UUID) error {
 		return err
 	}
 
-	log.Printf("RSS Worker: Vynucené stažení zdroje %s", f.FeedURL)
+	log.Printf("RSS worker: forced fetch of feed %s", f.FeedURL)
 	return fetchAndStoreFeed(ctx, db, netutil.SafeHTTPClient(), f, 40*time.Second)
 }
 

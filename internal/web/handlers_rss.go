@@ -378,7 +378,7 @@ func (s *Server) handleRSSFeedFetch(c *gin.Context) {
 		return
 	}
 
-	s.setFlash(c, "success", "Zdroj úspěšně synchronizován.")
+	s.setFlash(c, "success", "Feed fetched.")
 	c.Redirect(http.StatusSeeOther, "/rss/"+feedID.String())
 }
 
@@ -390,12 +390,12 @@ func (s *Server) handleRSSFeedDelete(c *gin.Context) {
 
 	id, err := core.ParseUUID(c.Param("id"))
 	if err != nil {
-		s.renderError(c, http.StatusBadRequest, "Neplatné ID")
+		s.renderError(c, http.StatusBadRequest, "Invalid ID")
 		return
 	}
 
 	if err := core.SoftDeleteEntity(c.Request.Context(), s.db, user.ID, id); err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Nepodařilo se smazat feed")
+		s.renderError(c, http.StatusInternalServerError, "Could not move the feed to the trash")
 		return
 	}
 
@@ -405,6 +405,6 @@ func (s *Server) handleRSSFeedDelete(c *gin.Context) {
 		return
 	}
 
-	s.setFlash(c, "success", "Feed byl přesunut do koše.")
+	s.setFlash(c, "success", "Feed moved to the trash.")
 	c.Redirect(http.StatusSeeOther, "/settings/rss")
 }

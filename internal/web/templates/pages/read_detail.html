@@ -1,109 +1,49 @@
 {{define "content"}}
-<div
-    class="centered-view"
-    style="max-width: 1100px"
-    data-mobile-title="ATRIA: Reading"
->
-    {{template "flash_message" .}} {{/* ── Two-column layout ── */}}
+<div class="centered-view wide" style="--content-scale: {{.ContentFontScale}}" data-mobile-title="ATRIA: Reading">
+    {{template "flash_message" .}}
+
     <div class="article-layout">
-        {{/* ── Left: article content ── */}}
         <div>
-            {{/* ── Top toolbar ── */}}
             <div class="toolbar-top">{{template "toolbar" .}}</div>
-            <h1
-                style="
-                    margin-top: 0;
-                    color: var(--text-heading);
-                    font-size: calc(2rem * {{.ContentFontScale}});
-                "
-            >
-                {{.Article.Title}}
-            </h1>
-            <p class="text-muted mb-3" style="font-size: 0.9rem">
-                Saved from <strong>{{.Article.Domain}}</strong> &bull;
-                {{formatDate .Article.CreatedAt}} {{if .CharCount}}&bull;
-                <span title="Normostrany (1 NS = 1800 znaků)"
-                    >{{normoPages .CharCount}}</span
-                >{{end}}
+
+            <h1 class="reading-title">{{.Article.Title}}</h1>
+            <p class="reading-meta">
+                <span>Saved from <strong>{{.Article.Domain}}</strong> • {{formatDate .Article.CreatedAt}}{{with normoPages .CharCount}} • <span title="Length in standard pages of 1800 characters">{{.}}</span>{{end}}</span>
             </p>
 
-            <div
-                style="
-                    font-size: calc(1.1rem * {{.ContentFontScale}});
-                    line-height: 1.7;
-                    color: var(--text-main);
-                "
-            >
-                {{.Content}}
-            </div>
+            <div class="reading-body">{{.Content}}</div>
 
-            {{/* ── Bottom toolbar ── */}}
-            <div class="mt-3 detail-bottom-toolbar">
-                {{template "toolbar" .}}
-            </div>
+            <div class="detail-bottom-toolbar">{{template "toolbar" .}}</div>
         </div>
 
-        {{/* ── Right: metadata sidebar ── */}}
-        <div class="article-sidebar">
-            {{/* Poznámka */}}
+        <aside class="article-sidebar">
             <div id="user-note-section" class="meta-section">
                 <div id="note-view">
-                    <div class="flex-row mb-1" style="align-items: baseline">
-                        <strong
-                            class="meta-section-title"
-                            style="margin-bottom: 0"
-                            >Poznámka</strong
-                        >
-                        <a
-                            href="#"
-                            data-note-editing="true"
-                            style="font-size: 0.8rem; color: var(--text-muted)"
-                            >Upravit</a
-                        >
+                    <div class="meta-section-header">
+                        <h2 class="meta-section-title">My note</h2>
+                        <button type="button" class="btn-quiet btn-sm" data-note-editing="true">Edit</button>
                     </div>
-                    <div
-                        style="
-                            color: var(--text-main);
-                            font-size: 0.9rem;
-                            border-left: 3px solid var(--links);
-                            padding-left: 10px;
-                        "
-                    >
-                        {{if .UserNote}}{{.UserNote}}{{else}}<em
-                            style="color: var(--text-muted)"
-                            >Bez poznámky...</em
-                        >{{end}}
-                    </div>
+                    {{if .UserNote}}
+                    <p class="user-note">{{.UserNote}}</p>
+                    {{else}}
+                    <p class="meta-empty">No note</p>
+                    {{end}}
                 </div>
-                <form
-                    id="note-edit"
-                    hx-post="/api/articles/{{.ID}}/note"
-                    style="display: none; margin: 0"
-                >
-                    <input
-                        type="text"
-                        name="user_note"
-                        value="{{.UserNote}}"
-                        class="form-control"
-                        style="margin-bottom: 8px"
-                    />
-                    <div class="flex-row">
-                        <button type="submit" class="btn-sm">Uložit</button>
-                        <button
-                            type="button"
-                            class="outline btn-sm"
-                            data-note-editing="false"
-                        >
-                            Zrušit
-                        </button>
+                <form id="note-edit" hx-post="/api/articles/{{.ID}}/note" hidden>
+                    <label for="user-note-input" class="meta-section-title">My note</label>
+                    <input id="user-note-input" type="text" name="user_note" value="{{.UserNote}}" class="form-control" />
+                    <div class="form-actions">
+                        <button type="button" class="outline btn-sm" data-note-editing="false">Cancel</button>
+                        <button type="submit" class="btn-primary btn-sm">Save</button>
                     </div>
                 </form>
             </div>
 
-            {{template "tags_section" .}} {{template "links_section" .}}
-            {{template "attachments_section" .}} {{template "visibility_toggle"
-            .Article}}
-        </div>
+            {{template "tags_section" .}}
+            {{template "links_section" .}}
+            {{template "attachments_section" .}}
+            {{template "visibility_toggle" .Article}}
+        </aside>
     </div>
 </div>
 {{end}}

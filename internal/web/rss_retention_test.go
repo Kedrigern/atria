@@ -31,6 +31,6 @@ func TestFeedDetailShowsPrunedNote(t *testing.T) {
 	w := getWithCookie(r, "/rss/"+feed.ID.String()+"?archived=1", nil)
 	require.Equal(t, http.StatusOK, w.Code, w.Body.String())
 	assert.Contains(t, w.Body.String(), "Old story")
-	assert.Contains(t, w.Body.String(), "odstraněn, aby nezabíral místo")
+	assert.Contains(t, w.Body.String(), "to save space")
 	assert.Contains(t, w.Body.String(), `href="https://example.com/old"`)
 }
