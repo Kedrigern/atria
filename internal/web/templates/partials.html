@@ -176,14 +176,14 @@
         </div>
 
         <div class="action-row">
-            <form method="post" action="/api/rss/{{.ID}}/update" hx-post="/api/rss/{{.ID}}/update" hx-target="closest .list-item" hx-swap="outerHTML swap:0.3s">
+            <form method="post" action="/api/rss/{{.ID}}/update" hx-post="/api/rss/{{.ID}}/update" hx-target="closest .list-item" hx-swap="outerHTML">
                 <button type="submit" class="outline btn-sm" title="Save to Read-it-Later">
                     <span class="icon-sm icon-bookmark"></span>
                 </button>
             </form>
 
             {{if not .ReadAt}}
-            <form method="post" action="/api/rss/{{.ID}}/archive" hx-post="/api/rss/{{.ID}}/archive" hx-target="closest .list-item" hx-swap="outerHTML swap:0.3s">
+            <form method="post" action="/api/rss/{{.ID}}/archive" hx-post="/api/rss/{{.ID}}/archive" hx-target="closest .list-item" hx-swap="outerHTML">
                 <button type="submit" class="outline btn-sm" title="Archive (Mark as Read)">
                     <span class="icon-sm icon-check"></span>
                 </button>
@@ -216,7 +216,7 @@
             </button>
 
             <div class="action-row">
-                <form method="post" action="/api/rss/{{.ID}}/update" hx-post="/api/rss/{{.ID}}/update" hx-target="closest .list-item" hx-swap="outerHTML swap:0.3s">
+                <form method="post" action="/api/rss/{{.ID}}/update" hx-post="/api/rss/{{.ID}}/update" hx-target="closest .list-item" hx-swap="outerHTML">
                     <button type="submit" class="outline btn-sm" title="Save to Read-it-Later">
                         <span class="icon-sm icon-bookmark"></span>
                         Uložit do Inboxu
@@ -224,7 +224,7 @@
                 </form>
 
                 {{if not .ReadAt}}
-                <form method="post" action="/api/rss/{{.ID}}/archive" hx-post="/api/rss/{{.ID}}/archive" hx-target="closest .list-item" hx-swap="outerHTML swap:0.3s">
+                <form method="post" action="/api/rss/{{.ID}}/archive" hx-post="/api/rss/{{.ID}}/archive" hx-target="closest .list-item" hx-swap="outerHTML">
                     <button type="submit" class="outline btn-sm" title="Archive (Mark as Read)">
                         <span class="icon-sm icon-check"></span>
                         Archivovat

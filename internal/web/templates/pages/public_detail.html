@@ -5,6 +5,6 @@
     {{if .SourceURL}}
     <p class="text-muted mb-3" style="font-size: 0.9rem">Source: <a href="{{.SourceURL}}" target="_blank" rel="noopener noreferrer">Open original</a></p>
     {{end}}
-    <article style="font-size: 1.1rem; line-height: 1.7; color: var(--text-main)">{{.Content}}</article>
+    <article {{if not .SourceURL}}data-render-math{{end}} style="font-size: 1.1rem; line-height: 1.7; color: var(--text-main)">{{.Content}}</article>
 </div>
 {{end}}

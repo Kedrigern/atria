@@ -1,12 +1,11 @@
-const STATIC_CACHE = "atria-static-v14";
+const STATIC_CACHE = "atria-static-v15";
 const STATIC_ASSETS = [
     "/static/water.css?v=2",
-    "/static/style.css?v=9",
+    "/static/style.css?v=10",
     "/static/htmx.min.js?v=2",
     "/static/ebook.js?v=2",
-    "/static/app.js?v=1",
-    "/static/plugins.js?v=1",
-    "/static/mathjax-config.js?v=1",
+    "/static/app.js?v=2",
+    "/static/plugins.js?v=2",
     "/static/cryptogram.js?v=4",
     "/static/tabulator.min.css",
     "/static/tabulator.min.js",

@@ -142,7 +142,7 @@ document.addEventListener("click", function (evt) {
         const content = el.closest(".inline-content");
         if (content) content.style.display = "none";
     } else if (el.hasAttribute("data-scroll-top")) {
-        document.getElementById("main-content").scrollTo({ top: 0, behavior: "smooth" });
+        document.getElementById("main-content").scrollTo({ top: 0 });
     } else if (el.hasAttribute("data-ebook-view")) {
         const library = document.querySelector("[data-ebook-library]");
         if (library) library.dataset.view = el.dataset.ebookView;
