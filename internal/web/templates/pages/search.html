@@ -1,48 +1,52 @@
 {{define "content"}}
 <div class="centered-view" data-mobile-title="ATRIA: Search">
-    <div class="page-header-row mb-3">
-        <h2 class="hide-mobile">Search</h2>
-    </div>
+    <header class="page-header">
+        <h1 class="page-title">Search</h1>
+    </header>
 
-    <div id="search-form" class="flex-row flex-wrap mb-3" style="align-items: flex-start;">
-        <input
-            id="search-input"
-            type="search"
-            list="tag-suggestions"
-            name="q"
-            value="{{.Query}}"
-            placeholder="Search notes, articles, RSS…"
-            class="form-control"
-            style="flex: 1 1 300px;"
-            autofocus
-            hx-get="/search"
-            hx-target="#search-results"
-            hx-push-url="true"
-            hx-trigger="input delay:300ms, search"
-            hx-include="#search-filter,#search-archived"
-        />
-        <select
-            id="search-filter"
-            name="in"
-            class="form-control"
-            style="flex: 0 0 auto;"
-            hx-get="/search"
-            hx-target="#search-results"
-            hx-push-url="true"
-            hx-trigger="change"
-            hx-include="#search-input,#search-archived"
-        >
-            <option value=""       {{if eq .Filter ""}}        selected{{end}}>All</option>
-            <option value="notes"    {{if eq .Filter "notes"}}   selected{{end}}>Notes</option>
-            <option value="articles" {{if eq .Filter "articles"}} selected{{end}}>Articles</option>
-            <option value="rss"      {{if eq .Filter "rss"}}      selected{{end}}>RSS</option>
-        </select>
-        <label class="flex-row" style="gap: 6px; flex: 0 0 auto;">
+    <div id="search-form" class="search-form">
+        <div class="form-group search-query">
+            <label for="search-input">Search for</label>
+            <input
+                id="search-input"
+                type="search"
+                list="tag-suggestions"
+                name="q"
+                value="{{.Query}}"
+                placeholder="Notes, articles, RSS"
+                class="form-control"
+                autofocus
+                hx-get="/search"
+                hx-target="#search-results"
+                hx-push-url="true"
+                hx-trigger="input delay:300ms, search"
+                hx-include="#search-filter,#search-archived"
+            />
+        </div>
+        <div class="form-group">
+            <label for="search-filter">In</label>
+            <select
+                id="search-filter"
+                name="in"
+                class="form-control"
+                hx-get="/search"
+                hx-target="#search-results"
+                hx-push-url="true"
+                hx-trigger="change"
+                hx-include="#search-input,#search-archived"
+            >
+                <option value="" {{if eq .Filter ""}}selected{{end}}>All</option>
+                <option value="notes" {{if eq .Filter "notes"}}selected{{end}}>Notes</option>
+                <option value="articles" {{if eq .Filter "articles"}}selected{{end}}>Articles</option>
+                <option value="rss" {{if eq .Filter "rss"}}selected{{end}}>RSS</option>
+            </select>
+        </div>
+        <label class="checkbox-label search-archived">
             <input type="checkbox" id="search-archived" name="archived" value="1"
                 {{if .IncludeArchived}}checked{{end}}
                 hx-get="/search"
                 hx-target="#search-results"
-            hx-push-url="true"
+                hx-push-url="true"
                 hx-trigger="change"
                 hx-include="#search-input,#search-filter"
             />
@@ -50,15 +54,13 @@
         </label>
     </div>
 
-    <details class="mb-3" style="border: 1px solid var(--border); border-radius: 6px; padding: 10px 15px; background: var(--background-alt);">
-        <summary style="cursor: pointer; font-weight: 600; color: var(--text-muted); background: transparent; padding: 0; margin: 0; border: none;">
-            💡 Tipy pro pokročilé vyhledávání
-        </summary>
-        <ul style="margin-top: 12px; margin-bottom: 0; padding-left: 20px; line-height: 1.6; font-size: 0.9rem; color: var(--text-main);">
-            <li><kbd>"přesná fráze"</kbd> – najde přesnou shodu slov v daném pořadí.</li>
-            <li><kbd>-slovo</kbd> – vyloučí z výsledků entity, které obsahují toto slovo (např. <code>jablko -hruška</code>).</li>
-            <li><kbd>OR</kbd> – najde entity obsahující alespoň jedno ze slov (např. <code>kočka OR pes</code>).</li>
-            <li><strong>Tagy a přílohy:</strong> Pokud napíšeš existující tag nebo název nahrané přílohy, entita automaticky vyskočí nahoru.</li>
+    <details class="help-box">
+        <summary>Search tips</summary>
+        <ul>
+            <li><kbd>"exact phrase"</kbd> finds these words in this order.</li>
+            <li><kbd>-word</kbd> leaves out items that contain the word, for example <code>apple -pear</code>.</li>
+            <li><kbd>OR</kbd> finds items that contain one of the words, for example <code>cat OR dog</code>.</li>
+            <li>If you enter the name of a tag or of an attachment, the items with it come first.</li>
         </ul>
     </details>
 
@@ -66,7 +68,7 @@
 
     {{if .Tags}}
     <section class="tag-browser mb-3" aria-labelledby="tag-browser-title">
-        <h3 id="tag-browser-title">Tags</h3>
+        <h2 id="tag-browser-title" class="section-title">Tags</h2>
         <div class="tag-browser-list">
             {{range .Tags}}
             <a class="tag-browser-item" href="/tags/{{.Name}}">
