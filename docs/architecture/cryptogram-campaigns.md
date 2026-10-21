@@ -4,7 +4,7 @@ Status: proposed.
 
 ## 1. Goal
 
-A campaign is one short story, told in three cryptograms. You solve the cryptograms in the order of the story. After each solved cryptogram, you can read all solved parts of the story as one text. This text also helps with the next cryptogram, because names and words come back.
+A campaign is one short story, told in 3 to 10 cryptograms. You solve the cryptograms in the order of the story. After each solved cryptogram, you can read all solved parts of the story as one text. This text also helps with the next cryptogram, because names and words come back.
 
 The first campaigns come from "Fifty Famous Stories Retold" by James Baldwin (1896). The book is in the public domain and is Project Gutenberg eBook #18442. The book has 50 stories. The start has five of them:
 
@@ -32,7 +32,7 @@ These items are not in this design:
 | Story so far | All solved passages of a campaign, in order, as one text |
 | Topic | A kind of content, for example quotes, fairy tales, history, or literature |
 
-A campaign has three passages: the beginning, the middle, and the end of the story.
+A campaign has 3 to 10 passages. The first passage starts the story and the last passage ends it. A short story needs fewer passages than a long one.
 
 ## 3. The flow
 
@@ -53,7 +53,7 @@ The script is `scripts/cryptogram-campaign.py`, a uv script like `scripts/ui-scr
 4. It splits the text into stories. It uses the table of contents, so a heading such as "II. The Three Answers" stays in its story.
 5. It joins the syllables that the book separates for young readers: "Eng-land" becomes "England". Some hyphens belong to the word, for example in "ill-natured". If both parts are words of the book and the joined word is not, the script keeps the hyphen.
 6. It changes letters to ASCII, for example "Cæsar" to "Caesar".
-7. It selects three passages for each story (section 5).
+7. It selects 3 to 10 passages for each story (section 5).
 8. It writes a draft file (section 6). The option `--story` limits the draft to the stories that you name.
 
 ## 5. Selection of passages
@@ -62,7 +62,8 @@ The script cannot know which parts of a story are important. Thus it makes a dra
 
 - A passage has 40 to 200 letters and ends at the end of a sentence.
 - A passage has at most one line of dialogue.
-- The first passage starts the story. The last passage ends it. The middle passage comes from the middle of the story.
+- The first passage starts the story. The last passage ends it. The other passages follow the story in order, so the story so far reads as a story.
+- The script makes about one passage for each 100 words of the story, at least 3 and at most 10. The option `--passages` sets a fixed number.
 - A passage with many rare names gets a lower score, because it is hard to solve.
 
 The draft marks each story with `"reviewed": false`. The import stops while a story has this mark. Thus no draft goes into the database by mistake.
@@ -136,7 +137,7 @@ atria games import fifty-famous-stories.json --replace
 The import runs in one transaction. It stops in these cases:
 
 - A story is not reviewed.
-- A campaign does not have three passages.
+- A campaign has fewer than 3 or more than 10 passages.
 - A passage has fewer than 40 or more than 200 letters.
 - A passage has letters outside A to Z after the change to ASCII.
 
@@ -148,7 +149,7 @@ If a campaign exists with different passages, the import stops. With `--replace`
 
 The games page gets two tabs (section 6 of `ui.md`):
 
-- Campaigns: the campaigns grouped by book. Each campaign shows its progress ("1 of 3 solved") and a button for the next passage.
+- Campaigns: the campaigns grouped by book. Each campaign shows its progress ("2 of 6 solved") and a button for the next passage.
 - Single puzzles: the cryptograms without a campaign, as today.
 
 Above the list, filter links show the topics, for example "All", "Quotes", "Fairy tales", "History". The filter is in the address (`/games?topic=history`), so it works without JavaScript. The active topic is bold and underlined, as on the RSS page.
@@ -161,7 +162,7 @@ The campaign page shows:
 - The button "Next passage", or the badge "Solved" at the end.
 - The story so far: the solved passages in normal case, as one text.
 
-The page of a passage shows its position, for example "King Alfred and the Cakes, passage 2 of 3". A link "Story so far" goes to the campaign page. After you solve the passage, the button "Next passage" replaces "Choose another puzzle". After the last passage, the button "Read the story" goes to the campaign page.
+The page of a passage shows its position, for example "King Alfred and the Cakes, passage 2 of 6". A link "Story so far" goes to the campaign page. After you solve the passage, the button "Next passage" replaces "Choose another puzzle". After the last passage, the button "Read the story" goes to the campaign page.
 
 You cannot open a passage before you solve the passages before it. Atria then shows the campaign page with the message "Solve the earlier passages first."
 
