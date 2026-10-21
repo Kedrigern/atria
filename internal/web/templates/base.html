@@ -13,6 +13,7 @@
         <script src="/static/htmx.min.js?v=2"></script>
         <script src="/static/ebook.js?v=2"></script>
         <meta name="csrf-token" content="{{.CSRFToken}}" />
+        <meta name="atria-build" content="{{.UIBuild}}" />
 
     </head>
     <body>
@@ -138,7 +139,7 @@
 
         <main id="main-content">{{template "content" .}}</main>
 
-        <script src="/static/app.js?v=3"></script>
+        <script src="/static/app.js?v=4"></script>
         <script type="module" src="/static/plugins.js?v=3"></script>
     </body>
 </html>

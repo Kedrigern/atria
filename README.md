@@ -81,7 +81,7 @@ go run ./cmd/atria article parse --file post.html --url https://example.com/post
 
 The `--save-html` flag keeps a copy of the downloaded page. If a site does not parse well, save the page once. Then parse the saved file again with `--file` while you change the extraction code. You can also use the saved page as a test fixture. The `--sanitized` flag shows the HTML as the web interface shows it.
 
-To take screenshots of the main pages after a change of the interface, run the script below. It needs `uv` and Chromium, and it uses the database in `TEST_DATABASE_URL`, so it deletes all data there. The screenshots go to `ui-screenshots/`: one image per page, and one overview image for each variant (desktop light, desktop dark, phone, and e-ink in grayscale).
+To take screenshots of the main pages after a change of the interface, run the script below. It needs `uv` and Chromium, and it uses the database in `TEST_DATABASE_URL`, so it deletes all data there. The screenshots go to `ui-screenshots/`: one image per page, and one overview image for each variant (desktop light, desktop dark, phone, tablet in the dark theme, and e-ink in grayscale).
 
 ```console
 uv run scripts/ui-screenshots.py
