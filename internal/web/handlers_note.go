@@ -203,13 +203,13 @@ func (s *Server) handleEntityLinkAdd(c *gin.Context) {
 
 	results, err := core.FindEntities(c.Request.Context(), s.db, user.ID, "", targetStr, false)
 	if err != nil || len(results) == 0 {
-		s.renderError(c, http.StatusNotFound, "Entita nenalezena. Zkontrolujte název, Short ID nebo UUID.")
+		s.renderError(c, http.StatusNotFound, "No item found. Use the title, the short ID or the UUID.")
 		return
 	}
 	targetID := results[0].ID
 
 	if sourceID == targetID {
-		s.renderError(c, http.StatusBadRequest, "Nemůžete prolinkovat entitu samu na sebe.")
+		s.renderError(c, http.StatusBadRequest, "An item cannot link to itself.")
 		return
 	}
 

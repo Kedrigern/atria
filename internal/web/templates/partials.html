@@ -1,47 +1,43 @@
 {{define "tags_section"}}
 <div id="tag-container-{{.ID}}" class="meta-section">
-    <strong class="meta-section-title">Tagy</strong>
+    <h2 class="meta-section-title">Tags</h2>
     <div id="tag-list-{{.ID}}" class="flex-row flex-wrap mb-1">
         {{range .Tags}}
         <a href="/tags/{{.Name}}" class="tag">#{{.Name}}</a>
         {{else}}
-        <em style="color: var(--text-muted); font-size: 0.85rem;">Žádné tagy...</em>
+        <p class="meta-empty">No tags</p>
         {{end}}
     </div>
-    <form hx-post="/api/entity/{{.ID}}/tags"
-          hx-target="#tag-container-{{.ID}}"
-          hx-swap="outerHTML"
-          class="flex-row mt-1" style="margin-bottom: 0;">
-        <input type="text" name="tag_name" list="tag-suggestions" placeholder="Přidat tag..."
-               class="form-control" style="font-size: 0.85rem; padding: 6px 10px; margin: 0; flex: 1;" required>
-        <button type="submit" class="outline btn-sm" style="margin: 0; padding: 6px 10px;">+</button>
+    <form hx-post="/api/entity/{{.ID}}/tags" hx-target="#tag-container-{{.ID}}" hx-swap="outerHTML" class="meta-form">
+        <input type="text" name="tag_name" list="tag-suggestions" placeholder="reading" aria-label="New tag" class="form-control" required>
+        <button type="submit" class="outline btn-sm" title="Add tag" aria-label="Add tag"><span class="icon-sm icon-plus" aria-hidden="true"></span></button>
     </form>
 </div>
 {{end}}
 
 {{define "attachments_section"}}
 <div class="meta-section">
-    <strong class="meta-section-title">Přílohy</strong>
+    <h2 class="meta-section-title">Attachments</h2>
     {{if .Attachments}}
     <ul id="attachment-list-{{.ID}}" class="meta-list">
         {{range .Attachments}}
         <li class="meta-list-item flex-between">
-            <div class="flex-row" style="gap: 6px; overflow: hidden;">
-                <span class="icon-sm icon-file text-muted"></span>
-                <a href="/data/attachments/{{.DiskPath}}" target="_blank" style="font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{.Filename}}">{{.Filename}}</a>
-            </div>
-            <small style="color: var(--text-muted); flex-shrink: 0;">{{divide .SizeBytes 1024}} KB</small>
+            <span class="meta-list-label">
+                <span class="icon-sm icon-file text-muted" aria-hidden="true"></span>
+                <a href="/data/attachments/{{.DiskPath}}" target="_blank" class="meta-list-link" title="{{.Filename}}">{{.Filename}}</a>
+            </span>
+            <small class="meta-list-size">{{divide .SizeBytes 1024}} KB</small>
         </li>
         {{end}}
     </ul>
     {{else}}
-    <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0;">Žádné přílohy...</p>
+    <p class="meta-empty">No attachments</p>
     {{end}}
 
-    <form hx-post="/api/entity/{{.ID}}/attachments" hx-encoding="multipart/form-data" hx-target="#main-content" style="margin: 0;">
+    <form hx-post="/api/entity/{{.ID}}/attachments" hx-encoding="multipart/form-data" hx-target="#main-content">
         <label class="button outline btn-sm flex-row btn-dashed">
-            <span class="icon-sm icon-file"></span> Nahrát soubor
-            <input type="file" name="file" style="display: none;" required data-auto-submit>
+            <span class="icon-sm icon-file" aria-hidden="true"></span> Upload file
+            <input type="file" name="file" class="visually-hidden" required data-auto-submit>
         </label>
     </form>
 </div>
@@ -49,47 +45,50 @@
 
 {{define "links_section"}}
 <div class="meta-section">
-    <strong class="meta-section-title">Propojení</strong>
+    <h2 class="meta-section-title">Links</h2>
 
     {{if or .OutgoingLinks .IncomingLinks}}
-        <ul class="meta-list">
-            {{range .OutgoingLinks}}
-            <li class="meta-list-item">🔗 <a href="/{{if eq .Type "note"}}notes{{else}}read{{end}}/{{.ID}}" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{.Title}}</a></li>
-            {{end}}
-            {{range .IncomingLinks}}
-            <li class="meta-list-item text-muted">⬅️ <a href="/{{if eq .Type "note"}}notes{{else}}read{{end}}/{{.ID}}" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-muted);">{{.Title}}</a></li>
-            {{end}}
-        </ul>
+    <ul class="meta-list">
+        {{range .OutgoingLinks}}
+        <li class="meta-list-item">
+            <span class="icon-sm icon-link" title="Links to" aria-label="Links to"></span>
+            <a href="/{{if eq .Type "note"}}notes{{else}}read{{end}}/{{.ID}}" class="meta-list-link">{{.Title}}</a>
+        </li>
+        {{end}}
+        {{range .IncomingLinks}}
+        <li class="meta-list-item">
+            <span class="icon-sm icon-arrow-left text-muted" title="Linked from" aria-label="Linked from"></span>
+            <a href="/{{if eq .Type "note"}}notes{{else}}read{{end}}/{{.ID}}" class="meta-list-link">{{.Title}}</a>
+        </li>
+        {{end}}
+    </ul>
     {{else}}
-        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0;">Žádná propojení...</p>
+    <p class="meta-empty">No links</p>
     {{end}}
 
-    <form hx-post="/api/entity/{{.ID}}/links" hx-target="#main-content" class="flex-row mt-1" style="margin-bottom: 0;">
-        <input type="text" name="target_identifier" placeholder="Název n. ID entity..." class="form-control" style="font-size: 0.85rem; padding: 6px 10px; margin: 0; flex: 1;" required>
-        <button type="submit" class="outline btn-sm" style="margin: 0; padding: 6px 10px;">🔗</button>
+    <form hx-post="/api/entity/{{.ID}}/links" hx-target="#main-content" class="meta-form">
+        <input type="text" name="target_identifier" placeholder="Title or short ID" aria-label="Link to" class="form-control" required>
+        <button type="submit" class="outline btn-sm" title="Add link" aria-label="Add link"><span class="icon-sm icon-link" aria-hidden="true"></span></button>
     </form>
 </div>
 {{end}}
 
 {{define "visibility_toggle"}}
-<div class="meta-section" style="padding: 10px 16px;">
-    <div class="flex-row flex-between">
-        <div class="flex-row text-muted" style="font-size: 0.85rem; font-weight: 600;">
-            <span class="icon-sm icon-user"></span> Viditelnost
-        </div>
-        <select
-            name="visibility"
-            hx-put="/api/entity/{{.ID}}/visibility"
-            hx-swap="none"
-            style="padding: 2px 6px; margin: 0; background: transparent; border: none; color: var(--text-main); font-size: 0.85rem; cursor: pointer; text-align: right; width: auto;">
-            <option value="private" {{if eq .Visibility "private"}}selected{{end}}>Private</option>
-            <option value="users" {{if eq .Visibility "users"}}selected{{end}}>Users Only</option>
-            <option value="public" {{if eq .Visibility "public"}}selected{{end}}>Public Link</option>
-        </select>
-        {{if eq .Visibility "public"}}
-        <button type="button" class="outline btn-sm" title="Kopírovat veřejný odkaz" data-copy="/public/{{if eq .Type "note"}}notes{{else}}articles{{end}}/{{.ID}}" data-copy-origin>Kopírovat odkaz</button>
-        {{end}}
-    </div>
+<div class="meta-section">
+    <h2 class="meta-section-title"><label for="visibility-{{.ID}}">Visibility</label></h2>
+    <select
+        id="visibility-{{.ID}}"
+        name="visibility"
+        class="form-control"
+        hx-put="/api/entity/{{.ID}}/visibility"
+        hx-swap="none">
+        <option value="private" {{if eq .Visibility "private"}}selected{{end}}>Private</option>
+        <option value="users" {{if eq .Visibility "users"}}selected{{end}}>All users of this Atria</option>
+        <option value="public" {{if eq .Visibility "public"}}selected{{end}}>Public link</option>
+    </select>
+    {{if eq .Visibility "public"}}
+    <button type="button" class="outline btn-sm mt-1" data-copy="/public/{{if eq .Type "note"}}notes{{else}}articles{{end}}/{{.ID}}" data-copy-origin>Copy public link</button>
+    {{end}}
 </div>
 {{end}}
 
@@ -240,12 +239,12 @@
 <form method="post" action="/api/profile/font-size" class="inline-action-form">
     <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
     <input type="hidden" name="delta" value="-1" />
-    <button type="submit" class="outline btn-sm" title="Zmenšit písmo">A-</button>
+    <button type="submit" class="outline btn-sm" title="Smaller text" aria-label="Smaller text">A-</button>
 </form>
 <form method="post" action="/api/profile/font-size" class="inline-action-form">
     <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
     <input type="hidden" name="delta" value="1" />
-    <button type="submit" class="outline btn-sm" title="Zvětšit písmo">A+</button>
+    <button type="submit" class="outline btn-sm" title="Larger text" aria-label="Larger text">A+</button>
 </form>
 {{end}}
 
@@ -303,53 +302,50 @@
 <div class="toolbar toolbar-compact">
     <div class="toolbar-group">
         <a href="/notes" class="button-link outline btn-sm toolbar-back-link">
-            <span class="icon-sm icon-chevron-left"></span> Zpět
+            <span class="icon-sm icon-chevron-left" aria-hidden="true"></span> Notes
         </a>
         <div class="toolbar-sep hide-mobile"></div>
         <div class="dropdown hide-mobile" tabindex="0">
-            <button type="button" class="outline btn-sm" title="Export">
-                <span class="icon-sm icon-download"></span>
+            <button type="button" class="outline btn-sm" title="Export" aria-label="Export">
+                <span class="icon-sm icon-download" aria-hidden="true"></span>
             </button>
             <div class="dropdown-menu">
-                <a href="/notes/{{.Note.ID}}/export/md">⬇ Markdown</a>
-                <a href="/notes/{{.Note.ID}}/export/epub">⬇ EPUB</a>
+                <a href="/notes/{{.Note.ID}}/export/md">Markdown</a>
+                <a href="/notes/{{.Note.ID}}/export/epub">EPUB</a>
             </div>
         </div>
-
-        <form method="post" action="/api/notes/{{.Note.ID}}/delete" class="inline-action-form">
+        <form method="post" action="/api/notes/{{.Note.ID}}/delete" class="inline-action-form" data-confirm="Move this note to the trash?">
             <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
-            <button type="submit" class="outline btn-sm btn-danger" title="Smazat poznámku">
-                <span class="icon-sm icon-trash"></span>
+            <button type="submit" class="outline btn-sm btn-danger" title="Move to trash" aria-label="Move to trash">
+                <span class="icon-sm icon-trash" aria-hidden="true"></span>
             </button>
         </form>
     </div>
     <div class="toolbar-group">
         {{template "font_size_controls" .}}
-        <span class="tag hide-mobile entity-short-id" data-copy="{{.Note.ShortID}}" title="Zkopírovat ID">#{{.Note.ShortID}}</span>
-        <button type="button" class="outline btn-sm btn-primary" title="Upravit poznámku"
-            data-note-editing="true">
-            <span class="icon-sm icon-edit"></span> Upravit
+        <button type="button" class="tag hide-mobile entity-short-id" data-copy="{{.Note.ShortID}}" title="Copy short ID">#{{.Note.ShortID}}</button>
+        <button type="button" class="btn-sm btn-primary" data-note-editing="true">
+            <span class="icon-sm icon-edit" aria-hidden="true"></span> Edit
         </button>
     </div>
 </div>
 {{end}}
 
 {{define "tree_node"}}
-
     {{if .Notes}}
-    <ul class="meta-list" style="padding-left: 20px; margin: 0 0 10px 0;">
+    <ul class="note-tree-list">
         {{range .Notes}}
         <li class="note-tree-item">
             <a href="/notes/{{.ID}}" hx-get="/notes/{{.ID}}" hx-target="#main-content" hx-push-url="true" class="note-tree-item-title">
-                <span class="icon-sm icon-note"></span>
+                <span class="icon-sm icon-note" aria-hidden="true"></span>
                 <span class="note-tree-item-title-text">{{.Title}}</span>
             </a>
 
             <div class="note-tree-item-metadata">
                 <span class="note-tree-item-date">{{formatDateOnly .CreatedAt}}</span>
-                {{if .CharCount}}
-                <span>&bull;</span>
-                <span title="Délka (1 NS = 1800 znaků)">{{normoPages .CharCount}}</span>
+                {{with normoPages .CharCount}}
+                <span aria-hidden="true">&bull;</span>
+                <span title="Length in standard pages of 1800 characters">{{.}}</span>
                 {{end}}
                 {{if .Tags}}
                 <div class="note-list-tags">
@@ -365,17 +361,16 @@
     {{end}}
 
     {{range $folderName, $folderNode := .Children}}
-    <details {{if lt .Level 3}}open{{end}} class="note-tree-folder" style="background: transparent; border: none; border-left: 1px dashed var(--border); padding: 0 0 0 10px; margin: 4px 0 4px 8px; border-radius: 0;">
+    <details {{if lt .Level 3}}open{{end}} class="note-tree-folder">
         <summary class="note-tree-folder-summary{{if eq .Level 1}} note-tree-folder-root-summary{{end}}">
-            <span class="icon-sm icon-folder" style="color: var(--text-muted); vertical-align: text-bottom; margin-right: 4px;"></span>
+            <span class="icon-sm icon-folder text-muted" aria-hidden="true"></span>
             {{$folderName}}
         </summary>
-
         <div class="mt-1">
             {{template "tree_node" $folderNode}}
         </div>
     </details>
-{{end}}
+    {{end}}
 {{end}}
 
 {{define "add_article_form"}}

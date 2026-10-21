@@ -1,108 +1,52 @@
 {{define "content"}}
-<div
-    id="note-detail"
-    class="centered-view"
-    style="max-width: 1100px"
-    data-mobile-title="ATRIA: Notes"
->
+<div id="note-detail" class="centered-view wide" style="--content-scale: {{.ContentFontScale}}" data-mobile-title="ATRIA: Notes">
     {{template "flash_message" .}}
 
     <div class="article-layout">
-        {{/* ── Left: note content ── */}}
         <div>
-            {{/* ── Top toolbar ── */}}
             <div class="toolbar-top note-toolbar-context">{{template "note-toolbar" .}}</div>
 
-            <h1
-                style="
-                    margin: 0 0 8px 0;
-                    color: var(--text-heading);
-                    font-size: calc(2rem * {{.ContentFontScale}});
-                "
-            >
-                {{.Note.Title}}
-            </h1>
-            <p class="flex-row text-muted mb-3" style="font-size: 0.9rem">
-                <span class="icon-sm icon-folder"></span>
+            <h1 class="reading-title">{{.Note.Title}}</h1>
+            <p class="reading-meta">
+                <span class="icon-sm icon-folder" aria-hidden="true"></span>
                 {{.Note.Path}}
             </p>
 
-            <div
-                id="note-view"
-                data-render-math
-                style="
-                    font-size: calc(1.1rem * {{.ContentFontScale}});
-                    line-height: 1.7;
-                    color: var(--text-main);
-                "
-            >
-                <style>
-                    #note-view > h1:first-child {
-                        margin-top: 0;
-                        font-size: calc(1.4rem * {{.ContentFontScale}});
-                        color: var(--text-muted);
-                        border-bottom: none;
-                        padding-bottom: 0;
-                    }
-                </style>
-                {{.Content}}
-            </div>
+            <div id="note-view" class="reading-body" data-render-math>{{.Content}}</div>
 
-            <div id="note-edit" class="mb-3" style="display: none">
-                <form hx-post="/api/notes/{{.ID}}/update" style="margin: 0">
+            <div id="note-edit" hidden>
+                <form hx-post="/api/notes/{{.ID}}/update">
                     <div class="form-group">
-                        <label for="note-title">Název</label>
+                        <label for="note-title">Title</label>
                         <input id="note-title" type="text" name="title" value="{{.Note.Title}}" class="form-control" required />
                     </div>
                     <div class="form-group">
-                        <label for="note-path">Cesta (např. /projekty/atria)</label>
-                        <input id="note-path" type="text" name="path" value="{{.Note.Path}}" placeholder="/" class="form-control" />
+                        <label for="note-path">Folder</label>
+                        <input id="note-path" type="text" name="path" value="{{.Note.Path}}" class="form-control" />
+                        <p class="form-help">For example /projects/atria. Use / for the top level.</p>
                     </div>
                     <div class="form-group">
-                        <label for="note-markdown-content">Obsah (Markdown)</label>
-                    <textarea
-                        id="note-markdown-content"
-                        name="markdown_content"
-                        class="form-control"
-                        style="
-                            height: 400px;
-                            font-family: monospace;
-                            font-size: 1rem;
-                            line-height: 1.5;
-                            margin-bottom: 15px;
-                        "
-                    >
-{{.Note.MarkdownContent}}</textarea
-                    >
+                        <label for="note-markdown-content">Content (Markdown)</label>
+                        <textarea id="note-markdown-content" name="markdown_content" class="form-control markdown-editor markdown-editor-tall">
+{{.Note.MarkdownContent}}</textarea>
                     </div>
-                    <div class="flex-row">
-                        <button type="submit" class="btn-primary">
-                            Uložit změny
-                        </button>
-                        <button
-                            type="button"
-                            class="outline"
-                            data-note-editing="false"
-                        >
-                            Zrušit
-                        </button>
+                    <div class="form-actions">
+                        <button type="button" class="outline" data-note-editing="false">Cancel</button>
+                        <button type="submit" class="btn-primary">Save</button>
                     </div>
                 </form>
             </div>
 
-            {{/* ── Bottom toolbar ── */}}
-            <div class="mt-3 note-toolbar-context detail-bottom-toolbar">
-                {{template "note-toolbar" .}}
-            </div>
+            <div class="note-toolbar-context detail-bottom-toolbar">{{template "note-toolbar" .}}</div>
         </div>
 
-        {{/* ── Right: metadata sidebar ── */}}
-        <div class="article-sidebar">
+        <aside class="article-sidebar">
             <div id="toc-sidebar-target" class="mb-3"></div>
-            {{template "tags_section" .}} {{template "links_section" .}}
-            {{template "attachments_section" .}} {{template "visibility_toggle"
-            .Note}}
-        </div>
+            {{template "tags_section" .}}
+            {{template "links_section" .}}
+            {{template "attachments_section" .}}
+            {{template "visibility_toggle" .Note}}
+        </aside>
     </div>
 </div>
 {{end}}

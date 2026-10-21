@@ -67,7 +67,7 @@ func (s *Server) handleEntityRename(c *gin.Context) {
 	}
 
 	if err := core.RenameEntity(c.Request.Context(), s.db, user.ID, entityID, newTitle); err != nil {
-		s.renderError(c, http.StatusInternalServerError, "Nepodařilo se přejmenovat entitu")
+		s.renderError(c, http.StatusInternalServerError, "Could not rename the item")
 		return
 	}
 

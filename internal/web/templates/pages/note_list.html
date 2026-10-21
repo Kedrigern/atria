@@ -1,40 +1,22 @@
 {{define "content"}}
 <div class="centered-view" data-mobile-title="ATRIA: Notes">
-    <div class="page-header-row flex-between flex-wrap mb-3" style="gap: 15px">
-        <h2 style="margin: 0">Knowledge Base</h2>
-
-        <div class="flex-row">
-            <button
-                type="button"
-                class="outline btn-sm"
-                title="Rozbalit vše"
-                data-tree-open="true"
-            >
-                <span class="icon-sm icon-expand"></span>
+    <header class="page-header">
+        <h1 class="page-title">Knowledge Base</h1>
+        <div class="page-actions">
+            <button type="button" class="outline btn-sm" title="Expand all folders" aria-label="Expand all folders" data-tree-open="true">
+                <span class="icon-sm icon-expand" aria-hidden="true"></span>
             </button>
-
-            <button
-                type="button"
-                class="outline btn-sm"
-                title="Sbalit vše"
-                data-tree-open="false"
-            >
-                <span class="icon-sm icon-collapse"></span>
+            <button type="button" class="outline btn-sm" title="Collapse all folders" aria-label="Collapse all folders" data-tree-open="false">
+                <span class="icon-sm icon-collapse" aria-hidden="true"></span>
             </button>
-
-            <div class="toolbar-sep"></div>
-
-            <button
-                hx-get="/notes/new"
-                hx-target="#main-content"
-                hx-push-url="true"
-                class="btn btn-primary btn-sm"
-            >
-                + New Note
-            </button>
+            <a href="/notes/new" hx-get="/notes/new" hx-target="#main-content" hx-push-url="true" class="button-link btn-primary btn-sm">New note</a>
         </div>
-    </div>
+    </header>
 
+    {{if or .TreeRoot.Notes .TreeRoot.Children}}
     <div class="note-tree">{{template "tree_node" .TreeRoot}}</div>
+    {{else}}
+    <p class="page-empty-hint">You have no notes yet.</p>
+    {{end}}
 </div>
 {{end}}

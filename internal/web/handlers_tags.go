@@ -18,7 +18,7 @@ func (s *Server) handleTagList(c *gin.Context) {
 
 	tags, err := core.ListTags(c.Request.Context(), s.db, user.ID)
 	if err != nil {
-		s.respondError(c, http.StatusInternalServerError, "Chyba při načítání tagů", err)
+		s.respondError(c, http.StatusInternalServerError, "Could not load the tags", err)
 		return
 	}
 
@@ -39,7 +39,7 @@ func (s *Server) handleTagDetail(c *gin.Context) {
 
 	entities, err := core.GetTagEntities(c.Request.Context(), s.db, user.ID, tagName)
 	if err != nil {
-		s.respondError(c, http.StatusInternalServerError, "Chyba při načítání entit tagu", err)
+		s.respondError(c, http.StatusInternalServerError, "Could not load the items with this tag", err)
 		return
 	}
 
@@ -70,7 +70,7 @@ func (s *Server) handleTagCreate(c *gin.Context) {
 		return
 	}
 
-	s.setFlash(c, "success", "Tag vytvořen.")
+	s.setFlash(c, "success", "Tag created.")
 	c.Redirect(http.StatusSeeOther, "/settings/tags")
 }
 
@@ -83,7 +83,7 @@ func (s *Server) handleTagAttach(c *gin.Context) {
 
 	entityID, err := core.ParseUUID(c.Param("id"))
 	if err != nil {
-		s.renderError(c, http.StatusBadRequest, "Neplatné ID entity")
+		s.renderError(c, http.StatusBadRequest, "Invalid item ID")
 		return
 	}
 	if !s.requireOwnedEntity(c, user, entityID) {
@@ -93,14 +93,14 @@ func (s *Server) handleTagAttach(c *gin.Context) {
 	tagName := c.PostForm("tag_name")
 	err = core.AttachTagByTitle(c.Request.Context(), s.db, user.ID, entityID, tagName)
 	if err != nil {
-		s.respondError(c, http.StatusBadRequest, "Nepodařilo se připojit tag", err)
+		s.respondError(c, http.StatusBadRequest, "Could not add the tag", err)
 		return
 	}
 
 	if c.GetHeader("HX-Request") == "true" {
 		tags, err := core.GetEntityTags(c.Request.Context(), s.db, user.ID, entityID)
 		if err != nil {
-			s.respondError(c, http.StatusInternalServerError, "Nepodařilo se načíst tagy", err)
+			s.respondError(c, http.StatusInternalServerError, "Could not load the tags", err)
 			return
 		}
 
@@ -124,26 +124,26 @@ func (s *Server) handleTagAttachUniversal(c *gin.Context) {
 	tagName := c.PostForm("tag_name")
 
 	if entityIdentifier == "" || tagName == "" {
-		s.setFlash(c, "error", "Identifikátor entity i tag musí být vyplněny.")
+		s.setFlash(c, "error", "Enter an item and a tag.")
 		c.Redirect(http.StatusSeeOther, "/settings/tags")
 		return
 	}
 
 	entities, err := core.FindEntities(c.Request.Context(), s.db, user.ID, "", entityIdentifier, false)
 	if err != nil {
-		s.flashError(c, "Chyba databáze při vyhledávání", err)
+		s.flashError(c, "Database error during the search", err)
 		c.Redirect(http.StatusSeeOther, "/settings/tags")
 		return
 	}
 
 	if len(entities) == 0 {
-		s.setFlash(c, "error", "Nenalezena žádná entita odpovídající '"+entityIdentifier+"'.")
+		s.setFlash(c, "error", "No item matches '"+entityIdentifier+"'.")
 		c.Redirect(http.StatusSeeOther, "/settings/tags")
 		return
 	}
 
 	if len(entities) > 1 {
-		s.setFlash(c, "error", "Nalezeno více entit. Buďte specifičtější (zadejte Short ID).")
+		s.setFlash(c, "error", "More than one item matches. Use the short ID.")
 		c.Redirect(http.StatusSeeOther, "/settings/tags")
 		return
 	}
@@ -152,12 +152,12 @@ func (s *Server) handleTagAttachUniversal(c *gin.Context) {
 
 	err = core.AttachTagByTitle(c.Request.Context(), s.db, user.ID, targetEntity.ID, tagName)
 	if err != nil {
-		s.flashError(c, "Nepodařilo se připojit tag", err)
+		s.flashError(c, "Could not add the tag", err)
 		c.Redirect(http.StatusSeeOther, "/settings/tags")
 		return
 	}
 
-	s.setFlash(c, "success", "Tag #"+tagName+" byl úspěšně připojen k: "+targetEntity.Title)
+	s.setFlash(c, "success", "Tag #"+tagName+" added to: "+targetEntity.Title)
 	c.Redirect(http.StatusSeeOther, "/settings/tags")
 }
 
