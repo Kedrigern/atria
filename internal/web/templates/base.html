@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Atria - Personal Mind Palace</title>
         <link rel="stylesheet" href="/static/water.css?v=2" />
-        <link rel="stylesheet" href="/static/style.css?v=9" />
+        <link rel="stylesheet" href="/static/style.css?v=10" />
         <link rel="icon" type="image/png" href="/static/atria.png" />
         <link rel="manifest" href="/manifest.webmanifest" />
         <meta name="theme-color" content="#0d1117" />
@@ -14,24 +14,6 @@
         <script src="/static/ebook.js?v=2"></script>
         <meta name="csrf-token" content="{{.CSRFToken}}" />
 
-        <link
-            rel="stylesheet"
-            href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css"
-            media="(prefers-color-scheme: dark)"
-        />
-        <link
-            rel="stylesheet"
-            href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css"
-            media="(prefers-color-scheme: light)"
-        />
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-
-        <script src="/static/mathjax-config.js?v=1"></script>
-        <script
-            id="MathJax-script"
-            async
-            src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
-        ></script>
     </head>
     <body>
         {{if .User}}
@@ -156,7 +138,7 @@
 
         <main id="main-content">{{template "content" .}}</main>
 
-        <script src="/static/app.js?v=1"></script>
-        <script type="module" src="/static/plugins.js?v=1"></script>
+        <script src="/static/app.js?v=2"></script>
+        <script type="module" src="/static/plugins.js?v=2"></script>
     </body>
 </html>

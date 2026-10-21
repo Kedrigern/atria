@@ -72,6 +72,17 @@
     box-sizing: border-box;
 }
 
+/* No motion. E-ink screens refresh slowly, and each animation frame leaves a
+   ghost image (docs/architecture/ui.md, section 8). This also covers the
+   transitions in water.css, Tabulator and htmx. */
+*,
+*::before,
+*::after {
+    transition: none !important;
+    animation: none !important;
+    scroll-behavior: auto !important;
+}
+
 /* Light theme */
 :root,
 html[data-theme="light"],
@@ -173,7 +184,6 @@ main {
     padding: 40px;
     width: 100%;
     box-sizing: border-box;
-    scroll-behavior: smooth;
 }
 .centered-view.wide {
     max-width: 1100px;
@@ -264,7 +274,6 @@ a.button-link.btn-primary:hover,
     display: flex;
     justify-content: center;
     width: 100%;
-    transition: color 0.2s;
 }
 #sidebar a:hover,
 #sidebar a.htmx-request,
@@ -744,7 +753,6 @@ pre {
         top: 60px;
         height: calc(100vh - 60px);
         transform: translateX(-100%);
-        transition: transform 0.3s ease;
         z-index: 200;
     }
     #sidebar.open {
@@ -761,7 +769,6 @@ pre {
         z-index: 150;
         opacity: 0;
         pointer-events: none;
-        transition: opacity 0.3s ease;
     }
     #sidebar-backdrop.open {
         opacity: 1;
@@ -935,10 +942,6 @@ html[data-theme="dark"] .callout-danger {
 /* Interaktivní chování pro karty, které jsou odkazy */
 a.dashboard-card {
     /* Přidána plynulá animace i pro stín */
-    transition:
-        border-color 0.2s ease,
-        transform 0.1s ease,
-        box-shadow 0.2s ease;
 }
 
 a.dashboard-card:hover {
