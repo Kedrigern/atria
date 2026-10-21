@@ -1,6 +1,6 @@
 # User interface — design
 
-> Status: **proposal**. It needs one decision from the owner before the work starts: the language of the interface (section 3).
+> Status: **accepted**. The interface uses English only (section 3).
 
 This document defines one look and one set of building blocks for the web interface of Atria. It applies to all pages in `internal/web/templates` and to `internal/web/static/style.css`.
 
@@ -12,8 +12,9 @@ The interface has these goals:
 2. Each page uses a small set of shared components (reusable pieces of markup and CSS, for example a page header or a button).
 3. A new page needs no new CSS in most cases.
 4. The interface works with the light theme, the dark theme, the font size setting, a keyboard, and a phone.
+5. The interface works well on e-ink readers with little computing power, for example the Onyx BOOX Nova Air C. Reading on these devices is one of the main uses of Atria (section 8).
 
-These are not goals: a new visual identity, a JavaScript framework, or a CSS framework. Atria stays with server-rendered templates, htmx, `water.css` as the base, and its own `style.css`.
+The design is simple and uses as little JavaScript as possible. These are not goals: a new visual identity, a JavaScript framework, or a CSS framework. Atria stays with server-rendered templates, htmx, `water.css` as the base, and its own `style.css`.
 
 ## 2. Current state
 
@@ -37,17 +38,9 @@ The review also found two bugs. The RSS feed page shows an empty error box after
 
 ## 3. Decision: the language of the interface
 
-The interface must use one language on all pages. There are three options:
+The interface uses English only, on all pages. The CLI, the error messages from the server, the documentation, and the code comments are already English. The Czech texts in the templates get an English translation during the migration (section 13).
 
-| Option | Work | Effect |
-|---|---|---|
-| A. English only | Translate the Czech texts once | Same language as the code, the CLI, and the documentation |
-| B. Czech only | Translate the English texts once | The language of the owner and the main user |
-| C. Both, with a language setting in the profile | Move all texts into a message catalog (a file with one entry per text and language) | Each user chooses the language. Each new text needs two translations. |
-
-The recommendation is option A now. The CLI, the error messages from the server, the documentation, and the code comments are already English. If each text goes through one template function from the start (section 9), option C can follow later without a change to the templates.
-
-Dates and numbers keep the Czech format in all options: `21.10.2026 13:22`, and a decimal comma where a number is shown to a person.
+Dates and numbers keep the Czech format: `21.10.2026 13:22`, and a decimal comma where a number is shown to a person.
 
 ## 4. Design tokens
 
@@ -200,16 +193,27 @@ Dialogs use the HTML `dialog` element with the class `dialog`. The title is an `
 
 The interface uses one icon set: the SVG icons in `style.css` (`icon`, `icon-sm`, and the names such as `icon-trash`). Emoji are not used as icons. Each emoji in the templates today (for example 🎲, 💡, 📦, 🔐) gets an SVG icon or no icon. A new icon is added to the same set.
 
-## 8. Accessibility
+## 8. E-ink readers
+
+E-ink readers are a main target of Atria. An e-ink screen (a screen that shows text like ink on paper) refreshes slowly. Each change on the screen can leave a faint ghost image. The processor of these devices is also slow, and the color e-ink screen of the BOOX Nova Air C shows only weak colors. These rules follow from that:
+
+1. The interface has no animations, no transitions, and no smooth scrolling. Today the CSS fades and slides some elements for 0.2 to 0.3 seconds. The RSS list animates the removal of an item, and the "Top" button scrolls smoothly. All of these go away.
+2. A page loads only the JavaScript that it uses. Today each page loads highlight.js, MathJax, and Mermaid. Most pages have no code, no formulas, and no diagrams. These libraries must load only on pages with that content. The table editor (Tabulator) stays on the table page only.
+3. Color is never the only signal. A state, an error, or a selection also has a text, an icon, or a border. On a color e-ink screen, two colors can look the same.
+4. Each element that you tap has a size of at least 40 × 40 px. E-ink readers use touch or a stylus, and you cannot hover. Thus no action is available only on hover.
+5. Long content uses pages, not endless scrolling. Scrolling on e-ink is slow and refreshes the screen many times.
+6. Reading pages (a note, an article, an RSS item) show the toolbar above and below the content. After you read to the end, you can act at once, for example archive the article, without a scroll back to the top.
+
+## 9. Accessibility
 
 These rules apply to all pages:
 
 - Each element that you can click must also work with the keyboard, and it must show a visible focus outline in `--focus`.
-- Text and backgrounds meet the contrast ratio from 4.1.
+- Text and backgrounds meet the contrast ratio from 4.1. The light theme is the main theme for e-ink readers, so its contrast matters most.
 - The language in `<html lang="…">` matches the language of the interface.
 - Images have an `alt` text. A decorative icon has `aria-hidden="true"`.
 
-## 9. Texts in the interface
+## 10. Texts in the interface
 
 The texts in the interface follow the same rules as the documentation: short, plain sentences, the same word for the same thing on all pages, and no exclamation marks. These terms are fixed:
 
@@ -220,9 +224,9 @@ The texts in the interface follow the same rules as the documentation: short, pl
 | Save | Uložit, Save All Changes |
 | Read-it-later | Inbox, Read-it-Later Inbox |
 
-Each text in a template goes through one template function, for example `{{t "Save"}}`. In option A of section 3, the function returns the text without a change. Then option C needs no change to the templates.
+The texts stay in the templates. A translation system is not needed for one language.
 
-## 10. Rules for the code
+## 11. Rules for the code
 
 These rules keep the design consistent after the migration:
 
@@ -231,24 +235,25 @@ These rules keep the design consistent after the migration:
 3. A component gets its CSS in one place in `style.css`, under a comment with its name.
 4. A Go test reads all templates. If a template has a `style` attribute that is not a CSS variable, the test fails. This is the same approach as the test that forbids inline JavaScript.
 
-## 11. Screenshots for each change
+## 12. Screenshots for each change
 
 The repository gets the screenshot script from the review, as `scripts/ui-screenshots`. It starts a server with sample data and takes screenshots of all main pages. It does this in the light and the dark theme, at desktop and phone width. Then it puts the screenshots into one overview image.
 
-Each pull request that changes the interface adds the overview images before and after the change. This makes layout regressions visible before a release.
+Each pull request that changes the interface adds the overview images before and after the change. This makes layout regressions visible before a release. The script also takes portrait screenshots in grayscale. They show approximately what an e-ink reader shows.
 
-## 12. Migration plan
+## 13. Migration plan
 
 The work is done in small pull requests, in this order:
 
 1. Fix the two bugs from section 2. This does not depend on this design.
-2. Add the tokens, the components, and the screenshot script. No page changes yet.
-3. Remove the outdated content: the "Proof of Concept" box, the General settings that do not work, and the proxy debug table.
-4. Convert the pages area by area: notes, read-it-later and RSS, e-books, tables, games, search, settings and profile, login. Each pull request also translates the texts of its area (section 3).
-5. Add the Go test from section 10. It fails until the last area is converted, so it comes last.
+2. Apply the e-ink rules 1 and 2 from section 8: remove the animations, and load highlight.js, MathJax, and Mermaid only where they are used. This makes all pages faster on e-ink readers at once.
+3. Add the tokens, the components, and the screenshot script. No page changes yet.
+4. Remove the outdated content: the "Proof of Concept" box, the General settings that do not work, and the proxy debug table.
+5. Convert the pages area by area: notes, read-it-later and RSS, e-books, tables, games, search, settings and profile, login. Each pull request also translates the texts of its area into English (section 3).
+6. Add the Go test from section 11. It fails until the last area is converted, so it comes last.
 
-## 13. Open questions
+## 14. Decisions and open questions
 
-1. The language of the interface (section 3).
-2. The note and article pages show the toolbar above and below the content. Keep both, or keep only the top toolbar?
-3. A note that starts with `# Title` shows its title twice. If the first heading is the same as the title, hide it?
+1. Decided: the interface uses English only (section 3).
+2. Decided: reading pages keep the toolbar above and below the content (section 8, rule 6).
+3. Open: a note that starts with `# Title` shows its title twice. If the first heading is the same as the title, hide it?
