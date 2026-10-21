@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -20,7 +21,36 @@ import (
 	"database/sql"
 )
 
-var serverPort string
+var (
+	serverPort string
+	serverHost string
+)
+
+// listenAddress builds the address to listen on from --host/--port or
+// ATRIA_HOST/PORT. An empty host means all interfaces (the default); behind a
+// reverse proxy on the same machine use 127.0.0.1 so the app cannot be
+// reached around the proxy.
+func listenAddress(flagHost, flagPort string) (string, error) {
+	host := flagHost
+	if host == "" {
+		host = os.Getenv("ATRIA_HOST")
+	}
+	port := flagPort
+	if port == "" {
+		port = os.Getenv("PORT")
+	}
+	if port == "" {
+		port = "8080"
+	}
+
+	if host != "" && host != "localhost" && net.ParseIP(host) == nil {
+		return "", fmt.Errorf("invalid host %q: use an IP address such as 127.0.0.1 or ::1 (empty = all interfaces)", host)
+	}
+	if n, err := strconv.Atoi(port); err != nil || n < 1 || n > 65535 {
+		return "", fmt.Errorf("invalid port %q", port)
+	}
+	return net.JoinHostPort(host, port), nil
+}
 
 func startRSSWorker(ctx context.Context, db *sql.DB, interval time.Duration) {
 	go func() {
@@ -73,6 +103,10 @@ var serverCmd = &cobra.Command{
 		if err := web.ValidateSecurityConfig(); err != nil {
 			return err
 		}
+		addr, err := listenAddress(serverHost, serverPort)
+		if err != nil {
+			return err
+		}
 
 		// 1. Connect to DB
 		dsn := os.Getenv("DATABASE_URL")
@@ -98,16 +132,8 @@ var serverCmd = &cobra.Command{
 		router := srv.SetupRouter()
 
 		// 4. Run
-		port := serverPort
-		if port == "" {
-			port = os.Getenv("PORT")
-			if port == "" {
-				port = "8080"
-			}
-		}
-
 		httpServer := &http.Server{
-			Addr:              ":" + port,
+			Addr:              addr,
 			Handler:           router,
 			ReadHeaderTimeout: 10 * time.Second,
 			// Generous body/response timeouts: uploads, EPUB exports and manual
@@ -119,7 +145,7 @@ var serverCmd = &cobra.Command{
 
 		serverErr := make(chan error, 1)
 		go func() {
-			log.Printf("🚀 Starting Atria web server on http://localhost:%s", port)
+			log.Printf("🚀 Starting Atria web server on %s", describeListen(addr))
 			serverErr <- httpServer.ListenAndServe()
 		}()
 
@@ -141,5 +167,15 @@ var serverCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(serverCmd)
-	serverCmd.Flags().StringVarP(&serverPort, "port", "p", "", "Port to run the server on (overrides .env)")
+	serverCmd.Flags().StringVarP(&serverPort, "port", "p", "", "Port to run the server on (overrides PORT)")
+	serverCmd.Flags().StringVar(&serverHost, "host", "", "Address to bind, e.g. 127.0.0.1 (overrides ATRIA_HOST; default: all interfaces)")
+}
+
+// describeListen renders the listen address for the startup log.
+func describeListen(addr string) string {
+	host, port, _ := net.SplitHostPort(addr)
+	if host == "" {
+		return "all interfaces, port " + port
+	}
+	return "http://" + addr
 }
