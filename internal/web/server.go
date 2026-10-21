@@ -209,7 +209,7 @@ func (s *Server) SetupRouter() *gin.Engine {
 	auth.GET("/tables", s.handleTableList)
 	auth.GET("/tables/:id", s.handleTableDetail)
 	auth.GET("/tables/:id/export.csv", s.handleTableExportCSV)
-	auth.GET("/settings", s.makeHandler("settings.html", nil))
+	auth.GET("/settings", func(c *gin.Context) { c.Redirect(http.StatusSeeOther, "/settings/rss") })
 	auth.GET("/settings/users", s.handleUserList)
 	auth.GET("/settings/rss", s.handleRSSFeedList)
 	auth.GET("/settings/attachments", s.handleAttachments)
@@ -641,11 +641,6 @@ func (s *Server) handleProfile(c *gin.Context) {
 		"NoteCount":        noteCount,
 		"ArticleCount":     articleCount,
 		"TagCount":         tagCount,
-		"ProxyHeaders": gin.H{
-			"Email":  c.GetHeader("Remote-Email"),
-			"User":   c.GetHeader("Remote-User"),
-			"Groups": c.GetHeader("Remote-Groups"),
-		},
 	})
 }
 
@@ -719,16 +714,6 @@ func (s *Server) handleFontSizeAdjust(c *gin.Context) {
 	}
 
 	c.Redirect(http.StatusFound, localRedirectTarget(c, "/"))
-}
-
-func (s *Server) makeHandler(tmplName string, data gin.H) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		renderData := gin.H{}
-		for k, v := range data {
-			renderData[k] = v
-		}
-		s.render(c, tmplName, renderData)
-	}
 }
 
 func (s *Server) handleLoginGet(c *gin.Context) {

@@ -75,30 +75,6 @@
         </div>
     </div>
 
-    <div class="card shadow mt-3" style="border-left: 4px solid var(--border);">
-        <h3>Relace a Identita (SSO)</h3>
-
-        <p style="font-size: 0.9rem;">Atria využívá externí autentizaci (Authelia). Níže jsou data předávaná skrze reverzní proxy:</p>
-
-        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 10px;">
-            <tr style="border-bottom: 1px solid var(--border);">
-                <th style="text-align: left; padding: 8px;">Hlavička</th>
-                <th style="text-align: left; padding: 8px;">Hodnota</th>
-            </tr>
-            <tr>
-                <td style="padding: 8px; color: var(--text-muted);">Remote-Email</td>
-                <td style="padding: 8px;"><code>{{index .ProxyHeaders "Email"}}</code></td>
-            </tr>
-            <tr>
-                <td style="padding: 8px; color: var(--text-muted);">Remote-User</td>
-                <td style="padding: 8px;"><code>{{index .ProxyHeaders "User"}}</code></td>
-            </tr>
-            <tr>
-                <td style="padding: 8px; color: var(--text-muted);">Remote-Groups</td>
-                <td style="padding: 8px; color: var(--accent);">{{index .ProxyHeaders "Groups"}}</td>
-            </tr>
-        </table>
-    </div>
 
     {{if .SSOManagementURL}}
     <div class="mt-3" style="text-align: center;">

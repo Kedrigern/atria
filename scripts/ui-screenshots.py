@@ -207,7 +207,7 @@ def pages(base):
         ("07-rss-feed", found["feed"]), ("08-ebooks", "/ebooks"), ("09-ebook", found["ebook"]),
         ("10-tables", "/tables"), ("11-table", found["table"]), ("12-games", "/games"),
         ("13-cryptogram", "/games/cryptograms/01900000-0000-7000-8000-000000000001"),
-        ("14-search", "/search?q=reading"), ("15-settings", "/settings"),
+        ("14-search", "/search?q=reading"), ("15-settings", "/settings/rss"),
         ("16-storage", "/settings/storage"), ("17-profile", "/profile"), ("18-login", "/login"),
     ]
     return [(name, path) for name, path in result if path]
