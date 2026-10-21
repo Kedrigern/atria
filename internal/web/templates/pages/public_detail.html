@@ -1,10 +1,10 @@
 {{define "content"}}
-<div class="centered-view" style="max-width: 900px; padding-top: 40px; padding-bottom: 40px">
-    <p style="margin: 0 0 8px; color: var(--text-muted); font-size: 0.8rem; letter-spacing: 1px">ATRIA</p>
-    <h1 style="margin-top: 0; color: var(--text-heading)">{{.Title}}</h1>
+<div class="centered-view public-view">
+    <p class="public-brand">ATRIA</p>
+    <h1 class="reading-title">{{.Title}}</h1>
     {{if .SourceURL}}
-    <p class="text-muted mb-3" style="font-size: 0.9rem">Source: <a href="{{.SourceURL}}" target="_blank" rel="noopener noreferrer">Open original</a></p>
+    <p class="reading-meta">Source: <a href="{{.SourceURL}}" target="_blank" rel="noopener noreferrer">Open original</a></p>
     {{end}}
-    <article {{if not .SourceURL}}data-render-math{{end}} style="font-size: 1.1rem; line-height: 1.7; color: var(--text-main)">{{.Content}}</article>
+    <article class="reading-body" {{if not .SourceURL}}data-render-math{{end}}>{{.Content}}</article>
 </div>
 {{end}}

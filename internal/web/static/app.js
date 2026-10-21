@@ -140,10 +140,13 @@ document.addEventListener("click", function (evt) {
     } else if (el.hasAttribute("data-toggle-inline")) {
         evt.preventDefault();
         const content = el.closest(".list-item")?.querySelector(".inline-content");
-        if (content) content.style.display = content.style.display === "none" ? "block" : "none";
+        if (content) content.hidden = !content.hidden;
     } else if (el.hasAttribute("data-hide-inline")) {
         const content = el.closest(".inline-content");
-        if (content) content.style.display = "none";
+        if (content) {
+            content.hidden = true;
+            content.closest(".list-item")?.scrollIntoView({ block: "start" });
+        }
     } else if (el.hasAttribute("data-scroll-top")) {
         document.getElementById("main-content").scrollTo({ top: 0 });
     } else if (el.hasAttribute("data-ebook-view")) {

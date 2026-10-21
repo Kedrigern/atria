@@ -1,89 +1,75 @@
 {{define "content"}}
-
 <div class="centered-view" data-mobile-title="ATRIA: RSS">
-    <h2 class="hide-mobile">RSS</h2>
-
     {{template "flash_message" .}}
 
-    <div class="flex-row flex-between flex-wrap mb-3" style="font-size: 1.1rem;">
-        <div>
-            <a
-                href="/rss"
-                style="{{if not .ActiveTag}}font-weight: bold; color: var(--accent){{else}}color: var(--text-muted){{end}}"
-                >All</a
-            >
-            {{range .Tags}}
-            <span style="color: var(--text-muted); margin: 0 10px">|</span>
-            <a
-                href="/rss?tag={{.Name}}"
-                style="{{if eq $.ActiveTag .Name}}font-weight: bold; color: var(--accent){{else}}color: var(--text-muted){{end}}"
-                >{{.Name}}</a
-            >
-            {{end}}
+    <header class="page-header">
+        <h1 class="page-title">RSS</h1>
+        <div class="page-actions">
+            <a href="/settings/rss" class="button-link outline btn-sm">Feeds</a>
+            <form method="post" action="/api/rss/fetch" hx-post="/api/rss/fetch" class="inline-action-form">
+                <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
+                <button type="submit" class="outline btn-sm">
+                    <span class="icon-sm icon-refresh" aria-hidden="true"></span> Fetch
+                </button>
+            </form>
         </div>
-        <form
-            method="post"
-            action="/api/rss/fetch"
-            hx-post="/api/rss/fetch"
-            hx-headers='{"X-CSRF-Token": "{{.CSRFToken}}"}'
-        >
-            <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
-            <button type="submit" class="outline btn-sm">⟳ Fetch</button>
-        </form>
-    </div>
+    </header>
+
+    {{if .Tags}}
+    <nav class="filter-nav" aria-label="Filter by tag">
+        <a href="/rss" {{if not .ActiveTag}}class="active" aria-current="page"{{end}}>All</a>
+        {{range .Tags}}
+        <a href="/rss?tag={{.Name}}" {{if eq $.ActiveTag .Name}}class="active" aria-current="page"{{end}}>{{.Name}}</a>
+        {{end}}
+    </nav>
+    {{end}}
 
     <div id="rss-page-items">
-        {{range .Items}} {{template "rss_list_item" .}} {{else}} {{if gt .Page
-        1}}
-        <p class="page-empty-hint">
-            No unread RSS items remain on this page. You can go back to the
-            previous page.
-        </p>
+        {{range .Items}}
+        {{template "rss_list_item" .}}
         {{else}}
-        <div style="text-align: center; margin-top: 40px; margin-bottom: 40px">
-            <h3 style="margin-bottom: 10px">🎉 Hotovo! Triáž je prázdná.</h3>
-            <p class="text-muted mb-3">
-                Prošli jste všechny nové RSS položky. Kam dál?
-            </p>
-
-            <div class="flex-row" style="gap: 15px; justify-content: center; flex-wrap: wrap;">
-                <a href="/read" class="button-link outline">📄 Číst uložené články</a>
-                <a href="/notes" class="button-link outline">📝 Přejít na poznámky</a>
-                <a href="/" class="button-link outline">🏠 Domů</a>
+        {{if gt .Page 1}}
+        <p class="page-empty-hint">No unread items remain on this page. Go back to the previous page.</p>
+        {{else}}
+        <div class="empty-state">
+            <h2>All items are read</h2>
+            <p class="page-empty-hint">There are no new RSS items.</p>
+            <div class="action-row">
+                <a href="/read" class="button-link outline">Read-it-later</a>
+                <a href="/notes" class="button-link outline">Notes</a>
+                <a href="/" class="button-link outline">Home</a>
             </div>
         </div>
-        {{end}} {{end}}
+        {{end}}
+        {{end}}
     </div>
 
     {{if or .Items (gt .Page 1)}}
-    <div class="pagination-bar" style="border-top: 1px solid var(--border-color)">
+    <nav class="pagination-bar" aria-label="Pages">
         <div class="action-row">
             {{if gt .Page 1}}
             <a href="/rss?page={{.PrevPage}}" class="button-link outline">&laquo; Previous</a>
-            {{end}} {{if .HasNext}}
+            {{end}}
+            {{if .HasNext}}
             <a href="/rss?page={{.NextPage}}" class="button-link outline">Next &raquo;</a>
-            {{end}} {{if .Items}}
-            <form
-                method="post"
-                action="/api/rss/archive-batch"
-            >
+            {{end}}
+            {{if .Items}}
+            <form method="post" action="/api/rss/archive-batch" class="inline-action-form">
                 <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
                 {{range .Items}}
                 <input type="hidden" name="ids" value="{{.ID}}" />
                 {{end}}
                 <input type="hidden" name="page" value="{{.Page}}" />
-                <button type="submit" class="button-link outline">✓ Archive page</button>
+                <button type="submit" class="btn-primary">
+                    <span class="icon-sm icon-check" aria-hidden="true"></span> Archive this page
+                </button>
             </form>
             {{end}}
-            <button
-                type="button"
-                class="button-link outline"
-                data-scroll-top
-            >
-                ↑ Top
+            <button type="button" class="outline" data-scroll-top>
+                <span class="icon-sm icon-chevron-up" aria-hidden="true"></span> Top
             </button>
         </div>
-    </div>
+    </nav>
     {{end}}
 </div>
 {{end}}

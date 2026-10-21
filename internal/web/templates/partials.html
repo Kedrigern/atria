@@ -93,11 +93,11 @@
 {{end}}
 
 {{define "badge_saved"}}
-<span class="tag tag-success">✅ Saved to Inbox</span>
+<p class="list-item-state"><span class="badge badge-success">Saved to read-it-later</span></p>
 {{end}}
 
 {{define "badge_archived"}}
-<span style="color: var(--text-muted); font-size: 0.9rem;">✓ Archived</span>
+<p class="list-item-state"><span class="badge">Archived</span></p>
 {{end}}
 
 {{define "tag_link"}}
@@ -106,30 +106,21 @@
 
 {{define "flash_message"}}
 {{if .Flash}}
-<div class="flash-message {{.Flash.Type}}">
-    <div class="action-row" style="justify-content: space-between">
-        <span>
-            {{.Flash.Message}}
-            {{if .Flash.LinkURL}}
-            <a href="{{.Flash.LinkURL}}">{{.Flash.LinkText}}</a>
-            {{end}}
-        </span>
-        <button
-            type="button"
-            class="outline"
-            data-flash-close
-            style="min-height: auto; padding: 4px 8px"
-        >
-            ×
-        </button>
-    </div>
+<div class="flash-message {{.Flash.Type}}" role="status">
+    <span>
+        {{.Flash.Message}}
+        {{if .Flash.LinkURL}}
+        <a href="{{.Flash.LinkURL}}">{{.Flash.LinkText}}</a>
+        {{end}}
+    </span>
+    <button type="button" class="btn-quiet btn-sm" data-flash-close title="Close" aria-label="Close">×</button>
 </div>
 {{end}}
 {{end}}
 
 {{define "pagination_bar"}}
 {{if or .HasNext (gt .Page 1)}}
-<div class="pagination-bar" style="border-top: 1px solid var(--border-color)">
+<nav class="pagination-bar" aria-label="Pages">
     <div class="action-row">
         {{if gt .Page 1}}
         <a href="{{.PaginationURL}}?page={{.PrevPage}}{{.PaginationExtra}}" class="button-link outline">&laquo; Previous</a>
@@ -138,7 +129,7 @@
         <a href="{{.PaginationURL}}?page={{.NextPage}}{{.PaginationExtra}}" class="button-link outline">Next &raquo;</a>
         {{end}}
     </div>
-</div>
+</nav>
 {{end}}
 {{end}}
 
@@ -159,73 +150,63 @@
 {{end}}
 
 {{define "rss_list_item"}}
-<div class="list-item rss-list-item" style="flex-direction: column; align-items: flex-start; gap: 8px">
-    <div class="page-header-row" style="width: 100%">
+<div class="list-item rss-list-item">
+    <div class="rss-list-item-head">
         <div>
-            <h4 style="margin: 0 0 5px 0">
-                <a href="#" data-toggle-inline>
-                    {{.Title}}
-                </a>
-            </h4>
-            <small class="rss-list-item-meta">
-                <a href="/rss/{{.FeedID}}" style="color: inherit; text-decoration: underline; text-underline-offset: 3px;">{{.SourceName}}</a> • {{formatDate .PublishedAt}}
-                {{if .ReadAt}} <span class="tag tag-success" style="font-size: 0.85rem; margin-left: 8px;">✓ read</span>{{end}}
-            </small>
+            <h2 class="list-item-title">
+                <a href="#" data-toggle-inline>{{.Title}}</a>
+            </h2>
+            <p class="list-item-meta rss-list-item-meta">
+                <a href="/rss/{{.FeedID}}">{{.SourceName}}</a> • {{formatDate .PublishedAt}}
+                {{if .ReadAt}}<span class="badge badge-success">Read</span>{{end}}
+            </p>
         </div>
 
-        <div class="action-row">
+        <div class="list-item-actions">
             <form method="post" action="/api/rss/{{.ID}}/update" hx-post="/api/rss/{{.ID}}/update" hx-target="closest .list-item" hx-swap="outerHTML">
-                <button type="submit" class="outline btn-sm" title="Save to Read-it-Later">
-                    <span class="icon-sm icon-bookmark"></span>
+                <button type="submit" class="outline btn-sm" title="Save to read-it-later" aria-label="Save to read-it-later">
+                    <span class="icon-sm icon-bookmark" aria-hidden="true"></span>
                 </button>
             </form>
-
             {{if not .ReadAt}}
             <form method="post" action="/api/rss/{{.ID}}/archive" hx-post="/api/rss/{{.ID}}/archive" hx-target="closest .list-item" hx-swap="outerHTML">
-                <button type="submit" class="outline btn-sm" title="Archive (Mark as Read)">
-                    <span class="icon-sm icon-check"></span>
+                <button type="submit" class="outline btn-sm" title="Archive" aria-label="Archive">
+                    <span class="icon-sm icon-check" aria-hidden="true"></span>
                 </button>
             </form>
             {{end}}
-
-            <a href="{{.Link}}" target="_blank" class="button-link outline btn-sm" title="Otevřít originál">
-                <span class="icon-sm icon-external-link"></span>
+            <a href="{{.Link}}" target="_blank" rel="noopener" class="button-link outline btn-sm" title="Open original" aria-label="Open original">
+                <span class="icon-sm icon-external-link" aria-hidden="true"></span>
             </a>
         </div>
     </div>
 
     {{if .Description}}
-    <div class="rss-list-item-description">
-        {{truncate (stripHTML .Description) 220}}
-    </div>
+    <p class="rss-list-item-description">{{truncate (stripHTML .Description) 220}}</p>
     {{end}}
 
-    <div class="inline-content" style="display: none; margin-top: 8px; padding: 15px; background: var(--background); border-radius: 6px; border: 1px solid var(--border); font-size: 0.95rem; line-height: 1.6; overflow-x: auto; width: 100%; box-sizing: border-box;">
+    <div class="inline-content" hidden>
         {{if .ContentPrunedAt}}
-        <p class="text-muted" style="margin: 0;">
-            Obsah tohoto přečteného článku byl {{formatDatePtr .ContentPrunedAt}} odstraněn, aby nezabíral místo.
-            <a href="{{.Link}}" target="_blank" rel="noopener">Otevřít originál</a>
+        <p class="text-muted">
+            Atria removed the text of this read item on {{formatDatePtr .ContentPrunedAt}} to save space.
+            <a href="{{.Link}}" target="_blank" rel="noopener">Open original</a>
         </p>
         {{else if .Content}}{{sanitizeHTML .Content}}{{else}}{{sanitizeHTML .Description}}{{end}}
 
-        <div class="flex-row flex-between flex-wrap mt-3" style="padding-top: 15px; border-top: 1px dashed var(--border); gap: 10px;">
+        <div class="inline-content-actions">
             <button type="button" class="outline btn-sm" data-hide-inline>
-                ↑ Zobrazit méně
+                <span class="icon-sm icon-chevron-up" aria-hidden="true"></span> Show less
             </button>
-
-            <div class="action-row">
+            <div class="list-item-actions">
                 <form method="post" action="/api/rss/{{.ID}}/update" hx-post="/api/rss/{{.ID}}/update" hx-target="closest .list-item" hx-swap="outerHTML">
-                    <button type="submit" class="outline btn-sm" title="Save to Read-it-Later">
-                        <span class="icon-sm icon-bookmark"></span>
-                        Uložit do Inboxu
+                    <button type="submit" class="outline btn-sm">
+                        <span class="icon-sm icon-bookmark" aria-hidden="true"></span> Save to read-it-later
                     </button>
                 </form>
-
                 {{if not .ReadAt}}
                 <form method="post" action="/api/rss/{{.ID}}/archive" hx-post="/api/rss/{{.ID}}/archive" hx-target="closest .list-item" hx-swap="outerHTML">
-                    <button type="submit" class="outline btn-sm" title="Archive (Mark as Read)">
-                        <span class="icon-sm icon-check"></span>
-                        Archivovat
+                    <button type="submit" class="btn-primary btn-sm">
+                        <span class="icon-sm icon-check" aria-hidden="true"></span> Archive
                     </button>
                 </form>
                 {{end}}
@@ -254,44 +235,44 @@
 <div class="toolbar toolbar-compact">
     <div class="toolbar-group">
         <a href="/read" class="button-link outline btn-sm toolbar-back-link">
-            <span class="icon-sm icon-chevron-left"></span><span class="article-toolbar-mobile-label"> Zpět</span>
+            <span class="icon-sm icon-chevron-left" aria-hidden="true"></span><span class="article-toolbar-mobile-label"> Read-it-later</span>
         </a>
         <div class="toolbar-sep hide-mobile"></div>
-        <a href="{{.Article.OriginalURL}}" target="_blank" class="button-link outline btn-sm" title="Přejít na originál">
-            <span class="icon-sm icon-external-link"></span>
+        <a href="{{.Article.OriginalURL}}" target="_blank" rel="noopener" class="button-link outline btn-sm" title="Open original" aria-label="Open original">
+            <span class="icon-sm icon-external-link" aria-hidden="true"></span>
         </a>
         <div class="dropdown hide-mobile" tabindex="0">
-            <button type="button" class="outline btn-sm" title="Export">
-                <span class="icon-sm icon-download"></span>
+            <button type="button" class="outline btn-sm" title="Export" aria-label="Export">
+                <span class="icon-sm icon-download" aria-hidden="true"></span>
             </button>
             <div class="dropdown-menu">
-                <a href="/read/{{.Article.ID}}/export/md">⬇ Markdown</a>
-                <a href="/read/{{.Article.ID}}/export/epub">⬇ EPUB</a>
+                <a href="/read/{{.Article.ID}}/export/md">Markdown</a>
+                <a href="/read/{{.Article.ID}}/export/epub">EPUB</a>
             </div>
         </div>
-        <button type="button" hx-post="/api/entity/{{.Article.ID}}/rename" hx-prompt="Zadejte nový název článku:" class="outline btn-sm article-toolbar-mobile-hidden" title="Přejmenovat článek">
-            <span class="icon-sm icon-edit"></span>
+        <button type="button" hx-post="/api/entity/{{.Article.ID}}/rename" hx-prompt="New title of the article:" class="outline btn-sm article-toolbar-mobile-hidden" title="Rename" aria-label="Rename">
+            <span class="icon-sm icon-edit" aria-hidden="true"></span>
         </button>
         <form method="post" action="/api/articles/{{.Article.ID}}/refetch" class="inline-action-form article-toolbar-mobile-hidden">
             <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
-            <button type="submit" class="outline btn-sm" title="Znovu stáhnout obsah">
-                <span class="icon-sm icon-refresh"></span>
+            <button type="submit" class="outline btn-sm" title="Download the article again" aria-label="Download the article again">
+                <span class="icon-sm icon-refresh" aria-hidden="true"></span>
             </button>
         </form>
     </div>
     <div class="toolbar-group">
         {{template "font_size_controls" .}}
-        <span class="tag hide-mobile entity-short-id" data-copy="{{.Article.ShortID}}" title="Zkopírovat ID">#{{.Article.ShortID}}</span>
-        <form method="post" action="/api/articles/{{.Article.ID}}/delete" class="inline-action-form article-toolbar-mobile-hidden" data-confirm="Opravdu smazat tento článek?">
+        <button type="button" class="tag hide-mobile entity-short-id" data-copy="{{.Article.ShortID}}" title="Copy short ID">#{{.Article.ShortID}}</button>
+        <form method="post" action="/api/articles/{{.Article.ID}}/delete" class="inline-action-form article-toolbar-mobile-hidden" data-confirm="Move this article to the trash?">
             <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
-            <button type="submit" class="outline btn-sm btn-danger" title="Smazat článek">
-                <span class="icon-sm icon-trash"></span>
+            <button type="submit" class="outline btn-sm btn-danger" title="Move to trash" aria-label="Move to trash">
+                <span class="icon-sm icon-trash" aria-hidden="true"></span>
             </button>
         </form>
         <form method="post" action="/api/articles/{{.Article.ID}}/archive" class="inline-action-form">
             <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
-            <button type="submit" class="btn-sm btn-primary" title="Archivovat">
-                <span class="icon-sm icon-check"></span><span class="article-toolbar-mobile-label"> Archivovat</span>
+            <button type="submit" class="btn-sm btn-primary" title="Archive">
+                <span class="icon-sm icon-check" aria-hidden="true"></span><span class="article-toolbar-mobile-label"> Archive</span>
             </button>
         </form>
     </div>
@@ -374,31 +355,11 @@
 {{end}}
 
 {{define "add_article_form"}}
-<form
-    method="post"
-    action="/api/articles/add"
-    class="flex-row flex-wrap mb-3"
-    style="align-items: flex-start"
->
+<form method="post" action="/api/articles/add" class="add-article-form">
     <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
-    <input
-        type="url"
-        name="url"
-        placeholder="https://... (Zadejte URL článku)"
-        class="form-control"
-        style="flex: 1 1 300px"
-        required
-    />
-    <input
-        type="text"
-        name="user_note"
-        placeholder="Poznámka k článku (volitelné)..."
-        class="form-control"
-        style="flex: 1 1 200px"
-    />
-    <button type="submit" class="btn-primary" style="white-space: nowrap">
-        Save Article
-    </button>
+    <input type="url" name="url" placeholder="https://example.com/article" aria-label="Address of the article" class="form-control add-article-url" required />
+    <input type="text" name="user_note" placeholder="Note (optional)" aria-label="Note for the article" class="form-control add-article-note" />
+    <button type="submit" class="btn-primary">Save article</button>
 </form>
 {{end}}
 

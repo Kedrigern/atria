@@ -1,89 +1,49 @@
 {{define "content"}}
-<div class="centered-view wide" data-mobile-title="ATRIA: RSS Feed">
+<div class="centered-view wide" data-mobile-title="ATRIA: RSS feed">
     {{template "settings_header" .}}
-    {{/* ── Feed header ── */}}
-    <div
-        class="page-header-row flex-wrap mb-3"
-        style="align-items: flex-start; gap: 12px;"
-    >
-        <div>
-            <h3 style="margin: 0 0 5px 0">
-                {{if .Feed.SiteURL}}
-                <a
-                    href="{{.Feed.SiteURL}}"
-                    target="_blank"
-                    style="color: var(--text-heading); text-decoration: none"
-                    >{{.Feed.Title}}</a
-                >
-                {{else}}{{.Feed.Title}}{{end}}
-            </h3>
-            <small style="color: var(--text-muted); font-size: 0.85rem; word-break: break-all;">
-                <a
-                    href="{{.Feed.FeedURL}}"
-                    target="_blank"
-                    style="color: var(--text-muted)"
-                    >{{.Feed.FeedURL}}</a
-                >
-            </small>
-        </div>
 
-        <div class="flex-row flex-wrap">
-            <form
-                method="post"
-                action="/api/rss/{{.Feed.ID}}/fetch"
-                hx-post="/api/rss/{{.Feed.ID}}/fetch"
-            >
+    <header class="page-header">
+        <div>
+            <h1 class="page-title">
+                {{if .Feed.SiteURL}}<a href="{{.Feed.SiteURL}}" target="_blank" rel="noopener" class="page-title-link">{{.Feed.Title}}</a>{{else}}{{.Feed.Title}}{{end}}
+            </h1>
+            <p class="page-subtitle feed-url"><a href="{{.Feed.FeedURL}}" target="_blank" rel="noopener">{{.Feed.FeedURL}}</a></p>
+        </div>
+        <div class="page-actions">
+            <a href="/settings/rss" class="button-link outline btn-sm">
+                <span class="icon-sm icon-chevron-left" aria-hidden="true"></span> Feeds
+            </a>
+            <form method="post" action="/api/rss/{{.Feed.ID}}/fetch" hx-post="/api/rss/{{.Feed.ID}}/fetch" class="inline-action-form">
                 <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
-                <button type="submit" class="outline btn-sm" style="white-space: nowrap;">
-                    ⟳ Fetch
+                <button type="submit" class="outline btn-sm">
+                    <span class="icon-sm icon-refresh" aria-hidden="true"></span> Fetch
                 </button>
             </form>
-
-            <a href="/settings/rss" class="button-link outline btn-sm" style="white-space: nowrap;">
-                ← Zpět
-            </a>
         </div>
-    </div>
+    </header>
 
-    {{/* ── Stats bar ── */}}
-    <div
-        class="flex-row flex-wrap mb-3"
-        style="
-            font-size: 0.9rem;
-            color: var(--text-muted);
-            background: var(--background-alt);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 10px 14px;
-            gap: 16px;
-        "
-    >
-        <span>📦 <strong>{{.Feed.TotalItems}}</strong> total</span>
-        <span>·</span>
-        <span>📬 <strong>{{.UnreadItems}}</strong> unread</span>
-        <span>·</span>
-        <span>✓ <strong>{{.Feed.ReadItems}}</strong> read</span>
-
-        {{if .Feed.LastFetchedAt}}
-        <span style="margin-left: auto; font-size: 0.85rem">
-            Last fetched: {{formatDatePtr .Feed.LastFetchedAt}} {{if
-            .Feed.LastFetchStatus}} · Status
-            <strong>{{.Feed.LastFetchStatus}}</strong>{{end}}
+    <div class="stats-bar">
+        <span><strong>{{.Feed.TotalItems}}</strong> total</span>
+        <span><strong>{{.UnreadItems}}</strong> unread</span>
+        <span><strong>{{.Feed.ReadItems}}</strong> read</span>
+        <span class="stats-bar-end">
+            {{if .Feed.LastFetchedAt}}
+            Last fetch: {{formatDatePtr .Feed.LastFetchedAt}}{{if .Feed.LastFetchStatus}}, status <strong>{{.Feed.LastFetchStatus}}</strong>{{end}}
+            {{else}}
+            Never fetched
+            {{end}}
         </span>
-        {{else}}
-        <span style="margin-left: auto; font-size: 0.85rem; color: var(--text-muted);">Never fetched</span>
-        {{end}}
     </div>
 
-    {{/* ── Fetch error ── */}} {{if .Feed.LastFetchError}}
-    <div class="alert alert-danger mb-3">
-        <strong>⚠️ Last fetch error:</strong>
+    {{if .Feed.LastFetchError}}
+    <div class="alert alert-danger mb-3" role="alert">
+        <strong>Last fetch error:</strong>
         {{.Feed.LastFetchError}}
     </div>
     {{end}}
-    {{/* ── Controls: Show archived checkbox & Archive All ── */}}
-    <div class="flex-row flex-between flex-wrap mb-3" style="font-size: 0.95rem;">
-        <label class="flex-row" style="gap: 8px; cursor: pointer; color: var(--text-main);">
+
+    <div class="feed-controls">
+        <label class="checkbox-label">
             <input
                 type="checkbox"
                 name="archived"
@@ -94,44 +54,34 @@
                 hx-push-url="true"
                 hx-include="this"
                 hx-trigger="change"
-                style="width: auto;"
             />
             Show archived items
         </label>
 
         {{if gt .UnreadItems 0}}
-        <form
-            method="post"
-            action="/api/rss/{{.Feed.ID}}/archive-all"
-            hx-post="/api/rss/{{.Feed.ID}}/archive-all"
-        >
+        <form method="post" action="/api/rss/{{.Feed.ID}}/archive-all" hx-post="/api/rss/{{.Feed.ID}}/archive-all" class="inline-action-form" data-confirm="Mark all {{.UnreadItems}} unread items of this feed as read?">
             <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
             <button type="submit" class="outline btn-sm">
-                <span class="icon-sm icon-check"></span>
-                Označit vše za přečtené
+                <span class="icon-sm icon-check" aria-hidden="true"></span> Mark all as read
             </button>
         </form>
         {{end}}
     </div>
 
-    {{/* ── Items list ── */}}
     <div id="feed-items">
-        {{range .Feed.Items}} {{template "rss_list_item" .}} {{else}} {{if gt .Page
-        1}}
-        <p class="page-empty-hint">
-            No items on this page. You can go back to the previous page.
-        </p>
+        {{range .Feed.Items}}
+        {{template "rss_list_item" .}}
         {{else}}
-        <p style="color: var(--text-muted)">
-            {{if .IncludeArchived}}No items in this feed yet.{{else}}No unread
-            items.
-            <a href="/rss/{{.Feed.ID}}?archived=1">Show archived</a>{{end}}
-        </p>
-        {{end}} {{end}}
+        {{if gt .Page 1}}
+        <p class="page-empty-hint">No items on this page. Go back to the previous page.</p>
+        {{else if .IncludeArchived}}
+        <p class="page-empty-hint">This feed has no items yet.</p>
+        {{else}}
+        <p class="page-empty-hint">No unread items. <a href="/rss/{{.Feed.ID}}?archived=1">Show archived items</a></p>
+        {{end}}
+        {{end}}
     </div>
 
-    {{/* ── Pagination ── */}}
     {{template "pagination_bar" .}}
 </div>
 {{end}}
-</svg>
