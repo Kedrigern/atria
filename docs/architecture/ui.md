@@ -256,4 +256,4 @@ The work is done in small pull requests, in this order:
 
 1. Decided: the interface uses English only (section 3).
 2. Decided: reading pages keep the toolbar above and below the content (section 8, rule 6).
-3. Open: a note that starts with `# Title` shows its title twice. If the first heading is the same as the title, hide it?
+3. Deferred: a note that starts with `# Title` shows its title twice. This design does not change it.
