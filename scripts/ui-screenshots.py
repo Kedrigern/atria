@@ -54,6 +54,8 @@ VARIANTS = {
     "desktop-light": {"width": 1400, "height": 900, "scheme": "light", "mobile": False},
     "desktop-dark": {"width": 1400, "height": 900, "scheme": "dark", "mobile": False},
     "phone": {"width": 390, "height": 844, "scheme": "light", "mobile": True},
+    # Portrait Android tablet (Galaxy Tab S9 FE) in the dark theme.
+    "tablet-dark": {"width": 625, "height": 1000, "scheme": "dark", "mobile": True},
     # Portrait at a typical CSS size of a 7.8" e-ink reader, then grayscale.
     "eink": {"width": 760, "height": 1012, "scheme": "light", "mobile": True, "grayscale": True},
 }

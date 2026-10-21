@@ -19,6 +19,9 @@ document.addEventListener("DOMContentLoaded", function () {
             if (token)
                 e.detail.headers["X-CSRF-Token"] =
                     token.getAttribute("content");
+            // The server reloads the full page if this page is from an older build.
+            const build = document.querySelector('meta[name="atria-build"]');
+            if (build) e.detail.headers["X-Atria-Build"] = build.getAttribute("content");
         },
     );
 });

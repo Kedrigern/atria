@@ -501,8 +501,12 @@ func (s *Server) render(c *gin.Context, tmplName string, data gin.H) {
 
 	data["Flash"] = s.getFlash(c)
 	data["CSRFToken"] = s.GetCSRFToken(c)
+	data["UIBuild"] = uiBuild()
 
 	if c.GetHeader("HX-Request") == "true" {
+		if staleHTMXPage(c) {
+			return
+		}
 		t, err = s.templates.get("hx:"+tmplName, func() (*template.Template, error) {
 			return template.New(tmplName).Funcs(s.getTemplateFuncs()).
 				ParseFS(TemplatesFS, "templates/partials.html", "templates/pages/"+tmplName)
