@@ -1,16 +1,13 @@
 # Atria
 
-**Your personal mind palace.** *A knowledge base, read-it-later, and RSS reader that respects your time and focus.*
+Atria is a personal knowledge base, read-it-later list, and RSS reader in one web application. It also has a command-line tool (CLI) for the same data.
 
-In ancient Roman architecture, the *Atrium* was the central, light-filled hall of a house. It was the place where light entered from the outside, where news was received, and where calm prevailed. 
+The name comes from the *atrium*, the central hall of a Roman house. Light came in from outside there, and the family received news there. Atria has the same job for your reading. It keeps notes, saved articles, RSS feeds, and small data tables in one place. You do not need Pocket, Feedly, Notion, and loose Markdown files at the same time.
 
-That is exactly what **Atria** aims to be for your digital life. 
-
-Instead of scattering your attention across Pocket, Feedly, Notion, and local Markdown files, Atria provides a single, blazing-fast, and online-first space with offline reading designed for **distraction-free reading and deep thinking**.
+Atria is online-first: you edit on the server. You can also read saved content offline.
 
 > [!WARNING]
-> 🚧 **Work in Progress** > Atria is currently under active development as an online-first app with offline reading support.
-
+> Atria is in active development. Its features and its data format can change.
 
 ## Usage
 
@@ -50,8 +47,7 @@ Use "atria [command] --help" for more information about a command.
 
 ## Administration
 
-The CLI talks to the database directly (`DATABASE_URL`), so these commands
-cover the whole instance:
+The CLI connects to the database in `DATABASE_URL` directly. Thus these commands work on the data of all users:
 
 ```console
 atria db usage                  # storage per user (largest first) + database size
@@ -60,24 +56,24 @@ atria user rm alice@x.cz        # shows what would be deleted; add --force to de
 atria rss prune --dry-run       # what RSS retention would free; drop --dry-run to run it now
 ```
 
-## Dev and compilation
+## Development
 
-Go package: `golang` (Fedora 43)
+You need Go 1.26 or later and PostgreSQL. On Fedora, install the `golang` package.
 
-Run tests:
+To run the tests, set `TEST_DATABASE_URL` in `.env`. The tests delete all data in that database, so use a separate database. Its name must contain `test`, or the tests stop.
 
 ```console
 go test ./... -p 1
 go test ./... -p 1 -v    # verbose
 ```
 
-Dev run app:
+To start the web server for development:
 
 ```console
 go run ./cmd/atria server
 ```
 
-Check how a page is extracted (nothing is saved, no database needed):
+To see how Atria extracts an article from a web page, use `article parse`. It does not save anything and does not need a database.
 
 ```console
 go run ./cmd/atria article parse https://example.com/post             # Markdown
@@ -86,11 +82,9 @@ go run ./cmd/atria article parse https://example.com/post --save-html post.html
 go run ./cmd/atria article parse --file post.html --url https://example.com/post
 ```
 
-`--save-html` keeps the downloaded page, so a problematic site can be turned
-into an offline test fixture and re-parsed with `--file` while tuning the
-extraction. `--sanitized` shows the HTML exactly as the web UI displays it.
+The `--save-html` flag keeps a copy of the downloaded page. If a site does not parse well, save the page once. Then parse the saved file again with `--file` while you change the extraction code. You can also use the saved page as a test fixture. The `--sanitized` flag shows the HTML as the web interface shows it.
 
-Build app:
+To build the binary:
 
 ```console
 go build -o atria cmd/atria/*.go
