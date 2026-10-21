@@ -441,6 +441,14 @@ func (s *Server) getTemplateFuncs() template.FuncMap {
 			}
 			return fmt.Sprintf("%.0f pages", pages)
 		},
+		// initial returns the first letter, uppercased, for the avatar.
+		// Slicing the string would cut a multi-byte letter such as "Š".
+		"initial": func(s string) string {
+			for _, r := range s {
+				return strings.ToUpper(string(r))
+			}
+			return ""
+		},
 		"divide": func(a, b int) int {
 			if b == 0 {
 				return 0
@@ -682,9 +690,9 @@ func (s *Server) handleProfilePreferencesUpdate(c *gin.Context) {
 
 	err := users.UpdatePreferences(c.Request.Context(), s.db, user.ID, prefs)
 	if err != nil {
-		s.setFlash(c, "error", "Nepodařilo se uložit preference.")
+		s.setFlash(c, "error", "Could not save the preferences.")
 	} else {
-		s.setFlash(c, "success", "Preference uloženy.")
+		s.setFlash(c, "success", "Preferences saved.")
 	}
 
 	c.Redirect(http.StatusFound, "/profile")
@@ -718,7 +726,7 @@ func (s *Server) handleFontSizeAdjust(c *gin.Context) {
 	prefs.FontSize = fontSize
 
 	if err := users.UpdatePreferences(c.Request.Context(), s.db, user.ID, prefs); err != nil {
-		s.setFlash(c, "error", "Nepodařilo se uložit velikost písma.")
+		s.setFlash(c, "error", "Could not save the text size.")
 	}
 
 	c.Redirect(http.StatusFound, localRedirectTarget(c, "/"))

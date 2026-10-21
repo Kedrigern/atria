@@ -1738,3 +1738,95 @@ details.toc a:focus {
 .tag-browser-item {
     min-height: 40px;
 }
+
+/* Settings */
+.tab-nav {
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-5);
+}
+.tab-nav a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+}
+.tab-nav a.active {
+    color: var(--text-bright);
+    border-bottom-color: var(--text-bright);
+}
+.section-header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--space-2) var(--space-4);
+    margin-bottom: var(--space-3);
+}
+.section-header .section-title {
+    margin: 0;
+}
+.inline-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0 var(--space-3);
+    margin-bottom: var(--space-4);
+}
+.inline-form .form-control {
+    margin: 0;
+}
+.inline-form-actions {
+    flex-basis: 100%;
+    margin-top: 0;
+}
+.section-header .btn-sm {
+    min-height: 40px;
+}
+.inline-form-wide {
+    flex: 1 1 300px;
+}
+.narrow-form {
+    max-width: 480px;
+    margin-top: var(--space-3);
+}
+.table-scroll {
+    overflow-x: auto;
+}
+.break-all {
+    overflow-wrap: anywhere;
+}
+.muted-link {
+    color: inherit;
+    text-decoration: none;
+}
+.row-actions {
+    justify-content: flex-end;
+    flex-wrap: nowrap;
+}
+.data-list-total td {
+    border-top: 2px solid var(--border);
+}
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0 var(--space-4);
+}
+
+/* Profile */
+.profile-identity {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+}
+.avatar {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-size: var(--text-lg);
+    font-weight: bold;
+}

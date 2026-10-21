@@ -2,98 +2,69 @@
 <div class="centered-view wide" data-mobile-title="ATRIA: Storage">
     {{template "settings_header" .}}
 
-    <div class="flex-row flex-between mb-3" style="align-items: baseline">
-        <h3 style="margin: 0">Úložiště</h3>
-        <div style="color: var(--text-muted); font-size: 0.95rem">
-            Celkem:
-            <strong style="color: var(--text-main)">{{formatBytes .Usage.TotalBytes}}</strong>
-        </div>
+    <div class="section-header">
+        <h2 class="section-title">Storage</h2>
+        <p class="list-item-meta">Total: <strong>{{formatBytes .Usage.TotalBytes}}</strong></p>
     </div>
 
-    <table style="width: 100%; border-collapse: collapse">
+    <table class="data-list">
         <thead>
-            <tr style="border-bottom: 2px solid var(--border)">
-                <th style="text-align: left; padding: 10px">Typ</th>
-                <th style="text-align: right; padding: 10px">Počet</th>
-                <th style="text-align: right; padding: 10px">Velikost</th>
+            <tr>
+                <th>Type</th>
+                <th class="num">Count</th>
+                <th class="num">Size</th>
             </tr>
         </thead>
         <tbody>
-            <tr style="border-bottom: 1px solid var(--border)">
-                <td style="padding: 10px"><a href="/settings/attachments">Přílohy</a></td>
-                <td style="text-align: right; padding: 10px">{{.Usage.AttachmentCount}}</td>
-                <td style="text-align: right; padding: 10px">{{formatBytes .Usage.AttachmentBytes}}</td>
-            </tr>
-            <tr style="border-bottom: 1px solid var(--border)">
-                <td style="padding: 10px"><a href="/read">Články</a></td>
-                <td style="text-align: right; padding: 10px">{{.Usage.ArticleCount}}</td>
-                <td style="text-align: right; padding: 10px">{{formatBytes .Usage.ArticleBytes}}</td>
-            </tr>
-            <tr style="border-bottom: 1px solid var(--border)">
-                <td style="padding: 10px"><a href="/notes">Poznámky</a></td>
-                <td style="text-align: right; padding: 10px">{{.Usage.NoteCount}}</td>
-                <td style="text-align: right; padding: 10px">{{formatBytes .Usage.NoteBytes}}</td>
-            </tr>
-            <tr style="border-bottom: 1px solid var(--border)">
-                <td style="padding: 10px"><a href="/settings/rss">RSS položky</a></td>
-                <td style="text-align: right; padding: 10px">{{.Usage.RSSItemCount}}</td>
-                <td style="text-align: right; padding: 10px">{{formatBytes .Usage.RSSBytes}}</td>
-            </tr>
+            <tr><td><a href="/settings/attachments">Attachments</a></td><td class="num">{{.Usage.AttachmentCount}}</td><td class="num">{{formatBytes .Usage.AttachmentBytes}}</td></tr>
+            <tr><td><a href="/read">Articles</a></td><td class="num">{{.Usage.ArticleCount}}</td><td class="num">{{formatBytes .Usage.ArticleBytes}}</td></tr>
+            <tr><td><a href="/notes">Notes</a></td><td class="num">{{.Usage.NoteCount}}</td><td class="num">{{formatBytes .Usage.NoteBytes}}</td></tr>
+            <tr><td><a href="/settings/rss">RSS items</a></td><td class="num">{{.Usage.RSSItemCount}}</td><td class="num">{{formatBytes .Usage.RSSBytes}}</td></tr>
         </tbody>
     </table>
-    <p class="text-muted" style="font-size: 0.85rem; margin-top: 10px">
-        Velikost textu je uložená (komprimovaná) velikost v databázi, včetně položek v koši.
-    </p>
+    <p class="form-help">The size of text is the stored (compressed) size in the database. It includes the items in the trash.</p>
 
     {{if .IsAdmin}}
-    <div class="flex-row flex-between mt-3 mb-3" style="align-items: baseline">
-        <h3 style="margin: 0">Všichni uživatelé</h3>
-        <div style="color: var(--text-muted); font-size: 0.95rem">
-            Databáze celkem:
-            <strong style="color: var(--text-main)">{{formatBytes .DatabaseSize}}</strong>
-        </div>
+    <div class="section-header mt-3">
+        <h2 class="section-title">All users</h2>
+        <p class="list-item-meta">Database total: <strong>{{formatBytes .DatabaseSize}}</strong></p>
     </div>
 
-    <div style="overflow-x: auto">
-        <table style="width: 100%; border-collapse: collapse">
+    <div class="table-scroll">
+        <table class="data-list">
             <thead>
-                <tr style="border-bottom: 2px solid var(--border)">
-                    <th style="text-align: left; padding: 10px">Uživatel</th>
-                    <th style="text-align: right; padding: 10px">Přílohy</th>
-                    <th style="text-align: right; padding: 10px">Články</th>
-                    <th style="text-align: right; padding: 10px">Poznámky</th>
-                    <th style="text-align: right; padding: 10px">RSS</th>
-                    <th style="text-align: right; padding: 10px">Celkem</th>
+                <tr>
+                    <th>User</th>
+                    <th class="num">Attachments</th>
+                    <th class="num">Articles</th>
+                    <th class="num">Notes</th>
+                    <th class="num">RSS</th>
+                    <th class="num">Total</th>
                 </tr>
             </thead>
             <tbody>
                 {{range .AllUsage}}
-                <tr style="border-bottom: 1px solid var(--border)">
-                    <td style="padding: 10px">
-                        <strong>{{.DisplayName}}</strong><br />
-                        <small class="text-muted">{{.Email}}</small>
-                    </td>
-                    <td style="text-align: right; padding: 10px">{{formatBytes .AttachmentBytes}}</td>
-                    <td style="text-align: right; padding: 10px">{{formatBytes .ArticleBytes}}</td>
-                    <td style="text-align: right; padding: 10px">{{formatBytes .NoteBytes}}</td>
-                    <td style="text-align: right; padding: 10px">{{formatBytes .RSSBytes}}</td>
-                    <td style="text-align: right; padding: 10px"><strong>{{formatBytes .TotalBytes}}</strong></td>
+                <tr>
+                    <td><strong>{{.DisplayName}}</strong><br /><small class="text-muted break-all">{{.Email}}</small></td>
+                    <td class="num">{{formatBytes .AttachmentBytes}}</td>
+                    <td class="num">{{formatBytes .ArticleBytes}}</td>
+                    <td class="num">{{formatBytes .NoteBytes}}</td>
+                    <td class="num">{{formatBytes .RSSBytes}}</td>
+                    <td class="num"><strong>{{formatBytes .TotalBytes}}</strong></td>
                 </tr>
                 {{end}}
-                <tr style="border-top: 2px solid var(--border)">
-                    <td style="padding: 10px"><strong>Celkem</strong></td>
-                    <td style="text-align: right; padding: 10px">{{formatBytes .TotalUsage.AttachmentBytes}}</td>
-                    <td style="text-align: right; padding: 10px">{{formatBytes .TotalUsage.ArticleBytes}}</td>
-                    <td style="text-align: right; padding: 10px">{{formatBytes .TotalUsage.NoteBytes}}</td>
-                    <td style="text-align: right; padding: 10px">{{formatBytes .TotalUsage.RSSBytes}}</td>
-                    <td style="text-align: right; padding: 10px"><strong>{{formatBytes .TotalUsage.TotalBytes}}</strong></td>
+                <tr class="data-list-total">
+                    <td><strong>Total</strong></td>
+                    <td class="num">{{formatBytes .TotalUsage.AttachmentBytes}}</td>
+                    <td class="num">{{formatBytes .TotalUsage.ArticleBytes}}</td>
+                    <td class="num">{{formatBytes .TotalUsage.NoteBytes}}</td>
+                    <td class="num">{{formatBytes .TotalUsage.RSSBytes}}</td>
+                    <td class="num"><strong>{{formatBytes .TotalUsage.TotalBytes}}</strong></td>
                 </tr>
             </tbody>
         </table>
     </div>
-    <p class="text-muted" style="font-size: 0.85rem; margin-top: 10px">
-        „Databáze celkem“ zahrnuje i indexy, vyhledávací data a interní režii PostgreSQL; soubory příloh jsou uložené mimo databázi.
-    </p>
+    <p class="form-help">"Database total" also includes the indexes, the search data and the internal overhead of PostgreSQL. The files of the attachments are stored outside the database.</p>
     {{end}}
 </div>
 {{end}}

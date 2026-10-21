@@ -134,19 +134,21 @@
 {{end}}
 
 {{define "settings_header"}}
-<h2 class="hide-mobile">Settings</h2>
+<header class="page-header">
+    <h1 class="page-title">Settings</h1>
+</header>
 {{template "flash_message" .}}
-{{template "settings_nav" .SettingsTab}}
+{{template "settings_nav" .}}
 {{end}}
 
 {{define "settings_nav"}}
-<div class="tab-nav">
-    <a href="/settings/users" class="{{if eq . "users"}}active{{end}}">Users</a>
-    <a href="/settings/rss" class="{{if eq . "rss"}}active{{end}}">RSS</a>
-    <a href="/settings/tags" class="{{if eq . "tags"}}active{{end}}">Tags</a>
-    <a href="/settings/attachments" class="{{if eq . "attachments"}}active{{end}}">Attachments</a>
-    <a href="/settings/storage" class="{{if eq . "storage"}}active{{end}}">Storage</a>
-</div>
+<nav class="tab-nav" aria-label="Settings">
+    {{if and .User (eq .User.Role "admin")}}<a href="/settings/users" {{if eq .SettingsTab "users"}}class="active" aria-current="page"{{end}}>Users</a>{{end}}
+    <a href="/settings/rss" {{if eq .SettingsTab "rss"}}class="active" aria-current="page"{{end}}>RSS</a>
+    <a href="/settings/tags" {{if eq .SettingsTab "tags"}}class="active" aria-current="page"{{end}}>Tags</a>
+    <a href="/settings/attachments" {{if eq .SettingsTab "attachments"}}class="active" aria-current="page"{{end}}>Attachments</a>
+    <a href="/settings/storage" {{if eq .SettingsTab "storage"}}class="active" aria-current="page"{{end}}>Storage</a>
+</nav>
 {{end}}
 
 {{define "rss_list_item"}}

@@ -23,8 +23,8 @@ func TestStoragePage(t *testing.T) {
 		asUser(t, user)
 		w := getWithCookie(r, "/settings/storage", nil)
 		require.Equal(t, http.StatusOK, w.Code, w.Body.String())
-		assert.Contains(t, w.Body.String(), "Úložiště")
-		assert.NotContains(t, w.Body.String(), "Všichni uživatelé")
+		assert.Contains(t, w.Body.String(), "Storage")
+		assert.NotContains(t, w.Body.String(), "All users")
 		assert.NotContains(t, w.Body.String(), admin.Email)
 	})
 
@@ -33,9 +33,9 @@ func TestStoragePage(t *testing.T) {
 		w := getWithCookie(r, "/settings/storage", nil)
 		require.Equal(t, http.StatusOK, w.Code, w.Body.String())
 		body := w.Body.String()
-		assert.Contains(t, body, "Všichni uživatelé")
+		assert.Contains(t, body, "All users")
 		assert.Contains(t, body, user.Email)
 		assert.Contains(t, body, admin.Email)
-		assert.Contains(t, body, "Databáze celkem")
+		assert.Contains(t, body, "Database total")
 	})
 }

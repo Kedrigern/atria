@@ -1,91 +1,69 @@
 {{define "content"}}
-<div class="centered-view">
-    <div class="doc-header">
-        <h1>Uživatelský profil</h1>
-        <p class="text-muted">Informace o vašem účtu v systému Atria</p>
-    </div>
+<div class="centered-view" data-mobile-title="ATRIA: Profile">
+    {{template "flash_message" .}}
 
-    <div class="grid-2">
-        <div class="flex-row mb-3" style="gap: 15px;">
-            <div style="width: 50px; height: 50px; background: var(--accent); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; text-transform: uppercase;">
-                {{if .User.DisplayName}}
-                    {{slice .User.DisplayName 0 1 | printf "%s"}}
-                {{else}}
-                    {{slice .User.Email 0 1 | printf "%s"}}
-                {{end}}
-            </div>
+    <header class="page-header">
+        <div class="profile-identity">
+            <span class="avatar" aria-hidden="true">{{if .User.DisplayName}}{{initial .User.DisplayName}}{{else}}{{initial .User.Email}}{{end}}</span>
             <div>
-                <h3 style="margin: 0;">{{if .User.DisplayName}}{{.User.DisplayName}}{{else}}{{.User.Email}}{{end}}</h3>
-                <span class="tag {{if eq .User.Role "admin"}}tag-important{{end}}">{{.User.Role}}</span>
+                <h1 class="page-title">{{if .User.DisplayName}}{{.User.DisplayName}}{{else}}{{.User.Email}}{{end}}</h1>
+                <p class="page-subtitle">{{.User.Email}} · <span class="badge {{if eq .User.Role "admin"}}badge-accent{{end}}">{{.User.Role}}</span></p>
+            </div>
+        </div>
+        <div class="page-actions">
+            {{if .SSOManagementURL}}
+            <a href="{{.SSOManagementURL}}" class="button-link outline btn-sm" target="_blank" rel="noopener">Security (Authelia)</a>
+            {{end}}
+            <a href="/logout" class="button-link outline btn-sm btn-danger">Log out</a>
+        </div>
+    </header>
+
+    <h2 class="section-title">Preferences</h2>
+    <form action="/api/profile/preferences" method="POST">
+        <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="pref-theme">Theme</label>
+                <select id="pref-theme" name="theme" class="form-control">
+                    <option value="system" {{if eq .User.Preferences.Theme "system"}}selected{{end}}>Same as the device</option>
+                    <option value="light" {{if eq .User.Preferences.Theme "light"}}selected{{end}}>Light</option>
+                    <option value="dark" {{if eq .User.Preferences.Theme "dark"}}selected{{end}}>Dark</option>
+                </select>
+                <p class="form-help">Use Light on an e-ink reader.</p>
+            </div>
+
+            <div class="form-group">
+                <label for="pref-page-size">Items per page</label>
+                <input id="pref-page-size" type="number" name="pagination_size" min="10" max="100" step="10" value="{{.User.Preferences.PaginationSize}}" class="form-control">
+            </div>
+
+            <div class="form-group">
+                <label for="pref-font-size">Text size of notes and articles</label>
+                <select id="pref-font-size" name="font_size" class="form-control">
+                    {{$fontSize := .User.Preferences.FontSize}}
+                    {{if not $fontSize}}{{$fontSize = 100}}{{end}}
+                    <option value="80" {{if eq $fontSize 80}}selected{{end}}>80 %</option>
+                    <option value="90" {{if eq $fontSize 90}}selected{{end}}>90 %</option>
+                    <option value="100" {{if eq $fontSize 100}}selected{{end}}>100 % (default)</option>
+                    <option value="110" {{if eq $fontSize 110}}selected{{end}}>110 %</option>
+                    <option value="120" {{if eq $fontSize 120}}selected{{end}}>120 %</option>
+                    <option value="130" {{if eq $fontSize 130}}selected{{end}}>130 %</option>
+                    <option value="140" {{if eq $fontSize 140}}selected{{end}}>140 %</option>
+                    <option value="150" {{if eq $fontSize 150}}selected{{end}}>150 %</option>
+                    <option value="160" {{if eq $fontSize 160}}selected{{end}}>160 % (e-ink)</option>
+                </select>
             </div>
         </div>
 
-        <div class="card shadow mt-3">
-            <h3>⚙️ Nastavení a preference</h3>
-            <p class="text-muted" style="font-size: 0.9rem; margin-bottom: 15px;">Přizpůsobte si Atrii podle sebe. (Další nastavení lze provést přes CLI).</p>
+        <label class="checkbox-label">
+            <input type="checkbox" name="rss_inline_details" {{if .User.Preferences.RSSInlineDetails}}checked{{end}}>
+            Show the full text of RSS items in the list
+        </label>
 
-            <form action="/api/profile/preferences" method="POST">
-                <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-
-                    <div class="form-group">
-                        <label>Vzhled (Téma):</label>
-                        <select name="theme" class="form-control">
-                            <option value="system" {{if eq .User.Preferences.Theme "system"}}selected{{end}}>💻 Systémové</option>
-                            <option value="light" {{if eq .User.Preferences.Theme "light"}}selected{{end}}>☀️ Světlé</option>
-                            <option value="dark" {{if eq .User.Preferences.Theme "dark"}}selected{{end}}>🌙 Tmavé</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Počet položek na stránku:</label>
-                        <input type="number" name="pagination_size" min="10" max="100" step="10" value="{{.User.Preferences.PaginationSize}}" class="form-control">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Velikost písma:</label>
-                        <select name="font_size" class="form-control">
-                            {{$fontSize := .User.Preferences.FontSize}}
-                            {{if not $fontSize}}{{$fontSize = 100}}{{end}}
-                            <option value="80" {{if eq $fontSize 80}}selected{{end}}>80% (menší)</option>
-                            <option value="90" {{if eq $fontSize 90}}selected{{end}}>90%</option>
-                            <option value="100" {{if eq $fontSize 100}}selected{{end}}>100% (výchozí)</option>
-                            <option value="110" {{if eq $fontSize 110}}selected{{end}}>110%</option>
-                            <option value="120" {{if eq $fontSize 120}}selected{{end}}>120%</option>
-                            <option value="130" {{if eq $fontSize 130}}selected{{end}}>130%</option>
-                            <option value="140" {{if eq $fontSize 140}}selected{{end}}>140%</option>
-                            <option value="150" {{if eq $fontSize 150}}selected{{end}}>150%</option>
-                            <option value="160" {{if eq $fontSize 160}}selected{{end}}>160% (větší, e-book)</option>
-                        </select>
-                    </div>
-
-                </div>
-
-                <div class="mb-3">
-                    <label class="flex-row" style="gap: 10px; cursor: pointer;">
-                        <input type="checkbox" name="rss_inline_details" {{if .User.Preferences.RSSInlineDetails}}checked{{end}}>
-                        <strong>Zobrazovat detaily RSS článků inline (přímo v seznamu)</strong>
-                    </label>
-                </div>
-
-                <div style="text-align: right;">
-                    <button type="submit" class="button">Uložit preference</button>
-                </div>
-            </form>
+        <div class="form-actions">
+            <button type="submit" class="btn-primary">Save</button>
         </div>
-    </div>
-
-
-    {{if .SSOManagementURL}}
-    <div class="mt-3" style="text-align: center;">
-        <a href="{{.SSOManagementURL}}" class="button outline" target="_blank">
-            🔐 Správa zabezpečení (Authelia)
-        </a>
-    </div>
-    {{end}}
-
-    <a href="/logout" class="button btn-danger mt-3">
-        🚪 Odhlásit se
-    </a>
+    </form>
+    <p class="form-help">The CLI has more settings.</p>
 </div>
 {{end}}
