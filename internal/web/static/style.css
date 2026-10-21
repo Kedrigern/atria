@@ -76,7 +76,7 @@
     color: var(--text-main);
 }
 
-/* Formuláře (nahradí všechny ty inline divy kolem inputů) */
+/* Forms */
 .form-group {
     margin-bottom: 1rem;
 }
@@ -162,7 +162,7 @@ html[data-theme="dark"] {
     display: inline-block;
 }
 
-/* Vynucený tmavý režim */
+/* Dark theme chosen by the user */
 html[data-theme="dark"] .theme-logo-light {
     display: none;
 }
@@ -170,7 +170,7 @@ html[data-theme="dark"] .theme-logo-dark {
     display: inline-block;
 }
 
-/* Systémový režim - detekce OS */
+/* Theme of the device */
 @media (prefers-color-scheme: dark) {
     html[data-theme="system"] .theme-logo-light,
     html:not([data-theme]) .theme-logo-light {
@@ -353,11 +353,6 @@ a.button-link.btn-primary:hover,
     -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z'/%3E%3C/svg%3E");
     mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z'/%3E%3C/svg%3E");
 }
-.nav-book-icon {
-    width: 22px;
-    height: 22px;
-    flex-shrink: 0;
-}
 .icon-note {
     -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'/%3E%3Cpolyline points='14 2 14 8 20 8'/%3E%3Cline x1='16' y1='13' x2='8' y2='13'/%3E%3Cline x1='16' y1='17' x2='8' y2='17'/%3E%3C/svg%3E");
     mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'/%3E%3Cpolyline points='14 2 14 8 20 8'/%3E%3Cline x1='16' y1='13' x2='8' y2='13'/%3E%3Cline x1='16' y1='17' x2='8' y2='17'/%3E%3C/svg%3E");
@@ -441,6 +436,14 @@ a.button-link.btn-primary:hover,
 .icon-info {
     -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cline x1='12' y1='16' x2='12' y2='12'/%3E%3Cline x1='12' y1='8' x2='12.01' y2='8'/%3E%3C/svg%3E");
     mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cline x1='12' y1='16' x2='12' y2='12'/%3E%3Cline x1='12' y1='8' x2='12.01' y2='8'/%3E%3C/svg%3E");
+}
+.icon-book {
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 19.5A2.5 2.5 0 0 1 6.5 17H20'/%3E%3Cpath d='M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 19.5A2.5 2.5 0 0 1 6.5 17H20'/%3E%3Cpath d='M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z'/%3E%3C/svg%3E");
+}
+.icon-dice {
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='3' width='18' height='18' rx='2' ry='2'/%3E%3Cpath d='M16 8h.01'/%3E%3Cpath d='M8 8h.01'/%3E%3Cpath d='M8 16h.01'/%3E%3Cpath d='M16 16h.01'/%3E%3Cpath d='M12 12h.01'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='3' width='18' height='18' rx='2' ry='2'/%3E%3Cpath d='M16 8h.01'/%3E%3Cpath d='M8 8h.01'/%3E%3Cpath d='M8 16h.01'/%3E%3Cpath d='M16 16h.01'/%3E%3Cpath d='M12 12h.01'/%3E%3C/svg%3E");
 }
 .icon-refresh {
     -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='23 4 23 10 17 10'/%3E%3Cpolyline points='1 20 1 14 7 14'/%3E%3Cpath d='M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15'/%3E%3C/svg%3E");
@@ -661,7 +664,7 @@ a.button-link.btn-primary:hover,
     border-top: 1px solid var(--border);
 }
 
-/* Toolbar button sizes — použít společně s button/button.outline/a.button-link */
+/* Toolbar button sizes: use with button, button.outline or a.button-link */
 .btn-sm,
 a.button-link.btn-sm {
     margin: 0;
@@ -969,9 +972,8 @@ html[data-theme="dark"] .callout-danger {
 .dashboard-card {
     border: 1px solid var(--border);
     padding: 20px;
-    border-radius: 8px; /* Mírně kulatější rohy evokují tlačítko/kartu */
+    border-radius: var(--radius);
     background: var(--background-alt);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04); /* NOVÉ: Jemný stín, který kartu "zvedne" z papíru i bez hoveru */
 }
 
 .dashboard-card h4 {
@@ -988,22 +990,10 @@ html[data-theme="dark"] .callout-danger {
     margin-top: 0;
 }
 
-/* Interaktivní chování pro karty, které jsou odkazy */
-a.dashboard-card {
-    /* Přidána plynulá animace i pro stín */
-}
-
 a.dashboard-card:hover {
     border-color: var(--links);
-    transform: translateY(-2px);
-    /* Silnější stín při najetí myší pro světlý režim */
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
 }
 
-/* Výraznější stín pro tmavý režim (černá na černé potřebuje vyšší opacitu) */
-html[data-theme="dark"] a.dashboard-card:hover {
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
-}
 
 /* --- Sidebar Metadata Sections --- */
 .meta-section {
@@ -1079,7 +1069,7 @@ form.htmx-request button[type="submit"] {
         38,
         38,
         0.1
-    ); /* Podpora dark/light módu pomocí opacity! */
+    ); /* Opacity works in the light and the dark theme. */
     color: #dc2626;
     border-color: rgba(220, 38, 38, 0.3);
 }
@@ -1829,4 +1819,87 @@ details.toc a:focus {
     color: #fff;
     font-size: var(--text-lg);
     font-weight: bold;
+}
+
+/* Application frame */
+.sidebar-group {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+#sidebar a.nav-link {
+    align-items: center;
+    min-height: 44px;
+    margin: var(--space-1) 0;
+    border-left: 3px solid transparent;
+}
+/* The active item has a bar on the left, not only a color (e-ink). */
+#sidebar a.nav-link.active {
+    border-left-color: currentColor;
+}
+.mobile-title {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--accent);
+    letter-spacing: 2px;
+}
+#menu-toggle {
+    min-width: 40px;
+    min-height: 40px;
+    justify-content: center;
+}
+
+/* Home page */
+.home-logo {
+    margin: var(--space-2) 0 var(--space-6);
+    text-align: center;
+}
+.home-logo img {
+    max-height: 120px;
+    width: auto;
+}
+.dashboard-title {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0 0 var(--space-3);
+    font-size: var(--text-lg);
+    color: var(--links);
+}
+.dashboard-list {
+    margin-bottom: 0;
+    padding-left: var(--space-5);
+}
+
+/* Login page */
+.login-view {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 70vh;
+    padding: var(--space-4);
+}
+.login-card {
+    width: 100%;
+    max-width: 400px;
+    padding: var(--space-6) var(--space-5);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--background-alt);
+}
+.login-header {
+    margin-bottom: var(--space-5);
+    text-align: center;
+}
+.login-submit {
+    width: 100%;
+    min-height: 44px;
+    margin-top: var(--space-2);
+}
+.login-sso {
+    margin-top: var(--space-5);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--border);
+    text-align: center;
 }

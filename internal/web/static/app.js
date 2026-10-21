@@ -45,21 +45,23 @@ const menuToggle = document.getElementById("menu-toggle");
 if (menuToggle) menuToggle.addEventListener("click", toggleSidebar);
 if (sidebarBackdrop) sidebarBackdrop.addEventListener("click", closeSidebar);
 
-document.body.addEventListener("htmx:afterSettle", function () {
+// Marks the menu item of the current page. The settings link points to
+// /settings/rss, but it is active on all /settings pages.
+function markActiveNav() {
     const currentPath = window.location.pathname;
-
     document.querySelectorAll(".nav-link").forEach((link) => {
-        link.classList.remove("active");
         const href = link.getAttribute("href");
-
-        if (
-            href === currentPath ||
-            (href !== "/" && currentPath.startsWith(href))
-        ) {
-            link.classList.add("active");
-        }
+        const section = href.startsWith("/settings") ? "/settings" : href;
+        const active = href === currentPath || (href !== "/" && currentPath.startsWith(section));
+        link.classList.toggle("active", active);
+        if (active) link.setAttribute("aria-current", "page");
+        else link.removeAttribute("aria-current");
     });
+}
+markActiveNav();
 
+document.body.addEventListener("htmx:afterSettle", function () {
+    markActiveNav();
     if (window.innerWidth <= 1024) closeSidebar();
 });
 

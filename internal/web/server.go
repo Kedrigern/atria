@@ -748,7 +748,7 @@ func (s *Server) handleLoginPost(c *gin.Context) {
 
 	limiterKey := c.ClientIP()
 	if !s.loginLimiter.allowed(limiterKey) {
-		s.setFlash(c, "error", "Příliš mnoho neúspěšných pokusů. Zkuste to znovu později.")
+		s.setFlash(c, "error", "Too many failed attempts. Try again later.")
 		c.Redirect(http.StatusFound, "/login")
 		return
 	}
@@ -768,14 +768,14 @@ func (s *Server) handleLoginPost(c *gin.Context) {
 	}
 	if err != nil {
 		s.loginLimiter.fail(limiterKey)
-		s.setFlash(c, "error", "Neplatný e-mail nebo heslo.")
+		s.setFlash(c, "error", "Wrong email or password.")
 		c.Redirect(http.StatusFound, "/login")
 		return
 	}
 
 	s.loginLimiter.reset(limiterKey)
 	if !s.setSessionCookie(c, user) {
-		s.setFlash(c, "error", "Přihlášení se nezdařilo, zkuste to znovu.")
+		s.setFlash(c, "error", "The login failed. Try again.")
 		c.Redirect(http.StatusFound, "/login")
 		return
 	}

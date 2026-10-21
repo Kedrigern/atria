@@ -1,63 +1,27 @@
 {{define "content"}}
-<div class="flex-row" style="justify-content: center; min-height: 70vh">
-    <div
-        class="card shadow"
-        style="width: 100%; max-width: 400px; padding: 30px"
-    >
-        <div class="mb-3" style="text-align: center">
-            <h1>Atria</h1>
-            <p class="text-muted">Přihlášení do vašeho digitálního archivu</p>
-        </div>
+<div class="login-view">
+    <div class="login-card">
+        <header class="login-header">
+            <h1 class="page-title">Atria</h1>
+            <p class="page-subtitle">Log in to your knowledge base.</p>
+        </header>
 
         {{template "flash_message" .}}
 
         <form action="/login" method="POST">
             <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
-
             <div class="form-group">
-                <label for="email">E-mailová adresa</label>
-                <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    required
-                    autofocus
-                    placeholder="vass@email.cz"
-                    class="form-control"
-                />
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required autofocus autocomplete="username" class="form-control" />
             </div>
-
-            <div class="form-group mb-3">
-                <label for="password">Heslo</label>
-                <input
-                    type="password"
-                    id="password"
-                    name="password"
-                    required
-                    placeholder="••••••••"
-                    class="form-control"
-                />
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required autocomplete="current-password" class="form-control" />
             </div>
-
-            <button type="submit" class="button form-control">
-                Přihlásit se
-            </button>
+            <button type="submit" class="btn-primary login-submit">Log in</button>
         </form>
 
-        <div
-            class="mt-3"
-            style="
-                padding-top: 20px;
-                border-top: 1px solid var(--border);
-                text-align: center;
-                font-size: 0.9rem;
-            "
-        >
-            <p class="text-muted">
-                Používáte SSO? Pokud k serveru přistupujete přes schválenou
-                proxy (Authelia), měli byste být přihlášeni automaticky.
-            </p>
-        </div>
+        <p class="form-help login-sso">If you open Atria through the single sign-on proxy (Authelia), you are logged in automatically.</p>
     </div>
 </div>
 {{end}}

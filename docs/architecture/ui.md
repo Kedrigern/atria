@@ -252,6 +252,8 @@ The work is done in small pull requests, in this order:
 5. Convert the pages area by area: notes, read-it-later and RSS, e-books, tables, games, search, settings and profile, login. Each pull request also translates the texts of its area into English (section 3).
 6. Add the Go test from section 11. It fails until the last area is converted, so it comes last.
 
+All six steps are done (pull requests #30 to #42). The tests `TestTemplatesHaveNoInlineStyles` and `TestTemplatesAreInEnglish` keep the rules from sections 3 and 11.
+
 ## 14. Decisions and open questions
 
 1. Decided: the interface uses English only (section 3).
