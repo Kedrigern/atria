@@ -1123,7 +1123,7 @@ form.htmx-request button[type="submit"] {
 .table-create-forms { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
 .table-create-forms form { display: flex; flex-direction: column; gap: 8px; }
 .table-status { min-height: 1.3em; margin: 0 0 8px; font-size: 0.85rem; }
-.table-status-error { color: #dc2626; }
+.table-status-error { color: var(--danger); font-weight: bold; }
 .table-columns-dialog { max-width: 760px; width: 95vw; }
 .table-column-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; align-items: end; border: 1px solid var(--border); border-radius: 6px; padding: 10px; margin-bottom: 8px; }
 .table-column-row textarea { min-height: 2.4em; }
@@ -1654,4 +1654,28 @@ details.toc a:focus {
 }
 .section-title {
     font-size: var(--text-lg);
+}
+
+/* Tables */
+.dialog-actions-split {
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+.table-create-forms .meta-section .form-group {
+    margin-bottom: var(--space-3);
+}
+.table-column-row .btn-sm,
+.dialog-actions .btn-sm {
+    min-height: 40px;
+    justify-content: center;
+}
+#table-editor .tabulator-cell.table-delete-cell {
+    min-height: 40px;
+}
+#table-editor .table-delete-cell {
+    color: var(--danger);
+    cursor: pointer;
+}
+@media (max-width: 640px) {
+    .data-list .col-optional { display: none; }
 }

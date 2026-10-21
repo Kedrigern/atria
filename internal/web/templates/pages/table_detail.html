@@ -2,29 +2,34 @@
 <link rel="stylesheet" href="/static/tabulator.min.css" />
 <div class="centered-view full" data-mobile-title="ATRIA: {{.Table.Title}}">
     {{template "flash_message" .}}
-    <div class="page-header-row mb-3 table-header">
+    <header class="page-header">
         <div>
-            <h2 style="margin-bottom: 0">{{.Table.Title}}</h2>
-            <small class="text-muted">SQL name <code>{{.Table.SQLName}}</code> · <span data-table-rowcount>{{.Table.RowCount}}</span> rows</small>
+            <h1 class="page-title">{{.Table.Title}}</h1>
+            <p class="page-subtitle">SQL name <code>{{.Table.SQLName}}</code> · <span data-table-rowcount>{{.Table.RowCount}}</span> rows</p>
         </div>
-        <div class="action-row">
-            <button type="button" class="outline btn-sm" data-table-add-row>+ Row</button>
+        <div class="page-actions">
+            <a href="/tables" class="button-link outline btn-sm">
+                <span class="icon-sm icon-chevron-left" aria-hidden="true"></span> Tables
+            </a>
             <button type="button" class="outline btn-sm" data-open-dialog="table-columns-dialog">Columns</button>
             <a href="/tables/{{.Table.ID}}/export.csv" class="button-link outline btn-sm">Export CSV</a>
             <form method="post" action="/api/tables/{{.Table.ID}}/delete" class="inline-action-form" data-confirm="Move this table to the trash?">
                 <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
-                <button type="submit" class="outline btn-sm btn-danger" title="Delete table"><span class="icon-sm icon-trash"></span></button>
+                <button type="submit" class="outline btn-sm btn-danger" title="Move to trash" aria-label="Move to trash"><span class="icon-sm icon-trash" aria-hidden="true"></span></button>
             </form>
+            <button type="button" class="btn-primary btn-sm" data-table-add-row>
+                <span class="icon-sm icon-plus" aria-hidden="true"></span> Add row
+            </button>
         </div>
-    </div>
+    </header>
 
     <p class="table-status text-muted" data-table-status aria-live="polite"></p>
     <div id="table-editor" data-table-id="{{.Table.ID}}"></div>
 
-    <dialog id="table-columns-dialog" class="table-columns-dialog">
+    <dialog id="table-columns-dialog" class="dialog table-columns-dialog">
         <form method="dialog" data-table-columns-form>
-            <h3>Columns</h3>
-            <p class="text-muted" style="font-size: 0.85rem">The name is used in SQL views (a-z, 0-9, _). Changing a type converts values; values that do not fit are cleared.</p>
+            <h2>Columns</h2>
+            <p class="form-help">Views use the name of a column. Use a-z, 0-9 and _. If you change the type, Atria converts the values. A value that does not fit the new type is cleared.</p>
             <div data-table-columns></div>
             <template data-table-column-template>
                 <fieldset class="table-column-row">
@@ -37,12 +42,14 @@
                         </select>
                     </label>
                     <label>Decimals <input type="number" name="decimals" min="0" max="10" /></label>
-                    <label>Options <small class="text-muted">(select, one per line)</small><textarea name="options" rows="2"></textarea></label>
-                    <button type="button" class="outline btn-sm btn-danger" data-table-remove-column>Remove</button>
+                    <label>Options <small class="text-muted">(for select, one per line)</small><textarea name="options" rows="2"></textarea></label>
+                    <button type="button" class="outline btn-sm btn-danger" data-table-remove-column>Remove column</button>
                 </fieldset>
             </template>
-            <div class="flex-row flex-between mt-3">
-                <button type="button" class="outline btn-sm" data-table-add-column>+ Column</button>
+            <div class="dialog-actions dialog-actions-split">
+                <button type="button" class="outline btn-sm" data-table-add-column>
+                    <span class="icon-sm icon-plus" aria-hidden="true"></span> Add column
+                </button>
                 <div class="action-row">
                     <button type="submit" value="cancel" class="outline">Cancel</button>
                     <button type="button" class="btn-primary" data-table-save-columns>Save</button>
@@ -52,5 +59,5 @@
     </dialog>
 </div>
 <script src="/static/tabulator.min.js"></script>
-<script src="/static/tables.js?v=3"></script>
+<script src="/static/tables.js?v=4"></script>
 {{end}}
