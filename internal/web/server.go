@@ -3,6 +3,7 @@ package web
 import (
 	"atria/internal/articles"
 	"atria/internal/core"
+	"atria/internal/games"
 	"atria/internal/notes"
 	"atria/internal/rss"
 	"atria/internal/search"
@@ -257,6 +258,7 @@ func (s *Server) SetupRouter() *gin.Engine {
 	{
 		games.GET("", s.handleGameList)
 		games.GET("/cryptograms/:id", s.handleCryptogramPlay)
+		games.GET("/campaigns/:id", s.handleCampaign)
 	}
 
 	// E-books
@@ -449,6 +451,7 @@ func (s *Server) getTemplateFuncs() template.FuncMap {
 			}
 			return ""
 		},
+		"topicLabel": games.TopicLabel,
 		"divide": func(a, b int) int {
 			if b == 0 {
 				return 0

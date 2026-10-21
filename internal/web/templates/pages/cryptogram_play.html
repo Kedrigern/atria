@@ -2,13 +2,24 @@
 <div class="centered-view cryptogram-page" data-mobile-title="ATRIA: Cryptogram">
     <header class="page-header">
         <div>
+            {{if .Puzzle.Campaign}}
+            <h1 class="page-title">{{.Puzzle.Campaign.Title}}</h1>
+            <p class="page-subtitle">Passage {{.Puzzle.Campaign.Position}} of {{.Puzzle.Campaign.Total}}</p>
+            {{else}}
             <h1 class="page-title">{{.Puzzle.Title}}</h1>
             <p class="page-subtitle">{{if .Puzzle.Category}}{{.Puzzle.Category}} · {{end}}Difficulty {{.Puzzle.DifficultyScore}} / 5</p>
+            {{end}}
         </div>
         <div class="page-actions">
-            <a href="/games" hx-get="/games" hx-target="#main-content" hx-push-url="true" class="button-link outline btn-sm">
+            {{if .Puzzle.Campaign}}
+            <a href="/games/campaigns/{{.Puzzle.Campaign.ID}}" hx-get="/games/campaigns/{{.Puzzle.Campaign.ID}}" hx-target="#main-content" hx-push-url="true" class="button-link outline btn-sm">
+                <span class="icon-sm icon-chevron-left" aria-hidden="true"></span> Story so far
+            </a>
+            {{else}}
+            <a href="/games?tab=single" hx-get="/games?tab=single" hx-target="#main-content" hx-push-url="true" class="button-link outline btn-sm">
                 <span class="icon-sm icon-chevron-left" aria-hidden="true"></span> Cryptograms
             </a>
+            {{end}}
             {{if not .Puzzle.CompletedAt}}
             <form method="post" action="/api/games/cryptograms/{{.Puzzle.ID}}/hint" class="inline-action-form">
                 <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
@@ -61,7 +72,15 @@
         <h2 class="section-title">Solved</h2>
         <p>You solved this cryptogram in {{.Puzzle.MovesCount}} moves.</p>
         {{if .Puzzle.CompletionText}}<p>{{.Puzzle.CompletionText}}</p>{{end}}
-        <a href="/games" hx-get="/games" hx-target="#main-content" hx-push-url="true" class="button-link btn-primary">Choose another puzzle</a>
+        {{if .Puzzle.Campaign}}
+            {{if .Puzzle.Campaign.NextID}}
+            <a href="/games/cryptograms/{{.Puzzle.Campaign.NextID}}" hx-get="/games/cryptograms/{{.Puzzle.Campaign.NextID}}" hx-target="#main-content" hx-push-url="true" class="button-link btn-primary">Next passage</a>
+            {{else}}
+            <a href="/games/campaigns/{{.Puzzle.Campaign.ID}}" hx-get="/games/campaigns/{{.Puzzle.Campaign.ID}}" hx-target="#main-content" hx-push-url="true" class="button-link btn-primary">Read the story</a>
+            {{end}}
+        {{else}}
+        <a href="/games?tab=single" hx-get="/games?tab=single" hx-target="#main-content" hx-push-url="true" class="button-link btn-primary">Choose another puzzle</a>
+        {{end}}
     </section>
     {{end}}
 </div>

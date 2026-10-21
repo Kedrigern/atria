@@ -24,6 +24,7 @@ Available Commands:
   db          System and database administration
   ebook       Create and manage immutable e-book snapshots
   export      Bulk export functionalities
+  games       Game catalog: import cryptogram campaigns
   help        Help about any command
   link        Knowledge graph and entity relations management
   note        Knowledge base and markdown notes management

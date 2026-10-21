@@ -27,6 +27,7 @@ type Summary struct {
 	IntroText       *string
 	DifficultyScore int
 	CompletedAt     *time.Time
+	Topics          []string
 }
 
 // Token is one player-visible character in a cryptogram.
@@ -51,6 +52,8 @@ type Puzzle struct {
 	HintsUsed       int
 	RecentMoves     []Move
 	CompletedAt     *time.Time
+	// Campaign is set for a passage of a campaign.
+	Campaign *CampaignContext
 }
 
 // Move is a recent accepted or rejected letter assignment.
@@ -83,14 +86,16 @@ func (e *NotFoundError) Error() string {
 	return "cryptogram not found"
 }
 
-// List returns catalog puzzles and their completion state for a user.
-func List(ctx context.Context, db *sql.DB, userID uuid.UUID) ([]Summary, error) {
+// List returns the single puzzles (not the passages of campaigns) and their
+// completion state for a user. An empty topic returns all of them.
+func List(ctx context.Context, db *sql.DB, userID uuid.UUID, topic string) ([]Summary, error) {
 	rows, err := db.QueryContext(ctx, `
-		SELECT c.id, c.title, c.category, c.intro_text, c.difficulty_score, p.completed_at
+		SELECT c.id, c.title, c.category, c.intro_text, c.difficulty_score, p.completed_at, c.topics
 		FROM game_cryptograms c
 		LEFT JOIN game_cryptogram_progress p ON p.cryptogram_id = c.id AND p.user_id = $1
+		WHERE c.campaign_id IS NULL AND ($2 = '' OR $2 = ANY(c.topics))
 		ORDER BY (p.completed_at IS NOT NULL), c.category NULLS LAST, c.order_index NULLS LAST, c.title
-	`, userID)
+	`, userID, topic)
 	if err != nil {
 		return nil, fmt.Errorf("list cryptograms: %w", err)
 	}
@@ -99,7 +104,7 @@ func List(ctx context.Context, db *sql.DB, userID uuid.UUID) ([]Summary, error) 
 	var puzzles []Summary
 	for rows.Next() {
 		var puzzle Summary
-		if err := rows.Scan(&puzzle.ID, &puzzle.Title, &puzzle.Category, &puzzle.IntroText, &puzzle.DifficultyScore, &puzzle.CompletedAt); err != nil {
+		if err := rows.Scan(&puzzle.ID, &puzzle.Title, &puzzle.Category, &puzzle.IntroText, &puzzle.DifficultyScore, &puzzle.CompletedAt, pq.Array(&puzzle.Topics)); err != nil {
 			return nil, fmt.Errorf("scan cryptogram: %w", err)
 		}
 		puzzles = append(puzzles, puzzle)
@@ -117,6 +122,9 @@ func GetPuzzle(ctx context.Context, db *sql.DB, userID, cryptogramID uuid.UUID) 
 
 	puzzle, plainText, reveals, err := loadDefinition(ctx, tx, cryptogramID)
 	if err != nil {
+		return nil, err
+	}
+	if puzzle.Campaign, err = campaignContext(ctx, tx, userID, cryptogramID); err != nil {
 		return nil, err
 	}
 

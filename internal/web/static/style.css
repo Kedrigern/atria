@@ -1903,3 +1903,17 @@ details.toc a:focus {
     border-top: 1px solid var(--border);
     text-align: center;
 }
+
+/* Cryptogram campaigns */
+.game-book {
+    margin-bottom: var(--space-5);
+}
+.solved-box {
+    margin-top: var(--space-3);
+}
+.solved-box .game-library {
+    margin-top: var(--space-2);
+}
+.story-text p {
+    margin: 0 0 var(--space-3);
+}
