@@ -1,99 +1,57 @@
 {{define "content"}}
 <div class="centered-view wide" data-mobile-title="ATRIA: Tags">
     {{template "settings_header" .}}
-    <h3>Tag Manager</h3>
 
-    <form
-        method="post"
-        action="/api/tags/create"
-        class="flex-row mb-3"
-        hx-post="/api/tags/create"
-    >
+    <h2 class="section-title">Tags</h2>
+
+    <form method="post" action="/api/tags/create" hx-post="/api/tags/create" class="inline-form">
         <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
-        <input
-            type="text"
-            name="name"
-            placeholder="Název nového tagu..."
-            class="form-control"
-            required
-            maxlength="20"
-        />
-        <button type="submit">Vytvořit Tag</button>
+        <div class="form-group inline-form-wide">
+            <label for="new-tag-name">New tag</label>
+            <input id="new-tag-name" type="text" name="name" placeholder="reading" class="form-control" required maxlength="20" />
+            <p class="form-help">Lowercase letters, numbers and hyphens. At most 20 characters.</p>
+        </div>
+        <div class="form-actions inline-form-actions">
+            <button type="submit" class="btn-primary">Create tag</button>
+        </div>
     </form>
 
-    <details
-        class="mb-3"
-        style="
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 15px;
-            background: var(--background);
-        "
-    >
-        <summary style="cursor: pointer; font-weight: bold">
-            🔗 Přiřadit Tag k Entitě
-        </summary>
-        <form
-            method="post"
-            action="/api/tags/attach"
-            style="margin-top: 15px; display: grid; gap: 12px; max-width: 480px"
-        >
+    <details class="help-box">
+        <summary>Add a tag to an item</summary>
+        <form method="post" action="/api/tags/attach" class="narrow-form">
             <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
-
             <div class="form-group">
-                <label>Entita (Název, UUID, nebo Short ID)</label>
-                <input
-                    type="text"
-                    name="entity_identifier"
-                    required
-                    placeholder="např. Solar Setup nebo 8e6a1f..."
-                    class="form-control"
-                />
+                <label for="attach-entity">Item</label>
+                <input id="attach-entity" type="text" name="entity_identifier" required class="form-control" />
+                <p class="form-help">The title, the short ID or the UUID of a note or an article.</p>
             </div>
-
             <div class="form-group">
-                <label>Vyberte Tag</label>
-                <select name="tag_name" required class="form-control">
-                    <option value="" disabled selected>
-                        Zvolte tag ze seznamu...
-                    </option>
+                <label for="attach-tag">Tag</label>
+                <select id="attach-tag" name="tag_name" required class="form-control">
+                    <option value="" disabled selected>Select a tag</option>
                     {{range .Tags}}
                     <option value="{{.Name}}">#{{.Name}}</option>
                     {{end}}
                 </select>
             </div>
-
-            <button type="submit" style="width: fit-content">
-                Připojit Tag
-            </button>
+            <div class="form-actions">
+                <button type="submit" class="btn-primary">Add tag</button>
+            </div>
         </form>
     </details>
 
-    <div class="flex-row flex-wrap" style="gap: 15px">
+    {{if .Tags}}
+    <div class="tag-browser-list">
         {{range .Tags}}
-        <div
-            style="
-                border: 1px solid var(--border);
-                padding: 15px;
-                border-radius: 6px;
-                background: var(--background-alt);
-                min-width: 120px;
-                text-align: center;
-            "
-        >
-            <a
-                href="/tags/{{.Name}}"
-                style="font-weight: bold; font-size: 1.1rem"
-                >#{{.Name}}</a
-            >
-            <br /><small class="text-muted">{{.UsageCount}} uses</small>
-            {{if .IsSystem}}<br /><small class="text-muted"
-                >System</small
-            >{{end}}
-        </div>
-        {{else}}
-        <p>Zatím nemáte žádné tagy.</p>
+        <a class="tag-browser-item" href="/tags/{{.Name}}">
+            <span>#{{.Name}}</span>
+            <span class="tag-browser-count">{{.UsageCount}}</span>
+            {{if .IsSystem}}<span class="badge">system</span>{{end}}
+        </a>
         {{end}}
     </div>
+    {{else}}
+    <p class="page-empty-hint">You have no tags yet.</p>
+    {{end}}
 </div>
 {{end}}

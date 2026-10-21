@@ -2,104 +2,55 @@
 <div class="centered-view wide" data-mobile-title="ATRIA: Attachments">
     {{template "settings_header" .}}
 
-    <div class="flex-row flex-between mb-3" style="align-items: baseline">
-        <h3 style="margin: 0">Přílohy</h3>
-
-        {{if .Attachments}}
-        <div style="color: var(--text-muted); font-size: 0.95rem">
-            Celková velikost:
-            <strong style="color: var(--text-main)">{{.TotalSize}}</strong>
-        </div>
-        {{end}}
+    <div class="section-header">
+        <h2 class="section-title">Attachments</h2>
+        {{if .Attachments}}<p class="list-item-meta">Total size: <strong>{{.TotalSize}}</strong></p>{{end}}
     </div>
 
-    <table style="width: 100%; border-collapse: collapse; margin-top: 20px">
-        <thead>
-            <tr style="border-bottom: 2px solid var(--border)">
-                <th style="text-align: left; padding: 10px">Název</th>
-                <th style="text-align: left; padding: 10px">Typ</th>
-                <th style="text-align: left; padding: 10px">Velikost</th>
-                <th style="text-align: left; padding: 10px">Nahráno</th>
-                <th style="text-align: left; padding: 10px">Odkázáno</th>
-                <th style="text-align: left; padding: 10px">Akce</th>
-            </tr>
-        </thead>
-        <tbody>
-            {{range .Attachments}}
-            <tr style="border-bottom: 1px solid var(--border)">
-                <td style="padding: 10px">
-                    <div class="flex-row">
-                        <a
-                            href="/data/attachments/{{.DiskPath}}"
-                            target="_blank"
-                            ><strong>{{.Filename}}</strong></a
-                        >
-
-                        <button
-                            type="button"
-                            class="outline btn-sm"
-                            hx-post="/api/attachments/{{.ID}}/rename"
-                            hx-prompt="Zadejte nový název přílohy (včetně koncovky):"
-                            title="Přejmenovat"
-                        >
-                            ✏️
-                        </button>
-                    </div>
-                </td>
-                <td style="padding: 10px"><small>{{.MimeType}}</small></td>
-                <td style="padding: 10px">{{divide .SizeBytes 1024}} KB</td>
-                <td style="padding: 10px; color: var(--text-muted)">
-                    {{formatDate .CreatedAt}}
-                </td>
-
-                <td style="padding: 10px">
-                    {{if eq .LinkCount 0}}
-                    <span class="tag tag-danger">Sirotek</span>
-                    {{else}}
-                    <span class="tag">{{.LinkCount}}x</span>
-                    {{end}}
-                </td>
-
-                <td style="padding: 10px; text-align: right">
-                    {{if eq .LinkCount 0}}
-                    <form
-                        method="post"
-                        action="/api/attachments/{{.ID}}/delete"
-                        style="margin: 0"
-                    >
-                        <input
-                            type="hidden"
-                            name="_csrf"
-                            value="{{$.CSRFToken}}"
-                        />
-                        <button
-                            type="submit"
-                            class="outline btn-sm btn-danger"
-                            title="Smazat"
-                        >
-                            <span class="icon-sm icon-trash"></span>
-                        </button>
-                    </form>
-                    {{else}}
-                    <button
-                        disabled
-                        class="outline btn-sm"
-                        title="Příloha je připojena. Nejprve ji odpojte z entit."
-                        style="opacity: 0.3"
-                    >
-                        <span class="icon-sm icon-trash"></span>
-                    </button>
-                    {{end}}
-                </td>
-            </tr>
-            {{else}}
-            <tr>
-                <td colspan="4" style="padding: 20px; text-align: center">
-                    Žádné přílohy nebyly nahrány.
-                </td>
-            </tr>
-            {{end}}
-        </tbody>
-    </table>
+    {{if .Attachments}}
+    <div class="table-scroll">
+        <table class="data-list">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th class="col-optional">Type</th>
+                    <th class="num">Size</th>
+                    <th class="col-optional">Uploaded</th>
+                    <th>Used by</th>
+                    <th class="num">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .Attachments}}
+                <tr>
+                    <td class="break-all"><a href="/data/attachments/{{.DiskPath}}" target="_blank"><strong>{{.Filename}}</strong></a></td>
+                    <td class="col-optional"><small>{{.MimeType}}</small></td>
+                    <td class="num">{{divide .SizeBytes 1024}} KB</td>
+                    <td class="col-optional text-muted">{{formatDate .CreatedAt}}</td>
+                    <td>{{if eq .LinkCount 0}}<span class="badge badge-warning">Not used</span>{{else}}{{.LinkCount}} {{if eq .LinkCount 1}}item{{else}}items{{end}}{{end}}</td>
+                    <td class="num">
+                        <div class="list-item-actions row-actions">
+                            <button type="button" class="outline btn-sm" hx-post="/api/attachments/{{.ID}}/rename" hx-prompt="New name of the attachment, with the extension:" title="Rename" aria-label="Rename">
+                                <span class="icon-sm icon-edit" aria-hidden="true"></span>
+                            </button>
+                            {{if eq .LinkCount 0}}
+                            <form method="post" action="/api/attachments/{{.ID}}/delete" class="inline-action-form" data-confirm="Delete {{.Filename}} permanently?">
+                                <input type="hidden" name="_csrf" value="{{$.CSRFToken}}" />
+                                <button type="submit" class="outline btn-sm btn-danger" title="Delete permanently" aria-label="Delete permanently">
+                                    <span class="icon-sm icon-trash" aria-hidden="true"></span>
+                                </button>
+                            </form>
+                            {{end}}
+                        </div>
+                    </td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+    <p class="form-help">You can delete an attachment only when no note or article uses it.</p>
+    {{else}}
+    <p class="page-empty-hint">You have not uploaded any attachments.</p>
+    {{end}}
 </div>
 {{end}}

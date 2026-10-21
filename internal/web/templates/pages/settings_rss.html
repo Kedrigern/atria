@@ -1,176 +1,74 @@
 {{define "content"}}
-<div class="centered-view wide" data-mobile-title="ATRIA: RSS Feeds">
+<div class="centered-view wide" data-mobile-title="ATRIA: RSS feeds">
     {{template "settings_header" .}}
 
-    <div class="page-header-row mb-1">
-        <h3>Subscribed Feeds</h3>
-        <form method="post" action="/api/rss/fetch">
+    <div class="section-header">
+        <h2 class="section-title">RSS feeds</h2>
+        <form method="post" action="/api/rss/fetch" class="inline-action-form">
             <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
-            <button class="outline" type="submit">⟳ Fetch Now</button>
+            <button class="outline btn-sm" type="submit"><span class="icon-sm icon-refresh" aria-hidden="true"></span> Fetch all</button>
         </form>
     </div>
 
-    <form
-        method="post"
-        action="/api/rss/add"
-        class="flex-row flex-wrap mb-3"
-        style="align-items: flex-start"
-    >
+    <form method="post" action="/api/rss/add" class="inline-form">
         <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
-        <input
-            type="url"
-            name="url"
-            placeholder="https://... (URL feedu)"
-            class="form-control"
-            required
-        />
-        <input
-            type="text"
-            name="title"
-            placeholder="Název (volitelné)"
-            class="form-control"
-        />
-        <button type="submit" style="white-space: nowrap">Add Feed</button>
+        <div class="form-group inline-form-wide">
+            <label for="feed-url">Address of the feed</label>
+            <input id="feed-url" type="url" name="url" placeholder="https://example.com/feed.xml" class="form-control" required />
+        </div>
+        <div class="form-group">
+            <label for="feed-title">Title</label>
+            <input id="feed-title" type="text" name="title" class="form-control" />
+            <p class="form-help">Optional. The default is the title of the feed.</p>
+        </div>
+        <div class="form-actions inline-form-actions">
+            <button type="submit" class="btn-primary">Add feed</button>
+        </div>
     </form>
 
-    <table style="width: 100%; border-collapse: collapse; margin-top: 20px">
-        <thead>
-            <tr>
-                <th
-                    style="
-                        border-bottom: 1px solid var(--border-color);
-                        padding: 10px;
-                        text-align: left;
-                    "
-                >
-                    Title
-                </th>
-                <th
-                    style="
-                        border-bottom: 1px solid var(--border-color);
-                        padding: 10px;
-                        text-align: left;
-                    "
-                >
-                    URL
-                </th>
-                <th
-                    style="
-                        border-bottom: 1px solid var(--border-color);
-                        padding: 10px;
-                        text-align: left;
-                    "
-                >
-                    Last Fetch
-                </th>
-                <th
-                    style="
-                        border-bottom: 1px solid var(--border-color);
-                        padding: 10px;
-                        text-align: right;
-                    "
-                >
-                    Actions
-                </th>
-            </tr>
-        </thead>
-        <tbody>
-            {{range .Feeds}}
-            <tr>
-                <td
-                    style="
-                        border-bottom: 1px solid var(--border-color);
-                        padding: 10px;
-                    "
-                >
-                    <strong><a href="/rss/{{.ID}}">{{.Title}}</a></strong>
-                </td>
-                <td
-                    style="
-                        border-bottom: 1px solid var(--border-color);
-                        padding: 10px;
-                        color: var(--text-muted);
-                        font-size: 0.9rem;
-                    "
-                >
-                    <a
-                        href="{{.FeedURL}}"
-                        target="_blank"
-                        style="color: inherit; text-decoration: none"
-                        >{{.FeedURL}}</a
-                    >
-                </td>
-                <td
-                    style="
-                        border-bottom: 1px solid var(--border-color);
-                        padding: 10px;
-                        color: var(--text-muted);
-                        font-size: 0.9rem;
-                    "
-                >
-                    {{if .LastFetchedAt}}{{formatDate
-                    .LastFetchedAt}}{{else}}Never{{end}}
-                </td>
-                <td
-                    style="
-                        border-bottom: 1px solid var(--border-color);
-                        padding: 10px;
-                        text-align: right;
-                    "
-                >
-                    <div class="action-row" style="justify-content: flex-end">
-                        <button
-                            type="button"
-                            hx-post="/api/entity/{{.ID}}/rename"
-                            hx-prompt="Zadejte nový název pro tento RSS Feed:"
-                            class="outline btn-sm"
-                            title="Přejmenovat zdroj"
-                        >
-                            ✏️
-                        </button>
-
-                        <form
-                            method="post"
-                            action="/api/rss/{{.ID}}/fetch"
-                            style="margin: 0; display: inline"
-                        >
-                            <input
-                                type="hidden"
-                                name="_csrf"
-                                value="{{$.CSRFToken}}"
-                            />
-                            <button
-                                type="submit"
-                                class="outline btn-sm"
-                                title="Synchronizovat tento feed"
-                            >
-                                <span class="icon-sm icon-refresh"></span>
+    {{if .Feeds}}
+    <div class="table-scroll">
+        <table class="data-list">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th class="col-optional">Address</th>
+                    <th>Last fetch</th>
+                    <th class="num">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .Feeds}}
+                <tr>
+                    <td><strong><a href="/rss/{{.ID}}">{{.Title}}</a></strong></td>
+                    <td class="col-optional text-muted break-all"><a href="{{.FeedURL}}" target="_blank" rel="noopener" class="muted-link">{{.FeedURL}}</a></td>
+                    <td class="text-muted">{{if .LastFetchedAt}}{{formatDate .LastFetchedAt}}{{else}}Never{{end}}</td>
+                    <td class="num">
+                        <div class="list-item-actions row-actions">
+                            <button type="button" hx-post="/api/entity/{{.ID}}/rename" hx-prompt="New title of the feed:" class="outline btn-sm" title="Rename" aria-label="Rename">
+                                <span class="icon-sm icon-edit" aria-hidden="true"></span>
                             </button>
-                        </form>
-
-                        <form
-                            method="post"
-                            action="/api/rss/{{.ID}}/delete"
-                            style="margin: 0; display: inline"
-                        >
-                            <input
-                                type="hidden"
-                                name="_csrf"
-                                value="{{$.CSRFToken}}"
-                            />
-                            <button
-                                type="submit"
-                                class="outline btn-sm btn-danger"
-                                title="Smazat feed"
-                            >
-                                <span class="icon-sm icon-trash"></span>
-                            </button>
-                        </form>
-                    </div>
-                </td>
-            </tr>
-            {{else}} {{end}}
-        </tbody>
-    </table>
+                            <form method="post" action="/api/rss/{{.ID}}/fetch" class="inline-action-form">
+                                <input type="hidden" name="_csrf" value="{{$.CSRFToken}}" />
+                                <button type="submit" class="outline btn-sm" title="Fetch this feed" aria-label="Fetch this feed">
+                                    <span class="icon-sm icon-refresh" aria-hidden="true"></span>
+                                </button>
+                            </form>
+                            <form method="post" action="/api/rss/{{.ID}}/delete" class="inline-action-form" data-confirm="Move this feed to the trash?">
+                                <input type="hidden" name="_csrf" value="{{$.CSRFToken}}" />
+                                <button type="submit" class="outline btn-sm btn-danger" title="Move to trash" aria-label="Move to trash">
+                                    <span class="icon-sm icon-trash" aria-hidden="true"></span>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+    {{else}}
+    <p class="page-empty-hint">You have no RSS feeds yet. Add the address of a feed above.</p>
+    {{end}}
 </div>
 {{end}}
