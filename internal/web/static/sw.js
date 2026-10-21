@@ -1,7 +1,7 @@
-const STATIC_CACHE = "atria-static-v21";
+const STATIC_CACHE = "atria-static-v22";
 const STATIC_ASSETS = [
     "/static/water.css?v=2",
-    "/static/style.css?v=15",
+    "/static/style.css?v=16",
     "/static/htmx.min.js?v=2",
     "/static/ebook.js?v=3",
     "/static/app.js?v=6",

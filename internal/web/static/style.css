@@ -1092,27 +1092,25 @@ form.htmx-request button[type="submit"] {
 /* --- Cryptograms --- */
 .game-library { display: grid; gap: 12px; }
 .game-card { display: flex; justify-content: space-between; gap: 18px; align-items: center; padding: 18px; border: 1px solid var(--border); border-radius: 8px; background: var(--background-alt); }
-.game-card h3, .game-card p { margin: 0 0 6px; }
+.game-card .list-item-title, .game-card p { margin: 0 0 var(--space-1); }
 .game-card-action { display: flex; flex-direction: column; align-items: end; gap: 8px; white-space: nowrap; }
-.game-complete { color: #15803d; font-size: 0.85rem; font-weight: 600; }
 .cryptogram-context, .cryptogram-finished { margin: 18px 0; padding: 14px 16px; border-left: 3px solid var(--links); background: var(--background-alt); }
 .cryptogram-board { display: flex; flex-wrap: wrap; align-items: end; column-gap: 22px; row-gap: 10px; padding: 22px 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 1.3rem; line-height: 2.4; }
 .cryptogram-word { display: inline-flex; align-items: end; gap: 4px; margin-right: 16px; white-space: nowrap; }
 .cipher-input, .cipher-cell { box-sizing: border-box; width: 2.1em; height: 2.35em; padding: 0 0 0.2em; border: 0; border-bottom: 2px solid var(--text-main); border-radius: 0; background: transparent; color: var(--text-bright); font: inherit; font-weight: 700; text-align: center; }
 .cipher-input::placeholder { color: var(--text-muted); font-size: 0.68em; font-weight: 500; opacity: 1; }
 .cipher-input:focus { outline: none; border-bottom-color: var(--links); background: color-mix(in srgb, var(--links) 12%, transparent); }
-.cipher-input.solved, .cipher-cell.solved { border-bottom-color: #15803d; }
+.cipher-input.solved, .cipher-cell.solved { border-bottom-color: var(--success); }
 .cipher-cell { display: inline-flex; flex-direction: column; align-items: center; justify-content: end; }
 .cipher-guess { height: 1.25em; font-weight: 700; }
 .cipher-completed { font-weight: 700; }
 .cipher-code { font-size: 0.52em; line-height: 1.1; color: var(--text-muted); }
 .cipher-punctuation { padding-bottom: 0.08em; }
-.cryptogram-actions { display: flex; gap: 8px; }
 .cryptogram-stats { display: flex; gap: 16px; margin: 10px 0; color: var(--text-muted); }
 .cryptogram-log { margin: 16px 0; padding: 0; list-style: none; border-top: 1px solid var(--border); }
 .cryptogram-log li { padding: 8px 0; border-bottom: 1px solid var(--border); }
-.cryptogram-log .correct { color: #15803d; }
-.cryptogram-log .wrong { color: #dc2626; }
+.cryptogram-log .correct { color: var(--success); }
+.cryptogram-log .wrong { color: var(--danger); font-weight: bold; }
 @media (max-width: 640px) { .game-card { align-items: start; flex-direction: column; } .game-card-action { align-items: start; flex-direction: row; } .cryptogram-board { font-size: 1.1rem; column-gap: 18px; row-gap: 7px; } .cryptogram-word { gap: 2px; margin-right: 12px; } }
 
 /* Tables */
@@ -1678,4 +1676,10 @@ details.toc a:focus {
 }
 @media (max-width: 640px) {
     .data-list .col-optional { display: none; }
+}
+
+/* Games: each letter field is at least 40 px wide for touch and stylus. */
+.cipher-input {
+    min-width: 40px;
+    min-height: 40px;
 }

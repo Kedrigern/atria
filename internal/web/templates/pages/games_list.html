@@ -1,28 +1,28 @@
 {{define "content"}}
 <div class="centered-view" data-mobile-title="ATRIA: Games">
-    <div class="page-header-row mb-3">
+    <header class="page-header">
         <div>
-            <h2 class="hide-mobile">Cryptograms</h2>
-            <p class="text-muted">Solve a quote by matching every number to a letter.</p>
+            <h1 class="page-title">Cryptograms</h1>
+            <p class="page-subtitle">Solve a quote. Each number stands for one letter.</p>
         </div>
-    </div>
+    </header>
 
     <div class="game-library">
         {{range .Puzzles}}
         <article class="game-card">
             <div>
-                <h3>{{.Title}}</h3>
-                {{if .Category}}<p class="text-muted">{{.Category}}</p>{{end}}
+                <h2 class="list-item-title">{{.Title}}</h2>
+                {{if .Category}}<p class="list-item-meta">{{.Category}}</p>{{end}}
                 {{if .IntroText}}<p>{{.IntroText}}</p>{{end}}
-                <small class="text-muted">Difficulty: {{.DifficultyScore}} / 5</small>
+                <p class="list-item-meta">Difficulty: {{.DifficultyScore}} / 5</p>
             </div>
             <div class="game-card-action">
-                {{if .CompletedAt}}<span class="game-complete">Completed</span>{{end}}
+                {{if .CompletedAt}}<span class="badge badge-success">Solved</span>{{end}}
                 <a class="button-link btn-primary" href="/games/cryptograms/{{.ID}}" hx-get="/games/cryptograms/{{.ID}}" hx-target="#main-content" hx-push-url="true">{{if .CompletedAt}}Play again{{else}}Play{{end}}</a>
             </div>
         </article>
         {{else}}
-        <p class="page-empty-hint">No cryptograms are available yet.</p>
+        <p class="page-empty-hint">There are no cryptograms yet.</p>
         {{end}}
     </div>
 </div>

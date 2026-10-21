@@ -1,24 +1,26 @@
 {{define "content"}}
 <div class="centered-view cryptogram-page" data-mobile-title="ATRIA: Cryptogram">
-    <div class="page-header-row mb-3">
+    <header class="page-header">
         <div>
-            <a href="/games" hx-get="/games" hx-target="#main-content" hx-push-url="true" class="text-muted">← Cryptograms</a>
-            <h2>{{.Puzzle.Title}}</h2>
-            {{if .Puzzle.Category}}<p class="text-muted">{{.Puzzle.Category}} · Difficulty {{.Puzzle.DifficultyScore}} / 5</p>{{end}}
+            <h1 class="page-title">{{.Puzzle.Title}}</h1>
+            <p class="page-subtitle">{{if .Puzzle.Category}}{{.Puzzle.Category}} · {{end}}Difficulty {{.Puzzle.DifficultyScore}} / 5</p>
         </div>
-        <div class="cryptogram-actions">
+        <div class="page-actions">
+            <a href="/games" hx-get="/games" hx-target="#main-content" hx-push-url="true" class="button-link outline btn-sm">
+                <span class="icon-sm icon-chevron-left" aria-hidden="true"></span> Cryptograms
+            </a>
             {{if not .Puzzle.CompletedAt}}
-            <form method="post" action="/api/games/cryptograms/{{.Puzzle.ID}}/hint">
+            <form method="post" action="/api/games/cryptograms/{{.Puzzle.ID}}/hint" class="inline-action-form">
                 <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
                 <button type="submit" class="outline btn-sm">Hint</button>
             </form>
             {{end}}
-            <form method="post" action="/api/games/cryptograms/{{.Puzzle.ID}}/reset" data-confirm="Reset all of your guesses for this puzzle?">
+            <form method="post" action="/api/games/cryptograms/{{.Puzzle.ID}}/reset" class="inline-action-form" data-confirm="Remove all of your guesses for this puzzle?">
                 <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
                 <button type="submit" class="outline btn-sm">Reset</button>
             </form>
         </div>
-    </div>
+    </header>
 
     {{if .Puzzle.IntroText}}<aside class="cryptogram-context">{{.Puzzle.IntroText}}</aside>{{end}}
 
@@ -46,7 +48,7 @@
         </div>
         {{if .Puzzle.RecentMoves}}
         <section aria-label="Recent guesses">
-            <h3>Recent guesses</h3>
+            <h2 class="section-title">Recent guesses</h2>
             <ul class="cryptogram-log">
                 {{range .Puzzle.RecentMoves}}<li class="{{if .IsHint}}hint{{else if .IsCorrect}}correct{{else}}wrong{{end}}">{{.Code}} → {{.Letter}} — {{if .IsHint}}hint{{else if .IsCorrect}}correct{{else}}wrong{{end}}</li>{{end}}
             </ul>
@@ -56,7 +58,7 @@
 
     {{if .Puzzle.CompletedAt}}
     <section class="cryptogram-finished">
-        <h3>Completed</h3>
+        <h2 class="section-title">Solved</h2>
         <p>You solved this cryptogram in {{.Puzzle.MovesCount}} moves.</p>
         {{if .Puzzle.CompletionText}}<p>{{.Puzzle.CompletionText}}</p>{{end}}
         <a href="/games" hx-get="/games" hx-target="#main-content" hx-push-url="true" class="button-link btn-primary">Choose another puzzle</a>
