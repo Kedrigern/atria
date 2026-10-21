@@ -39,3 +39,6 @@ Thumbs.db
 
 # Claude Code agent worktrees
 .claude/worktrees/
+
+# Output of scripts/ui-screenshots.py
+/ui-screenshots/
