@@ -12,17 +12,91 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// bookGroup is one book on the Campaigns tab: open campaigns first, solved last.
+type bookGroup struct {
+	Title  string
+	Author *string
+	Open   []games.CampaignSummary
+	Solved []games.CampaignSummary
+}
+
 func (s *Server) handleGameList(c *gin.Context) {
 	user := s.getUser(c)
 	if user == nil {
 		return
 	}
-	puzzles, err := games.List(c.Request.Context(), s.db, user.ID)
+	ctx := c.Request.Context()
+	tab := c.Query("tab")
+	if tab != "single" {
+		tab = "campaigns"
+	}
+	topic := c.Query("topic")
+	topics, err := games.Topics(ctx, s.db, tab == "campaigns")
 	if err != nil {
-		s.respondError(c, http.StatusInternalServerError, "Failed to load cryptograms", err)
+		s.respondError(c, http.StatusInternalServerError, "Failed to load topics", err)
 		return
 	}
-	s.render(c, "games_list.html", gin.H{"Puzzles": puzzles})
+	data := gin.H{"Tab": tab, "Topic": topic, "Topics": topics}
+
+	if tab == "campaigns" {
+		campaigns, err := games.ListCampaigns(ctx, s.db, user.ID, topic)
+		if err != nil {
+			s.respondError(c, http.StatusInternalServerError, "Failed to load campaigns", err)
+			return
+		}
+		var books []*bookGroup
+		for _, campaign := range campaigns {
+			if len(books) == 0 || books[len(books)-1].Title != campaign.BookTitle {
+				books = append(books, &bookGroup{Title: campaign.BookTitle, Author: campaign.BookAuthor})
+			}
+			book := books[len(books)-1]
+			if campaign.Done() {
+				book.Solved = append(book.Solved, campaign)
+			} else {
+				book.Open = append(book.Open, campaign)
+			}
+		}
+		data["Books"] = books
+	} else {
+		puzzles, err := games.List(ctx, s.db, user.ID, topic)
+		if err != nil {
+			s.respondError(c, http.StatusInternalServerError, "Failed to load cryptograms", err)
+			return
+		}
+		var open, solved []games.Summary
+		for _, puzzle := range puzzles {
+			if puzzle.CompletedAt != nil {
+				solved = append(solved, puzzle)
+			} else {
+				open = append(open, puzzle)
+			}
+		}
+		data["Open"], data["Solved"] = open, solved
+	}
+	s.render(c, "games_list.html", data)
+}
+
+func (s *Server) handleCampaign(c *gin.Context) {
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+	id, err := core.ParseUUID(c.Param("id"))
+	if err != nil {
+		s.renderError(c, http.StatusNotFound, "Campaign not found")
+		return
+	}
+	campaign, err := games.GetCampaign(c.Request.Context(), s.db, user.ID, id)
+	if err != nil {
+		var notFound *games.NotFoundError
+		if errors.As(err, &notFound) {
+			s.renderError(c, http.StatusNotFound, "Campaign not found")
+		} else {
+			s.respondError(c, http.StatusInternalServerError, "Failed to load campaign", err)
+		}
+		return
+	}
+	s.render(c, "campaign_detail.html", gin.H{"Campaign": campaign})
 }
 
 func (s *Server) handleCryptogramPlay(c *gin.Context) {
@@ -38,9 +112,14 @@ func (s *Server) handleCryptogramPlay(c *gin.Context) {
 	puzzle, err := games.GetPuzzle(c.Request.Context(), s.db, user.ID, id)
 	if err != nil {
 		var notFound *games.NotFoundError
-		if errors.As(err, &notFound) {
+		var locked *games.LockedError
+		switch {
+		case errors.As(err, &locked):
+			s.setFlash(c, "info", "Solve the earlier passages first.")
+			c.Redirect(http.StatusSeeOther, "/games/campaigns/"+locked.CampaignID.String())
+		case errors.As(err, &notFound):
 			s.renderError(c, http.StatusNotFound, "Cryptogram not found")
-		} else {
+		default:
 			s.renderError(c, http.StatusInternalServerError, "Failed to load cryptogram")
 		}
 		return

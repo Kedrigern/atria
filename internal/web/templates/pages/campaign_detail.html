@@ -1,0 +1,40 @@
+{{define "content"}}
+<div class="centered-view" data-mobile-title="ATRIA: Campaign">
+    {{template "flash_message" .}}
+
+    <header class="page-header">
+        <div>
+            <h1 class="page-title">{{.Campaign.Title}}</h1>
+            <p class="page-subtitle">{{.Campaign.BookTitle}}{{if .Campaign.BookAuthor}} · {{.Campaign.BookAuthor}}{{end}} · {{.Campaign.Solved}} of {{.Campaign.Total}} solved</p>
+        </div>
+        <div class="page-actions">
+            <a href="/games" hx-get="/games" hx-target="#main-content" hx-push-url="true" class="button-link outline btn-sm">
+                <span class="icon-sm icon-chevron-left" aria-hidden="true"></span> Cryptograms
+            </a>
+            {{if .Campaign.NextID}}
+            <a href="/games/cryptograms/{{.Campaign.NextID}}" hx-get="/games/cryptograms/{{.Campaign.NextID}}" hx-target="#main-content" hx-push-url="true" class="button-link btn-primary btn-sm">{{if .Campaign.Solved}}Next passage{{else}}Start{{end}}</a>
+            {{else}}
+            <span class="badge badge-success">Solved</span>
+            {{end}}
+        </div>
+    </header>
+
+    <section class="story" aria-labelledby="story-title">
+        <h2 id="story-title" class="section-title">{{if .Campaign.NextID}}Story so far{{else}}The story{{end}}</h2>
+        {{if .Campaign.Story}}
+        <div class="reading-body story-text">
+            {{range .Campaign.Story}}<p>{{.}}</p>{{end}}
+        </div>
+        {{if .Campaign.NextID}}<p class="form-help">{{.Campaign.Solved}} of {{.Campaign.Total}} passages. The next passage continues the story.</p>{{end}}
+        {{else}}
+        <p class="page-empty-hint">Solve the first passage to start the story.</p>
+        {{end}}
+    </section>
+
+    {{if or .Campaign.SourceURL .Campaign.License}}
+    <p class="form-help">
+        Source: {{if .Campaign.SourceURL}}<a href="{{.Campaign.SourceURL}}" target="_blank" rel="noopener">{{.Campaign.BookTitle}}</a>{{else}}{{.Campaign.BookTitle}}{{end}}{{if .Campaign.License}}. {{.Campaign.License}}.{{end}}
+    </p>
+    {{end}}
+</div>
+{{end}}

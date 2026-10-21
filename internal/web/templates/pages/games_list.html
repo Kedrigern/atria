@@ -1,29 +1,94 @@
 {{define "content"}}
 <div class="centered-view" data-mobile-title="ATRIA: Games">
+    {{template "flash_message" .}}
+
     <header class="page-header">
         <div>
             <h1 class="page-title">Cryptograms</h1>
-            <p class="page-subtitle">Solve a quote. Each number stands for one letter.</p>
+            <p class="page-subtitle">Solve a text. Each number stands for one letter.</p>
         </div>
     </header>
 
-    <div class="game-library">
-        {{range .Puzzles}}
-        <article class="game-card">
-            <div>
-                <h2 class="list-item-title">{{.Title}}</h2>
-                {{if .Category}}<p class="list-item-meta">{{.Category}}</p>{{end}}
-                {{if .IntroText}}<p>{{.IntroText}}</p>{{end}}
-                <p class="list-item-meta">Difficulty: {{.DifficultyScore}} / 5</p>
+    <nav class="tab-nav" aria-label="Kind of puzzle">
+        <a href="/games?tab=campaigns{{if .Topic}}&topic={{.Topic}}{{end}}" {{if eq .Tab "campaigns"}}class="active" aria-current="page"{{end}}>Campaigns</a>
+        <a href="/games?tab=single{{if .Topic}}&topic={{.Topic}}{{end}}" {{if eq .Tab "single"}}class="active" aria-current="page"{{end}}>Single puzzles</a>
+    </nav>
+
+    {{if .Topics}}
+    <nav class="filter-nav" aria-label="Filter by topic">
+        <a href="/games?tab={{.Tab}}" {{if not .Topic}}class="active" aria-current="page"{{end}}>All</a>
+        {{range .Topics}}
+        <a href="/games?tab={{$.Tab}}&topic={{.}}" {{if eq $.Topic .}}class="active" aria-current="page"{{end}}>{{topicLabel .}}</a>
+        {{end}}
+    </nav>
+    {{end}}
+
+    {{if eq .Tab "campaigns"}}
+        {{range .Books}}
+        <section class="game-book">
+            <h2 class="section-title">{{.Title}}{{if .Author}} <span class="text-muted">· {{.Author}}</span>{{end}}</h2>
+            <div class="game-library">
+                {{range .Open}}{{template "campaign_card" .}}{{end}}
             </div>
-            <div class="game-card-action">
-                {{if .CompletedAt}}<span class="badge badge-success">Solved</span>{{end}}
-                <a class="button-link btn-primary" href="/games/cryptograms/{{.ID}}" hx-get="/games/cryptograms/{{.ID}}" hx-target="#main-content" hx-push-url="true">{{if .CompletedAt}}Play again{{else}}Play{{end}}</a>
-            </div>
-        </article>
+            {{if .Solved}}
+            <details class="help-box solved-box">
+                <summary>Solved ({{len .Solved}})</summary>
+                <div class="game-library">
+                    {{range .Solved}}{{template "campaign_card" .}}{{end}}
+                </div>
+            </details>
+            {{end}}
+        </section>
         {{else}}
-        <p class="page-empty-hint">There are no cryptograms yet.</p>
+        <p class="page-empty-hint">There are no campaigns{{if .Topic}} with this topic{{end}} yet.</p>
+        {{end}}
+    {{else}}
+        <div class="game-library">
+            {{range .Open}}{{template "puzzle_card" .}}{{end}}
+        </div>
+        {{if .Solved}}
+        <details class="help-box solved-box">
+            <summary>Solved ({{len .Solved}})</summary>
+            <div class="game-library">
+                {{range .Solved}}{{template "puzzle_card" .}}{{end}}
+            </div>
+        </details>
+        {{end}}
+        {{if not (or .Open .Solved)}}
+        <p class="page-empty-hint">There are no single puzzles{{if .Topic}} with this topic{{end}} yet.</p>
+        {{end}}
+    {{end}}
+</div>
+{{end}}
+
+{{define "campaign_card"}}
+<article class="game-card">
+    <div>
+        <h3 class="list-item-title"><a href="/games/campaigns/{{.ID}}" hx-get="/games/campaigns/{{.ID}}" hx-target="#main-content" hx-push-url="true">{{.Title}}</a></h3>
+        <p class="list-item-meta">{{.Solved}} of {{.Total}} solved{{range .Topics}} · {{topicLabel .}}{{end}}</p>
+    </div>
+    <div class="game-card-action">
+        {{if .Done}}
+        <span class="badge badge-success">Solved</span>
+        <a class="button-link outline" href="/games/campaigns/{{.ID}}" hx-get="/games/campaigns/{{.ID}}" hx-target="#main-content" hx-push-url="true">Read the story</a>
+        {{else if .NextID}}
+        <a class="button-link btn-primary" href="/games/cryptograms/{{.NextID}}" hx-get="/games/cryptograms/{{.NextID}}" hx-target="#main-content" hx-push-url="true">{{if .Solved}}Continue{{else}}Start{{end}}</a>
         {{end}}
     </div>
-</div>
+</article>
+{{end}}
+
+{{define "puzzle_card"}}
+<article class="game-card">
+    <div>
+        <h3 class="list-item-title">{{.Title}}</h3>
+        {{if .Category}}<p class="list-item-meta">{{.Category}}</p>{{end}}
+        {{if .IntroText}}<p>{{.IntroText}}</p>{{end}}
+        <p class="list-item-meta">Difficulty: {{.DifficultyScore}} / 5</p>
+    </div>
+    <div class="game-card-action">
+        {{if .CompletedAt}}<span class="badge badge-success">Solved</span>{{end}}
+        <a class="button-link {{if .CompletedAt}}outline{{else}}btn-primary{{end}}" href="/games/cryptograms/{{.ID}}" hx-get="/games/cryptograms/{{.ID}}" hx-target="#main-content" hx-push-url="true">{{if .CompletedAt}}Play again{{else}}Play{{end}}</a>
+    </div>
+</article>
 {{end}}

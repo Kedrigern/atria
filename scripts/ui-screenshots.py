@@ -156,6 +156,17 @@ def serve_fixtures(directory):
     return server, f"http://127.0.0.1:{port}"
 
 
+CAMPAIGN = """{
+  "book": {"slug": "sample-stories", "title": "Sample Stories", "author": "Atria", "topics": ["legends"]},
+  "campaigns": [{"slug": "the-wise-king", "title": "The Wise King", "reviewed": true, "passages": [
+    "Once upon a time a wise old king lived in a castle by the sea.",
+    "Every morning the king walked along the shore and talked to the fishermen.",
+    "One day a great storm came, and the king helped the people of the village."
+  ]}]
+}
+"""
+
+
 def run(binary, env, *args, stdin=None):
     result = subprocess.run([binary, *args], env=env, input=stdin, capture_output=True, text=True, check=False)
     if result.returncode != 0:
@@ -170,6 +181,7 @@ def seed(binary, env, work):
     (fixtures / "article.html").write_text(ARTICLE)
     (fixtures / "feed.xml").write_text(FEED.format(base=base))
     (work / "books.csv").write_text(TABLE)
+    (work / "campaign.json").write_text(CAMPAIGN)
     try:
         run(binary, env, "db", "drop", "--force")
         run(binary, env, "db", "migrate")
@@ -184,6 +196,7 @@ def seed(binary, env, work):
         run(binary, env, "tag", "attach", "Reading plan 2026", "reading")
         run(binary, env, "table", "import", str(work / "books.csv"), "--title", "Knihovna")
         run(binary, env, "ebook", "create", "Reading plan 2026", "How to read more deeply", "--title", "Weekend reading")
+        run(binary, env, "games", "import", str(work / "campaign.json"))
     finally:
         server.shutdown()
 
@@ -202,6 +215,7 @@ def pages(base):
         "feed": first_link(base, "/rss/feeds", "/rss"),
         "ebook": first_link(base, "/ebooks", "/ebooks"),
         "table": first_link(base, "/tables", "/tables"),
+        "campaign": first_link(base, "/games", "/games/campaigns"),
     }
     result = [
         ("01-home", "/"), ("02-notes", "/notes"), ("03-note", found["note"]),
@@ -211,6 +225,7 @@ def pages(base):
         ("13-cryptogram", "/games/cryptograms/01900000-0000-7000-8000-000000000001"),
         ("14-search", "/search?q=reading"), ("15-settings", "/settings/rss"),
         ("16-storage", "/settings/storage"), ("17-profile", "/profile"), ("18-login", "/login"),
+        ("19-campaign", found["campaign"]), ("20-games-single", "/games?tab=single"),
     ]
     return [(name, path) for name, path in result if path]
 
