@@ -68,5 +68,5 @@ func TestSearchPageUsesQueryFromURL(t *testing.T) {
 	assert.False(t, strings.Contains(w.Body.String(), "<html"), "partial must not contain the page frame")
 
 	empty := getWithCookie(r, "/search", nil)
-	assert.Contains(t, empty.Body.String(), "Enter a search term")
+	assert.Contains(t, empty.Body.String(), "Enter a word to search for")
 }
