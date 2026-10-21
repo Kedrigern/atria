@@ -1,84 +1,35 @@
 {{define "content"}}
 <div class="centered-view">
-    <div style="text-align: center; margin-bottom: 40px; margin-top: 10px">
-        <img
-            src="/static/atria-text.png"
-            alt="Atria Logo"
-            class="theme-logo-light"
-            style="max-height: 120px; width: auto"
-        />
-        <img
-            src="/static/atria-text-dark.png"
-            alt="Atria Logo"
-            class="theme-logo-dark"
-            style="max-height: 120px; width: auto"
-        />
-    </div>
-
+    <h1 class="home-logo">
+        <img src="/static/atria-text.png" alt="Atria" class="theme-logo-light" />
+        <img src="/static/atria-text-dark.png" alt="Atria" class="theme-logo-dark" />
+    </h1>
 
     {{template "add_article_form" .}}
 
-    <h2>Dashboard</h2>
     <div class="dashboard-grid">
-        <a
-            href="/rss"
-            hx-get="/rss"
-            hx-target="#main-content"
-            hx-push-url="true"
-            class="dashboard-card"
-        >
-            <h4 class="flex-row" style="gap: 8px">
-                <span class="icon icon-rss"></span>
-                RSS Triage
-            </h4>
+        <a href="/rss" hx-get="/rss" hx-target="#main-content" hx-push-url="true" class="dashboard-card">
+            <h2 class="dashboard-title"><span class="icon icon-rss" aria-hidden="true"></span> RSS</h2>
             <p>Unread items: <strong>{{.UnreadCount}}</strong></p>
         </a>
 
-        <a
-            href="/read"
-            hx-get="/read"
-            hx-target="#main-content"
-            hx-push-url="true"
-            class="dashboard-card"
-        >
-            <h4 class="flex-row" style="gap: 8px">
-                <span class="icon icon-bookmark"></span>
-                Read-it-Later
-            </h4>
-            <p>Items in Inbox: <strong>{{.InboxCount}}</strong></p>
+        <a href="/read" hx-get="/read" hx-target="#main-content" hx-push-url="true" class="dashboard-card">
+            <h2 class="dashboard-title"><span class="icon icon-bookmark" aria-hidden="true"></span> Read-it-later</h2>
+            <p>Saved articles: <strong>{{.InboxCount}}</strong></p>
         </a>
 
-        <a
-            href="/games"
-            hx-get="/games"
-            hx-target="#main-content"
-            hx-push-url="true"
-            class="dashboard-card"
-        >
-            <h4 class="flex-row" style="gap: 8px">🎲 Cryptograms</h4>
-            <p>Solve short quotes one letter at a time.</p>
+        <a href="/games" hx-get="/games" hx-target="#main-content" hx-push-url="true" class="dashboard-card">
+            <h2 class="dashboard-title"><span class="icon icon-dice" aria-hidden="true"></span> Cryptograms</h2>
+            <p>Solve a short quote, one letter at a time.</p>
         </a>
 
         <div class="dashboard-card full-width">
-            <h4 class="flex-row" style="gap: 8px">
-                <span class="icon icon-note"></span>
-                Recent Notes
-            </h4>
-            <ul style="padding-left: 20px; margin-bottom: 0">
+            <h2 class="dashboard-title"><span class="icon icon-note" aria-hidden="true"></span> Recent notes</h2>
+            <ul class="dashboard-list">
                 {{range .RecentNotes}}
-                <li>
-                    <a
-                        href="/notes/{{.ID}}"
-                        hx-get="/notes/{{.ID}}"
-                        hx-target="#main-content"
-                        hx-push-url="true"
-                        >{{.Title}}</a
-                    >
-                </li>
+                <li><a href="/notes/{{.ID}}" hx-get="/notes/{{.ID}}" hx-target="#main-content" hx-push-url="true">{{.Title}}</a></li>
                 {{else}}
-                <li class="text-muted">
-                    No recent notes found. Time to write something!
-                </li>
+                <li class="text-muted">You have no notes yet.</li>
                 {{end}}
             </ul>
         </div>
