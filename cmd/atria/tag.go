@@ -52,6 +52,21 @@ var tagAttachCmd = &cobra.Command{
 	},
 }
 
+var tagMergeCmd = &cobra.Command{
+	Use:   "merge <tag-to-merge> <tag-to-keep>",
+	Short: "Moves all items of the first tag to the second tag and deletes the first tag",
+	Args:  cobra.ExactArgs(2),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		result, err := core.MergeTags(app.Ctx, app.DB, app.Owner.ID, args[0], args[1])
+		if err != nil {
+			return err
+		}
+		fmt.Fprintf(cmd.OutOrStdout(), "#%s merged into #%s: %d items moved, %d already had #%s.\n",
+			args[0], args[1], result.Moved, result.AlreadyTagged, args[1])
+		return nil
+	},
+}
+
 var tagListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "Outputs a tabular list of all your tags",
@@ -115,7 +130,7 @@ var tagShowCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(tagCmd)
-	tagCmd.AddCommand(tagAddCmd, tagAttachCmd, tagListCmd)
+	tagCmd.AddCommand(tagAddCmd, tagAttachCmd, tagListCmd, tagMergeCmd)
 	tagCmd.AddCommand(tagShowCmd)
 	tagListCmd.Flags().BoolVarP(&showLong, "long", "l", false, "Show full UUIDs")
 	tagListCmd.Flags().StringVarP(&listFormat, "format", "f", "table", "Output format (table, json, csv, html)")
