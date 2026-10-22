@@ -119,14 +119,19 @@ func ExtractEPUBCover(epubPath, destinationDir string) (*EPUBCover, error) {
 }
 
 type epubPackageDocument struct {
-	metadata  EPUBMetadata
-	coverPath string
+	metadata EPUBMetadata
+	// packagePath is the path of the package document (OPF) in the archive.
+	packagePath string
+	coverPath   string
+	// coverMediaType is the media type that the manifest declares for the cover.
+	coverMediaType string
 }
 
 type epubManifestItem struct {
 	id         string
 	href       string
 	properties string
+	mediaType  string
 }
 
 func readPackageDocument(archive *zip.ReadCloser) (*epubPackageDocument, error) {
@@ -261,19 +266,21 @@ func parsePackageDocument(file *zip.File, packagePath string) (*epubPackageDocum
 				id:         attributeValue(start, "id"),
 				href:       attributeValue(start, "href"),
 				properties: attributeValue(start, "properties"),
+				mediaType:  attributeValue(start, "media-type"),
 			})
 		}
 	}
 
 	coverItem := findCoverManifestItem(manifest, coverID)
-	var coverPath string
+	document := &epubPackageDocument{metadata: metadata, packagePath: packagePath}
 	if coverItem != nil {
-		coverPath, err = resolveArchivePath(packagePath, coverItem.href)
+		document.coverPath, err = resolveArchivePath(packagePath, coverItem.href)
 		if err != nil {
 			return nil, fmt.Errorf("resolve EPUB cover path: %w", err)
 		}
+		document.coverMediaType = coverItem.mediaType
 	}
-	return &epubPackageDocument{metadata: metadata, coverPath: coverPath}, nil
+	return document, nil
 }
 
 func findCoverManifestItem(items []epubManifestItem, legacyCoverID string) *epubManifestItem {

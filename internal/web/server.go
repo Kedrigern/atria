@@ -349,6 +349,8 @@ func (s *Server) SetupRouter() *gin.Engine {
 			apiEbooks.POST("/create", s.handleEbookCreate)
 			apiEbooks.POST("/import", s.handleEbookImport)
 			apiEbooks.POST("/:id/update", s.handleEbookUpdate)
+			apiEbooks.POST("/:id/cover", s.handleEbookReplace("cover"))
+			apiEbooks.POST("/:id/file", s.handleEbookReplace("epub"))
 			apiEbooks.POST("/:id/delete", s.handleEbookDelete)
 		}
 

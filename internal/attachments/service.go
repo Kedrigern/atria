@@ -20,13 +20,54 @@ import (
 	"github.com/gofrs/uuid/v5"
 )
 
+// querier is the part of *sql.DB and *sql.Tx that AddAttachment needs.
+type querier interface {
+	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
+	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+}
+
+// NewFiles records the files that an operation newly wrote to the storage.
+// If the operation fails, Remove deletes them, so no file stays without an
+// attachment row. A file that existed before (the same content, stored for
+// another attachment) is never recorded.
+type NewFiles struct {
+	paths []string
+}
+
+// Remove deletes the recorded files.
+func (n *NewFiles) Remove() {
+	for _, p := range n.paths {
+		_ = os.Remove(p)
+	}
+	n.paths = nil
+}
+
+func storageRoot() string {
+	if storagePath := os.Getenv("STORAGE_PATH"); storagePath != "" {
+		return storagePath
+	}
+	return "./data/attachments"
+}
+
+// AbsPath returns the path on disk of a stored attachment.
+func AbsPath(diskPath string) string {
+	return filepath.Join(storageRoot(), diskPath)
+}
+
 // AddAttachment save local file into Atria storage
 // Ensure deduplication by hash
 func AddAttachment(ctx context.Context, db *sql.DB, ownerID uuid.UUID, localPath string, originalFilename string) (*core.Attachment, error) {
-	storagePath := os.Getenv("STORAGE_PATH")
-	if storagePath == "" {
-		storagePath = "./data/attachments" // Fallback default value
-	}
+	return addAttachment(ctx, db, nil, ownerID, localPath, originalFilename)
+}
+
+// AddAttachmentTx is AddAttachment inside a transaction. The new files go
+// into files; the caller removes them if the transaction does not commit.
+func AddAttachmentTx(ctx context.Context, tx *sql.Tx, files *NewFiles, ownerID uuid.UUID, localPath string, originalFilename string) (*core.Attachment, error) {
+	return addAttachment(ctx, tx, files, ownerID, localPath, originalFilename)
+}
+
+func addAttachment(ctx context.Context, db querier, files *NewFiles, ownerID uuid.UUID, localPath string, originalFilename string) (*core.Attachment, error) {
+	storagePath := storageRoot()
 
 	srcFile, err := os.Open(localPath)
 	if err != nil {
@@ -89,8 +130,13 @@ func AddAttachment(ctx context.Context, db *sql.DB, ownerID uuid.UUID, localPath
 
 	tempFile.Close()
 
+	_, statErr := os.Stat(absDiskPath)
+	newFile := errors.Is(statErr, os.ErrNotExist)
 	if err := os.Rename(tempPath, absDiskPath); err != nil {
 		return nil, fmt.Errorf("failed to finalize file move: %w", err)
+	}
+	if newFile && files != nil {
+		files.paths = append(files.paths, absDiskPath)
 	}
 
 	attachment := &core.Attachment{
@@ -116,7 +162,11 @@ func AddAttachment(ctx context.Context, db *sql.DB, ownerID uuid.UUID, localPath
 		attachment.CreatedAt, attachment.UpdatedAt,
 	)
 	if err != nil {
-		os.Remove(absDiskPath)
+		// Remove the file only if this call wrote it: the same content can
+		// belong to an attachment of another user.
+		if newFile {
+			os.Remove(absDiskPath)
+		}
 		return nil, fmt.Errorf("failed to insert attachment record: %w", err)
 	}
 
