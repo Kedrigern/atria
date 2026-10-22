@@ -1917,3 +1917,16 @@ details.toc a:focus {
 .story-text p {
     margin: 0 0 var(--space-3);
 }
+
+/* A rejected letter stays visible, struck through, with a dashed line:
+   the state does not depend on color (e-ink). */
+.cipher-input.wrong {
+    color: var(--danger);
+    text-decoration: line-through;
+    border-bottom: 2px dashed var(--danger);
+}
+.cryptogram-message {
+    min-height: 1.5em;
+    margin: 0 0 var(--space-2);
+    font-weight: 600;
+}

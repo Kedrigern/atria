@@ -52,6 +52,9 @@
     </form>
     {{end}}
 
+    {{/* The result of the last guess. cryptogram.js fills it without a reload. */}}
+    <p id="cryptogram-message" class="cryptogram-message" role="status" aria-live="polite">{{with .Flash}}{{.Message}}{{end}}</p>
+
     <div id="cryptogram-feedback">
         <div class="cryptogram-stats" aria-label="Puzzle statistics">
             <span>Mistakes: {{.Puzzle.ErrorsMade}}</span>
@@ -84,5 +87,5 @@
     </section>
     {{end}}
 </div>
-<script src="/static/cryptogram.js?v=4"></script>
+<script src="/static/cryptogram.js?v=5"></script>
 {{end}}
