@@ -179,3 +179,31 @@ func (s *Server) handleTagOptions(c *gin.Context) {
 		}
 	}
 }
+
+// handleTagMerge moves all items of one tag to another tag and deletes the first.
+func (s *Server) handleTagMerge(c *gin.Context) {
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+	from, into := c.PostForm("from"), c.PostForm("into")
+	result, err := core.MergeTags(c.Request.Context(), s.db, user.ID, from, into)
+	if err != nil {
+		s.flashError(c, "Could not merge the tags", err)
+		c.Redirect(http.StatusSeeOther, "/settings/tags")
+		return
+	}
+	message := fmt.Sprintf("#%s is merged into #%s. %d %s got #%s.", from, into, result.Moved, plural(result.Moved, "item", "items"), into)
+	if result.AlreadyTagged > 0 {
+		message += fmt.Sprintf(" %d already had it.", result.AlreadyTagged)
+	}
+	s.setFlash(c, "success", message)
+	c.Redirect(http.StatusSeeOther, "/settings/tags")
+}
+
+func plural(n int, one, many string) string {
+	if n == 1 {
+		return one
+	}
+	return many
+}

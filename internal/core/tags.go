@@ -166,3 +166,79 @@ func GetTagEntities(ctx context.Context, db *sql.DB, ownerID uuid.UUID, tagName 
 	}
 	return results, rows.Err()
 }
+
+// TagMerge reports what MergeTags did.
+type TagMerge struct {
+	// Moved is the number of items that got the kept tag.
+	Moved int
+	// AlreadyTagged is the number of items that had both tags.
+	AlreadyTagged int
+}
+
+// MergeTags moves all items of the tag "from" to the tag "into" and deletes
+// "from". Both tags belong to the owner. A system tag cannot be merged away.
+func MergeTags(ctx context.Context, db *sql.DB, ownerID uuid.UUID, from, into string) (*TagMerge, error) {
+	from = strings.ToLower(strings.TrimPrefix(strings.TrimSpace(from), "#"))
+	into = strings.ToLower(strings.TrimPrefix(strings.TrimSpace(into), "#"))
+	if from == "" || into == "" {
+		return nil, NewUserError("select the tag to merge and the tag to keep")
+	}
+	if from == into {
+		return nil, NewUserError("select two different tags")
+	}
+
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("begin tag merge: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	find := func(name string) (uuid.UUID, bool, error) {
+		var id uuid.UUID
+		var isSystem sql.NullBool
+		err := tx.QueryRowContext(ctx, `SELECT id, is_system FROM tags WHERE owner_id = $1 AND name = $2 FOR UPDATE`, ownerID, name).
+			Scan(&id, &isSystem)
+		if err == sql.ErrNoRows {
+			return id, false, NewUserError("tag #%s does not exist", name)
+		}
+		if err != nil {
+			return id, false, fmt.Errorf("find tag %s: %w", name, err)
+		}
+		return id, isSystem.Bool, nil
+	}
+	fromID, fromSystem, err := find(from)
+	if err != nil {
+		return nil, err
+	}
+	intoID, _, err := find(into)
+	if err != nil {
+		return nil, err
+	}
+	if fromSystem {
+		return nil, NewUserError("#%s is a system tag; merge another tag into it instead", from)
+	}
+
+	var total int
+	if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM rel_entity_tags WHERE tag_id = $1`, fromID).Scan(&total); err != nil {
+		return nil, fmt.Errorf("count tagged items: %w", err)
+	}
+	result, err := tx.ExecContext(ctx, `
+		INSERT INTO rel_entity_tags (entity_id, tag_id)
+		SELECT entity_id, $2 FROM rel_entity_tags WHERE tag_id = $1
+		ON CONFLICT DO NOTHING
+	`, fromID, intoID)
+	if err != nil {
+		return nil, fmt.Errorf("move tagged items: %w", err)
+	}
+	moved, err := result.RowsAffected()
+	if err != nil {
+		return nil, fmt.Errorf("count moved items: %w", err)
+	}
+	if _, err := tx.ExecContext(ctx, `DELETE FROM tags WHERE id = $1`, fromID); err != nil {
+		return nil, fmt.Errorf("delete merged tag: %w", err)
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("commit tag merge: %w", err)
+	}
+	return &TagMerge{Moved: int(moved), AlreadyTagged: total - int(moved)}, nil
+}
