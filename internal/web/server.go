@@ -174,6 +174,7 @@ func (s *Server) getUser(c *gin.Context) *core.User {
 }
 
 func (s *Server) SetupRouter() *gin.Engine {
+	gin.SetMode(ginMode())
 	r := gin.Default()
 	r.Use(SecurityHeadersMiddleware())
 	r.Use(BodyLimitMiddleware(maxUploadBytes()))
@@ -802,4 +803,17 @@ func (s *Server) handleLogout(c *gin.Context) {
 	}
 
 	c.Redirect(http.StatusFound, "/login")
+}
+
+// ginMode is the Gin mode for the server: GIN_MODE if it is set, debug in
+// development and test, and release otherwise. Debug mode lists all routes
+// at each start and warns about the settings, which is noise in production.
+func ginMode() string {
+	if mode := os.Getenv("GIN_MODE"); mode != "" {
+		return mode
+	}
+	if isDevelopmentEnv() {
+		return gin.DebugMode
+	}
+	return gin.ReleaseMode
 }
