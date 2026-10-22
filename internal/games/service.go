@@ -259,7 +259,7 @@ func Guess(ctx context.Context, db *sql.DB, userID, cryptogramID uuid.UUID, code
 		if err := tx.Commit(); err != nil {
 			return fmt.Errorf("commit cryptogram mistake: %w", err)
 		}
-		return validationError("%s is not correct for this number", letter)
+		return validationError("%s is not the letter for number %d.", letter, code)
 	}
 
 	guesses[codeKey] = letter

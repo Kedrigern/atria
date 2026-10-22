@@ -7,6 +7,11 @@
     const focusInput = document.getElementById("cryptogram-focus");
     const nextFocusInput = document.getElementById("cryptogram-next-focus");
     const inputs = Array.from(document.querySelectorAll(".cipher-input"));
+    const message = document.getElementById("cryptogram-message");
+
+    function showMessage(text) {
+        if (message) message.textContent = text;
+    }
 
     const requestedFocus = new URLSearchParams(window.location.search).get("focus");
     if (requestedFocus !== null) {
@@ -26,7 +31,9 @@
     inputs.filter((input) => !input.readOnly).forEach((input) => {
         input.addEventListener("input", async () => {
             input.setCustomValidity("");
-            const letter = input.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 1);
+            input.classList.remove("wrong");
+            // The last typed letter wins, so a new letter replaces a wrong one.
+            const letter = input.value.toUpperCase().replace(/[^A-Z]/g, "").slice(-1);
             input.value = letter;
             if (!letter || input.dataset.submitting) return;
 
@@ -49,10 +56,16 @@
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.error || "Failed to save guess");
                 if (!result.success) {
-                    input.value = "";
+                    // Keep the rejected letter visible and marked, say why, and
+                    // update the mistakes and the log at once.
+                    input.classList.add("wrong");
+                    showMessage(result.error || `${letter} is not correct.`);
                     input.focus();
+                    input.select();
+                    await refreshFeedback();
                     return;
                 }
+                showMessage(`${letter} is correct.`);
 
                 inputs.filter((candidate) => candidate.dataset.code === input.dataset.code).forEach((candidate) => {
                     candidate.value = letter;

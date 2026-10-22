@@ -159,6 +159,7 @@ func (s *Server) handleCryptogramGuess(c *gin.Context) {
 				c.JSON(http.StatusOK, gin.H{"success": false, "error": validation.Message})
 				return
 			}
+			s.setFlash(c, "error", validation.Message)
 		} else {
 			if wantsJSON(c) {
 				c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to save cryptogram guess"})
