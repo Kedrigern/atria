@@ -179,37 +179,34 @@ func Generate(ctx context.Context, db *sql.DB, ownerID uuid.UUID, input Generate
 		return nil, fmt.Errorf("generate EPUB: %w", err)
 	}
 
-	epubAttachment, err := attachments.AddAttachment(ctx, db, ownerID, outputPath, filename)
-	if err != nil {
-		return nil, fmt.Errorf("store EPUB attachment: %w", err)
-	}
-
-	var coverAttachmentID *uuid.UUID
-	if input.CoverPath != "" {
-		coverName := input.CoverName
-		if coverName == "" {
-			coverName = filepath.Base(input.CoverPath)
-		}
-		cover, err := attachments.AddAttachment(ctx, db, ownerID, input.CoverPath, coverName)
-		if err != nil {
-			return nil, fmt.Errorf("store e-book cover: %w", err)
-		}
-		coverAttachmentID = &cover.ID
-	}
-
 	sourceIDs := make([]uuid.UUID, 0, len(input.Sources))
 	for _, source := range input.Sources {
 		sourceIDs = append(sourceIDs, source.ID)
 	}
-	return Create(ctx, db, ownerID, CreateInput{
-		Title:             input.Title,
-		Description:       input.Description,
-		Author:            input.Author,
-		Language:          input.Language,
-		CoverAttachmentID: coverAttachmentID,
-		EPUBAttachmentID:  epubAttachment.ID,
-		SourceEntityIDs:   sourceIDs,
+	coverName := input.CoverName
+	if coverName == "" && input.CoverPath != "" {
+		coverName = filepath.Base(input.CoverPath)
+	}
+
+	// The attachments and the e-book are saved in one transaction.
+	var book *core.Ebook
+	err = inTx(ctx, db, func(tx *sql.Tx, files *attachments.NewFiles) error {
+		epubID, coverID, err := storeEPUB(ctx, tx, files, ownerID, outputPath, filename, input.CoverPath, coverName)
+		if err != nil {
+			return err
+		}
+		book, err = createTx(ctx, tx, ownerID, CreateInput{
+			Title:             input.Title,
+			Description:       input.Description,
+			Author:            input.Author,
+			Language:          input.Language,
+			CoverAttachmentID: coverID,
+			EPUBAttachmentID:  epubID,
+			SourceEntityIDs:   sourceIDs,
+		})
+		return err
 	})
+	return book, err
 }
 
 // Import stores an existing EPUB and creates an e-book without source entity links.
@@ -233,30 +230,30 @@ func Import(ctx context.Context, db *sql.DB, ownerID uuid.UUID, input ImportInpu
 		input.Title = strings.TrimSuffix(filepath.Base(input.Filename), filepath.Ext(input.Filename))
 	}
 
-	attachment, err := attachments.AddAttachment(ctx, db, ownerID, input.Path, input.Filename)
-	if err != nil {
-		return nil, fmt.Errorf("store imported EPUB: %w", err)
-	}
-
-	var coverAttachmentID *uuid.UUID
-	cover, err := ExtractEPUBCover(input.Path, filepath.Dir(input.Path))
-	if err == nil {
+	coverPath, coverName := "", ""
+	if cover, err := ExtractEPUBCover(input.Path, filepath.Dir(input.Path)); err == nil {
 		defer os.Remove(cover.Path)
-		coverAttachment, err := attachments.AddAttachment(ctx, db, ownerID, cover.Path, cover.Filename)
-		if err != nil {
-			return nil, fmt.Errorf("store imported EPUB cover: %w", err)
-		}
-		coverAttachmentID = &coverAttachment.ID
+		coverPath, coverName = cover.Path, cover.Filename
 	}
 
-	return Create(ctx, db, ownerID, CreateInput{
-		Title:             input.Title,
-		Description:       input.Description,
-		Author:            input.Author,
-		Language:          input.Language,
-		CoverAttachmentID: coverAttachmentID,
-		EPUBAttachmentID:  attachment.ID,
+	// The attachments and the e-book are saved in one transaction.
+	var book *core.Ebook
+	err = inTx(ctx, db, func(tx *sql.Tx, files *attachments.NewFiles) error {
+		epubID, coverID, err := storeEPUB(ctx, tx, files, ownerID, input.Path, input.Filename, coverPath, coverName)
+		if err != nil {
+			return err
+		}
+		book, err = createTx(ctx, tx, ownerID, CreateInput{
+			Title:             input.Title,
+			Description:       input.Description,
+			Author:            input.Author,
+			Language:          input.Language,
+			CoverAttachmentID: coverID,
+			EPUBAttachmentID:  epubID,
+		})
+		return err
 	})
+	return book, err
 }
 
 // GetDetail returns an active e-book and its linked sources.
@@ -303,32 +300,6 @@ func GetDetail(ctx context.Context, db *sql.DB, ownerID, ebookID uuid.UUID) (*De
 	return &detail, nil
 }
 
-// UpdateMetadata updates editable Atria metadata without changing the EPUB attachment.
-func UpdateMetadata(ctx context.Context, db *sql.DB, ownerID, ebookID uuid.UUID, title, description, author, language string) error {
-	title = strings.TrimSpace(title)
-	if title == "" {
-		return core.NewUserError("e-book title is required")
-	}
-	result, err := db.ExecContext(ctx, `
-		UPDATE entities e
-		SET title = $1, slug = $2, updated_at = CURRENT_TIMESTAMP
-		FROM ebooks eb
-		WHERE e.id = eb.id AND e.id = $3 AND e.owner_id = $4 AND e.type = $5 AND e.deleted_at IS NULL
-	`, title, ebookSlug(title), ebookID, ownerID, core.TypeEbook)
-	if err != nil {
-		return fmt.Errorf("update e-book title: %w", err)
-	}
-	rows, err := result.RowsAffected()
-	if err != nil || rows == 0 {
-		return core.NewUserError("e-book not found")
-	}
-	_, err = db.ExecContext(ctx, `UPDATE ebooks SET description = NULLIF($1, ''), author = NULLIF($2, ''), language = NULLIF($3, '') WHERE id = $4`, description, author, language, ebookID)
-	if err != nil {
-		return fmt.Errorf("update e-book metadata: %w", err)
-	}
-	return nil
-}
-
 // Delete marks an active e-book owned by the user as deleted.
 func Delete(ctx context.Context, db *sql.DB, ownerID, ebookID uuid.UUID) error {
 	result, err := db.ExecContext(ctx, `
@@ -364,7 +335,22 @@ func Create(ctx context.Context, db *sql.DB, ownerID uuid.UUID, input CreateInpu
 		return nil, fmt.Errorf("begin e-book transaction: %w", err)
 	}
 	defer func() { _ = tx.Rollback() }()
+	book, err := createTx(ctx, tx, ownerID, input)
+	if err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("commit e-book: %w", err)
+	}
+	return book, nil
+}
 
+// createTx creates the e-book entity in a transaction of the caller.
+func createTx(ctx context.Context, tx *sql.Tx, ownerID uuid.UUID, input CreateInput) (*core.Ebook, error) {
+	title := strings.TrimSpace(input.Title)
+	if title == "" {
+		return nil, core.NewUserError("e-book title is required")
+	}
 	if err := verifyAttachmentOwner(ctx, tx, ownerID, input.EPUBAttachmentID); err != nil {
 		return nil, fmt.Errorf("EPUB attachment: %w", err)
 	}
@@ -377,7 +363,7 @@ func Create(ctx context.Context, db *sql.DB, ownerID uuid.UUID, input CreateInpu
 	now := time.Now().UTC()
 	ebookID := core.NewUUID()
 	slug := ebookSlug(title)
-	_, err = tx.ExecContext(ctx, `
+	_, err := tx.ExecContext(ctx, `
 		INSERT INTO entities (id, owner_id, type, visibility, title, slug, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $7)
 	`, ebookID, ownerID, core.TypeEbook, core.VisibilityPrivate, title, slug, now)
@@ -411,10 +397,6 @@ func Create(ctx context.Context, db *sql.DB, ownerID uuid.UUID, input CreateInpu
 		`, ebookID, sourceID, ownerID, core.TypeArticle, core.TypeNote); err != nil {
 			return nil, fmt.Errorf("link e-book source: %w", err)
 		}
-	}
-
-	if err := tx.Commit(); err != nil {
-		return nil, fmt.Errorf("commit e-book: %w", err)
 	}
 
 	return &core.Ebook{

@@ -4,6 +4,9 @@
         <h1 class="page-title">Edit e-book</h1>
     </header>
 
+    {{template "flash_message" .}}
+    <p class="form-help">Atria writes these details into the EPUB file too, so an e-book reader shows the same title and author.</p>
+
     <form method="post" action="/api/ebooks/{{.Ebook.ID}}/update">
         <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
         <div class="form-group">
@@ -26,6 +29,33 @@
         <div class="form-actions">
             <a href="/ebooks/{{.Ebook.ID}}" class="button-link outline">Cancel</a>
             <button type="submit" class="btn-primary">Save</button>
+        </div>
+    </form>
+
+    <h2 class="section-title mt-3">Cover</h2>
+    {{if .Ebook.CoverDiskPath}}<img src="/data/attachments/{{.Ebook.CoverDiskPath}}" alt="Current cover of {{.Ebook.Title}}" class="ebook-detail-cover" />{{end}}
+    <form method="post" action="/api/ebooks/{{.Ebook.ID}}/cover" enctype="multipart/form-data">
+        <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
+        <div class="form-group">
+            <label for="ebook-cover">New cover image</label>
+            <input id="ebook-cover" type="file" name="cover" accept="image/jpeg,image/png,image/gif" class="form-control" required />
+            <p class="form-help">A JPEG, PNG or GIF image. Atria puts it into the EPUB file too.</p>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn-primary">Replace cover</button>
+        </div>
+    </form>
+
+    <h2 class="section-title mt-3">EPUB file</h2>
+    <form method="post" action="/api/ebooks/{{.Ebook.ID}}/file" enctype="multipart/form-data" data-confirm="Replace the EPUB file? Atria takes the title, author, description and cover from the new file.">
+        <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
+        <div class="form-group">
+            <label for="ebook-file">New EPUB file</label>
+            <input id="ebook-file" type="file" name="epub" accept="application/epub+zip,.epub" class="form-control" required />
+            <p class="form-help">For example a better edition. Atria takes the title, author, description, language and cover from the new file. If the file has no cover, Atria keeps the current cover and puts it into the file.</p>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn-primary">Replace EPUB file</button>
         </div>
     </form>
 </div>

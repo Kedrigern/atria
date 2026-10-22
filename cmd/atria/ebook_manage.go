@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 
@@ -76,8 +77,46 @@ var ebookRmCmd = &cobra.Command{
 	},
 }
 
+var ebookCoverCmd = &cobra.Command{
+	Use:   "cover <identifier> <image-file>",
+	Short: "Replaces the cover of an e-book, in Atria and in the EPUB file",
+	Args:  cobra.ExactArgs(2),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		entity, err := resolveEntity(app.Ctx, app.DB, app.Owner.ID, core.TypeEbook, args[0], false)
+		if err != nil {
+			return err
+		}
+		if err := ebooks.ReplaceCover(app.Ctx, app.DB, app.Owner.ID, entity.ID, args[1], filepath.Base(args[1])); err != nil {
+			return err
+		}
+		fmt.Fprintf(cmd.OutOrStdout(), "Cover of %q replaced.\n", entity.Title)
+		return nil
+	},
+}
+
+var ebookReplaceCmd = &cobra.Command{
+	Use:   "replace <identifier> <epub-file>",
+	Short: "Replaces the EPUB file of an e-book (title, author and cover come from the new file)",
+	Long: `Replaces the EPUB file of an e-book, for example with a better edition.
+Atria takes the title, author, description, language and cover from the new
+file. Where the new file has no value, Atria keeps its own value and writes it
+into the file. The links to notes and articles stay.`,
+	Args: cobra.ExactArgs(2),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		entity, err := resolveEntity(app.Ctx, app.DB, app.Owner.ID, core.TypeEbook, args[0], false)
+		if err != nil {
+			return err
+		}
+		if err := ebooks.ReplaceFile(app.Ctx, app.DB, app.Owner.ID, entity.ID, args[1], filepath.Base(args[1])); err != nil {
+			return err
+		}
+		fmt.Fprintf(cmd.OutOrStdout(), "EPUB file of %q replaced.\n", entity.Title)
+		return nil
+	},
+}
+
 func init() {
-	ebookCmd.AddCommand(ebookEditCmd, ebookRmCmd)
+	ebookCmd.AddCommand(ebookEditCmd, ebookRmCmd, ebookCoverCmd, ebookReplaceCmd)
 	ebookEditCmd.Flags().StringVar(&ebookEditTitle, "title", "", "New title")
 	ebookEditCmd.Flags().StringVar(&ebookEditAuthor, "author", "", "Author (\"\" clears)")
 	ebookEditCmd.Flags().StringVar(&ebookEditDescription, "description", "", "Description (\"\" clears)")

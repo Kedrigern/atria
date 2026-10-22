@@ -240,6 +240,7 @@ func (s *Server) handleEbookUpdate(c *gin.Context) {
 		s.respondError(c, http.StatusBadRequest, "Failed to update e-book", err)
 		return
 	}
+	s.setFlash(c, "success", "E-book saved. The EPUB file has the new details too.")
 	c.Redirect(http.StatusSeeOther, "/ebooks/"+id.String())
 }
 
@@ -325,4 +326,50 @@ func saveEbookCover(c *gin.Context) (string, string, func(), error) {
 		return "", "", func() {}, err
 	}
 	return tempPath, file.Filename, cleanup, nil
+}
+
+// handleEbookReplace handles the uploads of a new cover ("cover") and a new
+// EPUB file ("epub") on the edit page.
+func (s *Server) handleEbookReplace(field string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		user := s.getUser(c)
+		if user == nil {
+			return
+		}
+		id, err := core.ParseUUID(c.Param("id"))
+		if err != nil {
+			s.renderError(c, http.StatusNotFound, "E-book not found")
+			return
+		}
+		back := "/ebooks/" + id.String() + "/edit"
+		file, err := c.FormFile(field)
+		if err != nil {
+			s.setFlash(c, "error", "Select a file first.")
+			c.Redirect(http.StatusSeeOther, back)
+			return
+		}
+		tempPath, cleanup, err := saveEbookImportUpload(file)
+		if err != nil {
+			s.respondError(c, http.StatusInternalServerError, "Failed to save the upload", err)
+			return
+		}
+		defer cleanup()
+
+		if field == "cover" {
+			err = ebooks.ReplaceCover(c.Request.Context(), s.db, user.ID, id, tempPath, file.Filename)
+		} else {
+			err = ebooks.ReplaceFile(c.Request.Context(), s.db, user.ID, id, tempPath, file.Filename)
+		}
+		if err != nil {
+			s.flashError(c, "Could not replace the "+map[string]string{"cover": "cover", "epub": "EPUB file"}[field], err)
+			c.Redirect(http.StatusSeeOther, back)
+			return
+		}
+		if field == "cover" {
+			s.setFlash(c, "success", "Cover replaced. The EPUB file has the new cover too.")
+		} else {
+			s.setFlash(c, "success", "EPUB file replaced.")
+		}
+		c.Redirect(http.StatusSeeOther, "/ebooks/"+id.String())
+	}
 }
