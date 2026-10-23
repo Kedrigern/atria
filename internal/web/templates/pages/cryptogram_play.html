@@ -60,14 +60,27 @@
             <span>Mistakes: {{.Puzzle.ErrorsMade}}</span>
             <span>Hints: {{.Puzzle.HintsUsed}}</span>
         </div>
-        {{if .Puzzle.RecentMoves}}
-        <section aria-label="Recent guesses">
-            <h2 class="section-title">Recent guesses</h2>
-            <ul class="cryptogram-log">
-                {{range .Puzzle.RecentMoves}}<li class="{{if .IsHint}}hint{{else if .IsCorrect}}correct{{else}}wrong{{end}}">{{.Code}} → {{.Letter}} — {{if .IsHint}}hint{{else if .IsCorrect}}correct{{else}}wrong{{end}}</li>{{end}}
-            </ul>
-        </section>
-        {{end}}
+        <div class="cryptogram-columns">
+            <section aria-labelledby="recent-guesses-title">
+                <h2 id="recent-guesses-title" class="section-title">Recent guesses</h2>
+                {{if .Puzzle.RecentMoves}}
+                <ul class="cryptogram-log">
+                    {{range .Puzzle.RecentMoves}}<li class="{{if .IsHint}}hint{{else if .IsCorrect}}correct{{else}}wrong{{end}}">{{.Code}} → {{.Letter}} — {{if .IsHint}}hint{{else if .IsCorrect}}correct{{else}}wrong{{end}}</li>{{end}}
+                </ul>
+                {{else}}
+                <p class="page-empty-hint">No guesses yet.</p>
+                {{end}}
+            </section>
+            {{if not .Puzzle.CompletedAt}}
+            <section aria-labelledby="letters-left-title">
+                <h2 id="letters-left-title" class="section-title">Letters left</h2>
+                <ul class="letters-left" aria-label="Letters that no number has yet">
+                    {{range .Puzzle.LettersLeft}}<li>{{.}}</li>{{end}}
+                </ul>
+                <p class="form-help">Not every letter is in the text.</p>
+            </section>
+            {{end}}
+        </div>
     </div>
 
     {{if .Puzzle.CompletedAt}}
@@ -87,5 +100,5 @@
     </section>
     {{end}}
 </div>
-<script src="/static/cryptogram.js?v=5"></script>
+<script src="/static/cryptogram.js?v=6"></script>
 {{end}}

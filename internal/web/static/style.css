@@ -1918,15 +1918,35 @@ details.toc a:focus {
     margin: 0 0 var(--space-3);
 }
 
-/* A rejected letter stays visible, struck through, with a dashed line:
-   the state does not depend on color (e-ink). */
+/* After a rejected letter, the field is empty and keeps a dashed line: the
+   state does not depend on color (e-ink). */
 .cipher-input.wrong {
-    color: var(--danger);
-    text-decoration: line-through;
     border-bottom: 2px dashed var(--danger);
 }
 .cryptogram-message {
     min-height: 1.5em;
     margin: 0 0 var(--space-2);
     font-weight: 600;
+}
+
+/* Below the puzzle: the recent guesses and the letters that are left, side by side. */
+.cryptogram-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-5);
+    align-items: start;
+}
+.letters-left {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-2);
+    margin: var(--space-3) 0;
+    padding: 0;
+    list-style: none;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: var(--text-lg);
+    font-weight: 600;
+}
+@media (max-width: 640px) {
+    .cryptogram-columns { grid-template-columns: 1fr; }
 }

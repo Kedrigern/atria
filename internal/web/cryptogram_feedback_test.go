@@ -71,4 +71,6 @@ func TestWrongCryptogramGuessGivesFeedback(t *testing.T) {
 	page := getWithCookie(r, "/games/cryptograms/"+puzzle, flash).Body.String()
 	assert.Contains(t, page, wrong+" is not the letter for number "+code+".")
 	assert.Contains(t, page, "Mistakes: 2")
+	assert.Contains(t, page, "Letters left")
+	assert.Contains(t, page, `class="letters-left"`)
 }

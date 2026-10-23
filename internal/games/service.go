@@ -51,7 +51,9 @@ type Puzzle struct {
 	ErrorsMade      int
 	HintsUsed       int
 	RecentMoves     []Move
-	CompletedAt     *time.Time
+	// LettersLeft are the letters A to Z that no number has yet.
+	LettersLeft []string
+	CompletedAt *time.Time
 	// Campaign is set for a passage of a campaign.
 	Campaign *CampaignContext
 }
@@ -199,6 +201,7 @@ func GetPuzzle(ctx context.Context, db *sql.DB, userID, cryptogramID uuid.UUID) 
 	puzzle.ErrorsMade = errorsMade
 	puzzle.HintsUsed = hintsUsed
 	puzzle.RecentMoves = recentMoves
+	puzzle.LettersLeft = lettersLeft(guesses)
 	puzzle.CompletedAt = completedAt
 	if err := tx.Commit(); err != nil {
 		return nil, fmt.Errorf("commit cryptogram attempt: %w", err)
@@ -535,4 +538,19 @@ func allSolved(mapping, guesses map[string]string) bool {
 		}
 	}
 	return true
+}
+
+// lettersLeft returns the letters A to Z that are not a solved guess yet.
+func lettersLeft(guesses map[string]string) []string {
+	used := make(map[string]bool, len(guesses))
+	for _, letter := range guesses {
+		used[letter] = true
+	}
+	left := make([]string, 0, 26)
+	for letter := 'A'; letter <= 'Z'; letter++ {
+		if !used[string(letter)] {
+			left = append(left, string(letter))
+		}
+	}
+	return left
 }

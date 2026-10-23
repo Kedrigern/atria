@@ -80,3 +80,15 @@ func TestInitialGuessesRevealOnlyConfiguredLetters(t *testing.T) {
 		t.Errorf("guess count = %d, want 1", len(guesses))
 	}
 }
+
+func TestLettersLeftSkipsSolvedLetters(t *testing.T) {
+	left := lettersLeft(map[string]string{"1": "E", "2": "A"})
+	if got, want := len(left), 24; got != want {
+		t.Fatalf("len = %d, want %d", got, want)
+	}
+	for _, letter := range left {
+		if letter == "E" || letter == "A" {
+			t.Errorf("solved letter %s is in the list", letter)
+		}
+	}
+}
