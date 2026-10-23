@@ -48,20 +48,31 @@
             input.dataset.submitting = "true";
 
             try {
-                const response = await fetch(form.action, {
-                    method: "POST",
-                    headers: { Accept: "application/json" },
-                    body: new URLSearchParams(new FormData(form)),
-                });
+                // A slow or lost answer must not block the field for good.
+                const controller = typeof AbortController === "function" ? new AbortController() : null;
+                const timer = controller ? setTimeout(() => controller.abort(), 15000) : null;
+                let response;
+                try {
+                    response = await fetch(form.action, {
+                        method: "POST",
+                        headers: { Accept: "application/json" },
+                        body: new URLSearchParams(new FormData(form)),
+                        signal: controller ? controller.signal : undefined,
+                    });
+                } finally {
+                    if (timer) clearTimeout(timer);
+                }
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.error || "Failed to save guess");
                 if (!result.success) {
-                    // Keep the rejected letter visible and marked, say why, and
-                    // update the mistakes and the log at once.
+                    // Empty the field, so the next letter fits (maxlength is 1, and
+                    // some e-ink browsers do not select text from a script). The
+                    // field keeps a dashed mark; the message and the log show the
+                    // rejected letter.
+                    input.value = "";
                     input.classList.add("wrong");
                     showMessage(result.error || `${letter} is not correct.`);
                     input.focus();
-                    input.select();
                     await refreshFeedback();
                     return;
                 }
@@ -81,8 +92,7 @@
                 if (next) next.focus();
             } catch (error) {
                 input.value = "";
-                input.setCustomValidity(error.message);
-                input.reportValidity();
+                showMessage(error.name === "AbortError" ? "The server did not answer. Try the letter again." : error.message);
                 input.focus();
             } finally {
                 delete input.dataset.submitting;
