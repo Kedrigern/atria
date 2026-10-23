@@ -16,13 +16,15 @@
         "history"
       ],
       "passages": [
-        "Many years ago there lived in England a wise and good king whose name was Alfred.",
         "A fierce, rude people, called the Danes, had come from over the sea, and were fighting the English. There were so many of them, and they were so bold and strong, that for a long time they gained every battle.",
         "At last, after a great battle, the English army was broken up and scattered. Every man had to save himself in the best way he could. King Alfred fled alone, in great haste, through the woods and swamps.",
         "Late in the day the king came to the hut of a woodcutter. He was very tired and hungry, and he begged the woodcutter's wife to give him something to eat and a place to sleep in her hut.",
         "The woman was baking some cakes upon the hearth, and she looked with pity upon the poor, ragged fellow who seemed so hungry. She had no thought that he was the king.",
+        "\"Yes,\" she said, \"I will give you some supper if you will watch these cakes. I want to go out and milk the cow; and you must see that they do not burn while I am gone.\"",
         "King Alfred was very willing to watch the cakes, but he had far greater things to think about. How was he going to get his army together again?",
-        "In a little while the woman came back. The cakes were smoking on the hearth. They were burned to a crisp.",
+        "In a little while the woman came back. The cakes were smoking on the hearth. They were burned to a crisp. Ah, how angry she was!",
+        "\"You lazy fellow!\" she cried. \"See what you have done! You want something to eat, but you do not want to work!\"",
+        "The king must have laughed to himself at the thought of being scolded in this way; and he was so hungry that he did not mind the woman's angry words half so much as the loss of the cakes.",
         "But it was not many days until he had gathered his men together again, and had beaten the Danes in a great battle."
       ]
     },
@@ -36,8 +38,11 @@
       "passages": [
         "There was once a king of Scotland whose name was Robert Bruce.",
         "He had need to be both brave and wise, for the times in which he lived were wild and rude. The King of England was at war with him, and had led a great army into Scotland to drive him out of the land.",
+        "Battle after battle had been fought. Six times had Bruce led his brave little army against his foes; and six times had his men been beaten, and driven into flight.",
+        "One rainy day, Bruce lay on the ground under a rude shed, listening to the patter of the drops on the roof above him. He was tired and sick at heart, and ready to give up all hope.",
         "As he lay thinking, he saw a spider over his head, making ready to weave her web. He watched her as she toiled slowly and with great care. Six times she tried to throw her frail thread from one beam to another, and six times it fell short.",
         "Would she fail again? No! The thread was carried safely to the beam, and fastened there.",
+        "\"I, too, will try a seventh time!\" cried Bruce. He arose and called his men together.",
         "Soon there was an army of brave Scotchmen around him. Another battle was fought, and the King of England was glad to go back into his own country.",
         "I have heard it said, that, after that day, no one by the name of Bruce would ever hurt a spider. The lesson which the little creature had taught the king was never forgotten."
       ]
@@ -57,7 +62,8 @@
         "For a long time, the lion brought food to Androclus every day; and the two became such good friends, that Androclus found his new life a very happy one.",
         "One day some soldiers who were passing through the wood found Androclus in the cave. They knew who he was, and so took him back to Rome.",
         "It was the law at that time that every slave who ran away from his master should be made to fight a hungry lion.",
-        "Then the hungry lion rushed in. With a single bound he reached the poor slave. Androclus gave a great cry, not of fear, but of gladness.",
+        "With a single bound he reached the poor slave. Androclus gave a great cry, not of fear, but of gladness. It was his old friend, the lion of the cave.",
+        "\"I am a man,\" he said; \"but no man has ever befriended me. This poor lion alone has been kind to me; and we love each other as brothers.\"",
         "And so Androclus was set free, and the lion was given to him for his own. And they lived together in Rome for many years."
       ]
     },
@@ -70,10 +76,13 @@
       ],
       "passages": [
         "There was once a king whose name was Dionysius. He was so unjust and cruel that he won for himself the name of tyrant.",
+        "He knew that almost everybody hated him, and so he was always in dread lest some one should take his life.",
         "But he was very rich, and he lived in a fine palace where there were many beautiful and costly things, and he was waited upon by a host of servants who were always ready to do his bidding.",
         "\"How happy you must be! You have here everything that any man could wish.\"",
+        "\"No, not that, O king!\" said Damocles; \"but I think, that, if I could only have your riches and your pleasures for one day, I should not want any greater happiness.\"",
         "And so, the next day, Damocles was led into the palace, and all the servants were bidden to treat him as their master. He sat down at a table in the banquet hall, and rich foods were placed before him.",
         "Then he chanced to raise his eyes toward the ceiling. What was it that was dangling above him, with its point almost touching his head? It was a sharp sword, and it was hung by only a single horse-hair.",
+        "But why should that trouble you? I have a sword over my head all the time. I am every moment in dread lest something may cause me to lose my life.\"",
         "\"Let me go,\" said Damocles. \"I now see that I was mistaken, and that the rich and powerful are not so happy as they seem. Let me go back to my old home in the poor little cottage among the mountains.\"",
         "And so long as he lived, he never again wanted to be rich, or to change places, even for a moment, with the king."
       ]
@@ -88,7 +97,13 @@
       "passages": [
         "There were once six blind men who stood by the roadside every day, and begged from the people who passed.",
         "It so happened one morning that an elephant was driven down the road where they stood. When they were told that the great beast was before them, they asked the driver to let him stop so that they might see him.",
-        "Of course they could not see him with their eyes; but they thought that by touching him they could learn just what kind of animal he was.",
+        "The first one happened to put his hand on the elephant's side. \"Well, well!\" he said, \"now I know all about this beast. He is exactly like a wall.\"",
+        "The second felt only of the elephant's tusk. \"My brother,\" he said, \"you are mistaken. He is not at all like a wall. He is round and smooth and sharp. He is more like a spear than anything else.\"",
+        "The third happened to take hold of the elephant's trunk. \"Both of you are wrong,\" he said. \"Anybody who knows anything can see that this elephant is like a snake.\"",
+        "The fourth reached out his arms, and grasped one of the elephant's legs. \"Oh, how blind you are!\" he said. \"It is very plain to me that he is round and tall like a tree.\"",
+        "The fifth was a very tall man, and he chanced to take hold of the elephant's ear. \"The blindest man ought to know that this beast is not like any of the things that you name,\" he said. \"He is exactly like a huge fan.\"",
+        "The sixth was very blind indeed, and it was some time before he could find the elephant at all. At last he seized the animal's tail.",
+        "But any man with a particle of sense can see that he is exactly like a rope.\"",
         "Each believed that he knew just how the animal looked; and each called the others hard names because they did not agree with him. People who have eyes sometimes act as foolishly."
       ]
     }

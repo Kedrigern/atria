@@ -61,12 +61,14 @@ The script is `scripts/cryptogram-campaign.py`, a uv script like `scripts/ui-scr
 The script cannot know which parts of a story are important. Thus it makes a draft, and a person makes the selection. The draft follows these rules:
 
 - A passage has 40 to 200 letters and ends at the end of a sentence.
-- A passage has at most one line of dialogue.
+- A passage has at most one line of dialogue, unless the dialogue carries the point (see below).
 - The first passage starts the story. The last passage ends it. The other passages follow the story in order, so the story so far reads as a story.
 - The script makes about one passage for each 100 words of the story, at least 3 and at most 10. The option `--passages` sets a fixed number.
 - A passage with many rare names gets a lower score, because it is hard to solve.
 
 The draft marks each story with `"reviewed": false`. The import stops while a story has this mark. Thus no draft goes into the database by mistake.
+
+The review makes sure that the story so far keeps the point of the story. Read the passages without the book. A reader must understand the turn of the story and why it ends as it does. The point is often in a line of dialogue, for example the words of the tyrant in "The Sword of Damocles". If the dialogue carries the point, the passage with the dialogue stays. The first campaigns lost their point in four of five stories, because the selection preferred narration.
 
 ## 6. The campaign file
 
