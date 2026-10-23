@@ -137,6 +137,10 @@ def split_chapters(body):
     for i, m in enumerate(starts):
         end = starts[i + 1].start() if i + 1 < len(starts) else len(body)
         text = body[m.end():end].strip("\n")
+        # The end matter of a book is not a part of its last chapter.
+        stop = re.search(r"^\s*(THE END\b|TRANSCRIBER|Transcriber|.*\bPrinted by\b)", text, re.MULTILINE)
+        if stop:
+            text = text[:stop.start()]
         title_block, _, rest = text.partition("\n\n")
         title = title_case(" ".join(title_block.split()).rstrip(".;,"))
         paragraphs = []
