@@ -98,7 +98,8 @@ To make a draft of a new campaign file from a Project Gutenberg book, use the sc
 
 ```console
 uv run scripts/cryptogram-campaign.py 18442 --list
-uv run scripts/cryptogram-campaign.py 18442 --story "Bruce and the Spider" --out draft.json
+uv run scripts/cryptogram-campaign.py 18442 --join-syllables --story "Bruce and the Spider" --out draft.json
+uv run scripts/cryptogram-campaign.py 11 --chapters --out alice-draft.json
 ```
 
 To build the binary:
