@@ -10,8 +10,9 @@ with "reviewed": false. A person reads it, corrects the passages and sets
 "reviewed": true. Then `atria games import <file>` loads it.
 
 Usage:
-    uv run scripts/cryptogram-campaign.py 18442 --out fifty-famous-stories.json \\
+    uv run scripts/cryptogram-campaign.py 18442 --join-syllables --out fifty-famous-stories.json \\
         --story "King Alfred and the Cakes" --story "Bruce and the Spider"
+    uv run scripts/cryptogram-campaign.py 11 --chapters --out alice.json      # a novel
     uv run scripts/cryptogram-campaign.py 18442 --list
     uv run scripts/cryptogram-campaign.py 18442 --text-dir stories/   # cleaned text of each story
 
@@ -30,7 +31,10 @@ from pathlib import Path
 GUTENDEX = "https://gutendex.com/books/{id}/"
 USER_AGENT = "atria-cryptogram-campaign/1 (one book, downloaded once)"
 MIN_LETTERS, MAX_LETTERS = 40, 200
-MIN_PASSAGES, MAX_PASSAGES = 3, 10
+MIN_PASSAGES, MAX_PASSAGES = 3, 40
+# The draft makes about one passage per 100 words, up to this number.
+DRAFT_MAX_PASSAGES = 30
+SMALL_WORDS = {"a", "an", "and", "as", "at", "by", "for", "in", "of", "on", "or", "the", "to", "with"}
 
 
 def fail(message):
@@ -111,6 +115,40 @@ def split_stories(body, titles):
     return stories
 
 
+def title_case(text):
+    """Make "HOW ROBINSON FIRST WENT TO SEA" into "How Robinson First Went to Sea"."""
+    if not text.isupper():
+        return text
+    words = text.lower().split()
+    return " ".join(w if i and w in SMALL_WORDS else w[:1].upper() + w[1:] for i, w in enumerate(words))
+
+
+def split_chapters(body):
+    """Split a novel at the headings "CHAPTER I", "CHAPTER II", and so on.
+
+    The title of a chapter is the text after the heading, up to the first empty
+    line, so a title on two lines is one title.
+    """
+    heading = re.compile(r"^\s*CHAPTER [IVXLC]+\.?\s*$", re.MULTILINE)
+    starts = [m for m in heading.finditer(body)]
+    if not starts:
+        fail("the book has no headings \"CHAPTER I\", \"CHAPTER II\", ...")
+    chapters = []
+    for i, m in enumerate(starts):
+        end = starts[i + 1].start() if i + 1 < len(starts) else len(body)
+        text = body[m.end():end].strip("\n")
+        title_block, _, rest = text.partition("\n\n")
+        title = title_case(" ".join(title_block.split()).rstrip(".;,"))
+        paragraphs = []
+        for paragraph in re.split(r"\n\s*\n", rest):
+            line = " ".join(paragraph.split())
+            if not line or line.startswith("[Illustration") or set(line) <= {"*", " "}:
+                continue
+            paragraphs.append(line)
+        chapters.append({"title": title, "paragraphs": paragraphs})
+    return chapters
+
+
 def ascii_text(text):
     text = text.replace("æ", "ae").replace("Æ", "Ae").replace("œ", "oe").replace("Œ", "Oe")
     text = text.replace("’", "'").replace("‘", "'").replace("“", '"').replace("”", '"')
@@ -181,7 +219,7 @@ def draft_passages(story, count):
     if len(candidates) < MIN_PASSAGES:
         return candidates
     words = sum(len(p.split()) for p in story["paragraphs"])
-    count = count or max(MIN_PASSAGES, min(MAX_PASSAGES, round(words / 100)))
+    count = count or max(MIN_PASSAGES, min(DRAFT_MAX_PASSAGES, round(words / 100)))
     count = min(count, len(candidates))
     # The first passage starts the story and the last one ends it. The others
     # are the best candidates of equal parts of the story, in order.
@@ -205,6 +243,10 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("book_id", type=int, help="Project Gutenberg book number, for example 18442")
     ap.add_argument("--story", action="append", help="title of a story to include (repeat it); default: all stories")
+    ap.add_argument("--join-syllables", action="store_true",
+                    help='join words that a book for young readers splits into syllables ("Eng-land"); for 18442')
+    ap.add_argument("--chapters", action="store_true",
+                    help='a novel: split at "CHAPTER I", "CHAPTER II", ... and open the chapters in order')
     ap.add_argument("--passages", type=int, help=f"a fixed number of passages per story ({MIN_PASSAGES} to {MAX_PASSAGES})")
     ap.add_argument("--topic", action="append", default=[], help="a topic of the book, for example history (repeat it)")
     ap.add_argument("--out", help="the draft campaign file to write")
@@ -217,8 +259,9 @@ def main():
 
     meta, text = load_book(args.book_id, Path(args.cache))
     body = strip_gutenberg(text)
-    stories = split_stories(body, contents(body))
-    join_syllables(stories)
+    stories = split_chapters(body) if args.chapters else split_stories(body, contents(body))
+    if args.join_syllables:
+        join_syllables(stories)
     for story in stories:
         story["paragraphs"] = [ascii_text(p) for p in story["paragraphs"]]
 
@@ -253,6 +296,7 @@ def main():
             "source_url": f"https://www.gutenberg.org/ebooks/{args.book_id}",
             "license": "Public domain in the USA",
             "topics": sorted(set(args.topic)),
+            "in_order": args.chapters,
         },
         "campaigns": [
             {
