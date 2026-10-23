@@ -260,6 +260,7 @@ func (s *Server) SetupRouter() *gin.Engine {
 		games.GET("", s.handleGameList)
 		games.GET("/cryptograms/:id", s.handleCryptogramPlay)
 		games.GET("/campaigns/:id", s.handleCampaign)
+		games.GET("/books/:slug", s.handleBook)
 	}
 
 	// E-books

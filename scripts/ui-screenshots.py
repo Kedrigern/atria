@@ -225,7 +225,7 @@ def pages(base):
         ("13-cryptogram", "/games/cryptograms/01900000-0000-7000-8000-000000000001"),
         ("14-search", "/search?q=reading"), ("15-settings", "/settings/rss"),
         ("16-storage", "/settings/storage"), ("17-profile", "/profile"), ("18-login", "/login"),
-        ("19-campaign", found["campaign"]), ("20-games-single", "/games?tab=single"),
+        ("19-campaign", found["campaign"]), ("20-games-single", "/games?tab=single"), ("21-book", "/games/books/sample-stories"),
     ]
     return [(name, path) for name, path in result if path]
 

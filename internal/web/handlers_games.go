@@ -10,10 +10,13 @@ import (
 	"atria/internal/games"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gofrs/uuid/v5"
 )
 
 // bookGroup is one book on the Campaigns tab: open campaigns first, solved last.
 type bookGroup struct {
+	ID     uuid.UUID
+	Slug   string
 	Title  string
 	Author *string
 	Open   []games.CampaignSummary
@@ -46,8 +49,8 @@ func (s *Server) handleGameList(c *gin.Context) {
 		}
 		var books []*bookGroup
 		for _, campaign := range campaigns {
-			if len(books) == 0 || books[len(books)-1].Title != campaign.BookTitle {
-				books = append(books, &bookGroup{Title: campaign.BookTitle, Author: campaign.BookAuthor})
+			if len(books) == 0 || books[len(books)-1].ID != campaign.BookID {
+				books = append(books, &bookGroup{ID: campaign.BookID, Slug: campaign.BookSlug, Title: campaign.BookTitle, Author: campaign.BookAuthor})
 			}
 			book := books[len(books)-1]
 			if campaign.Done() {
@@ -97,6 +100,24 @@ func (s *Server) handleCampaign(c *gin.Context) {
 		return
 	}
 	s.render(c, "campaign_detail.html", gin.H{"Campaign": campaign})
+}
+
+func (s *Server) handleBook(c *gin.Context) {
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+	book, err := games.GetBook(c.Request.Context(), s.db, user.ID, c.Param("slug"))
+	if err != nil {
+		var notFound *games.NotFoundError
+		if errors.As(err, &notFound) {
+			s.renderError(c, http.StatusNotFound, "Book not found")
+		} else {
+			s.respondError(c, http.StatusInternalServerError, "Failed to load book", err)
+		}
+		return
+	}
+	s.render(c, "book_detail.html", gin.H{"Book": book})
 }
 
 func (s *Server) handleCryptogramPlay(c *gin.Context) {

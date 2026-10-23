@@ -5,19 +5,25 @@
     <header class="page-header">
         <div>
             <h1 class="page-title">{{.Campaign.Title}}</h1>
-            <p class="page-subtitle">{{.Campaign.BookTitle}}{{if .Campaign.BookAuthor}} · {{.Campaign.BookAuthor}}{{end}} · {{.Campaign.Solved}} of {{.Campaign.Total}} solved</p>
+            <p class="page-subtitle"><a href="/games/books/{{.Campaign.BookSlug}}" hx-get="/games/books/{{.Campaign.BookSlug}}" hx-target="#main-content" hx-push-url="true">{{.Campaign.BookTitle}}</a>{{if .Campaign.BookAuthor}} · {{.Campaign.BookAuthor}}{{end}} · {{.Campaign.Solved}} of {{.Campaign.Total}} solved</p>
         </div>
         <div class="page-actions">
             <a href="/games" hx-get="/games" hx-target="#main-content" hx-push-url="true" class="button-link outline btn-sm">
                 <span class="icon-sm icon-chevron-left" aria-hidden="true"></span> Cryptograms
             </a>
-            {{if .Campaign.NextID}}
+            {{if .Campaign.Locked}}
+            <span class="badge">Locked</span>
+            {{else if .Campaign.NextID}}
             <a href="/games/cryptograms/{{.Campaign.NextID}}" hx-get="/games/cryptograms/{{.Campaign.NextID}}" hx-target="#main-content" hx-push-url="true" class="button-link btn-primary btn-sm">{{if .Campaign.Solved}}Next passage{{else}}Start{{end}}</a>
             {{else}}
             <span class="badge badge-success">Solved</span>
             {{end}}
         </div>
     </header>
+
+    {{if .Campaign.Locked}}
+    <p class="page-empty-hint">This chapter opens after you solve “{{.Campaign.LockedBy}}”.</p>
+    {{end}}
 
     <section class="story" aria-labelledby="story-title">
         <h2 id="story-title" class="section-title">{{if .Campaign.NextID}}Story so far{{else}}The story{{end}}</h2>

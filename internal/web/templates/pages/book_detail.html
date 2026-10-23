@@ -1,0 +1,66 @@
+{{define "content"}}
+<div class="centered-view" data-mobile-title="ATRIA: Book">
+    {{template "flash_message" .}}
+
+    <header class="page-header">
+        <div>
+            <h1 class="page-title">{{.Book.Title}}</h1>
+            <p class="page-subtitle">{{if .Book.Author}}{{.Book.Author}} · {{end}}{{.Book.Solved}} of {{.Book.Total}} passages solved</p>
+        </div>
+        <div class="page-actions">
+            <a href="/games" hx-get="/games" hx-target="#main-content" hx-push-url="true" class="button-link outline btn-sm">
+                <span class="icon-sm icon-chevron-left" aria-hidden="true"></span> Cryptograms
+            </a>
+            {{if .Book.NextID}}
+            <a href="/games/cryptograms/{{.Book.NextID}}" hx-get="/games/cryptograms/{{.Book.NextID}}" hx-target="#main-content" hx-push-url="true" class="button-link btn-primary btn-sm">{{if .Book.Solved}}Continue{{else}}Start{{end}}</a>
+            {{else if .Book.Total}}
+            <span class="badge badge-success">Solved</span>
+            {{end}}
+        </div>
+    </header>
+
+    <section aria-labelledby="chapters-title">
+        <h2 id="chapters-title" class="section-title">{{if .Book.InOrder}}Chapters{{else}}Stories{{end}}</h2>
+        <ol class="book-chapters">
+            {{range .Book.Chapters}}
+            <li class="book-chapter">
+                <a href="/games/campaigns/{{.ID}}" hx-get="/games/campaigns/{{.ID}}" hx-target="#main-content" hx-push-url="true">{{.Title}}</a>
+                <span class="list-item-meta">
+                    {{if .Done}}<span class="badge badge-success">Solved</span>
+                    {{else if .Locked}}<span class="badge">Locked</span>
+                    {{else}}{{.Solved}} of {{.Total}}{{end}}
+                </span>
+            </li>
+            {{end}}
+        </ol>
+    </section>
+
+    <section aria-labelledby="book-story-title">
+        <h2 id="book-story-title" class="section-title">Story so far</h2>
+        {{if .Book.Solved}}
+            {{$current := .Book.Current}}
+            {{range $i, $chapter := .Book.Chapters}}{{if $chapter.Story}}
+                {{if eq $i $current}}
+                <article class="book-story-chapter">
+                    <h3 class="book-story-title">{{$chapter.Title}}</h3>
+                    <div class="reading-body story-text">{{range $chapter.Story}}<p>{{.}}</p>{{end}}</div>
+                </article>
+                {{else}}
+                <details class="help-box book-story-chapter">
+                    <summary>{{$chapter.Title}}</summary>
+                    <div class="reading-body story-text">{{range $chapter.Story}}<p>{{.}}</p>{{end}}</div>
+                </details>
+                {{end}}
+            {{end}}{{end}}
+        {{else}}
+        <p class="page-empty-hint">Solve the first passage to start the story.</p>
+        {{end}}
+    </section>
+
+    {{if or .Book.SourceURL .Book.License}}
+    <p class="form-help">
+        Source: {{if .Book.SourceURL}}<a href="{{.Book.SourceURL}}" target="_blank" rel="noopener">{{.Book.Title}}</a>{{else}}{{.Book.Title}}{{end}}{{if .Book.License}}. {{.Book.License}}.{{end}}
+    </p>
+    {{end}}
+</div>
+{{end}}

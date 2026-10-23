@@ -204,7 +204,7 @@ A locked campaign shows on the games page with the text "Opens after chapter N" 
 
 ### 11.3 The book page
 
-A novel gets a book page at `/games/books/<slug>`. It shows the title, the author, the source, the progress for each chapter, and the button "Continue" for the next passage. Below, it shows the solved passages of all chapters in order, with the chapter titles as headings. The page shows the current chapter first. The earlier chapters are in a closed `details` element "Earlier chapters", so the page stays short on an e-ink reader.
+A novel gets a book page at `/games/books/<slug>`. It shows the title, the author, the source, the progress for each chapter, and the button "Continue" for the next passage. Below, it shows the solved passages of all chapters in order, with the chapter titles as headings. The page shows the current chapter open. Each other chapter with solved passages is in its own closed `details` element, so the page stays short on an e-ink reader. The same page works for a collection of stories: there, the list is "Stories" and no story is locked.
 
 The games page links the title of a book to its book page.
 

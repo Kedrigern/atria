@@ -1950,3 +1950,24 @@ details.toc a:focus {
 @media (max-width: 640px) {
     .cryptogram-columns { grid-template-columns: 1fr; }
 }
+
+/* Book page of cryptogram campaigns */
+.book-chapters {
+    margin: 0 0 var(--space-5);
+    padding-left: var(--space-5);
+}
+.book-chapter {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-1) var(--space-3);
+    min-height: 40px;
+    border-bottom: 1px dashed var(--border);
+}
+.book-story-chapter {
+    margin-bottom: var(--space-4);
+}
+.book-story-title {
+    font-size: var(--text-lg);
+}

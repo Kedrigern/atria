@@ -20,8 +20,10 @@ import (
 
 // Limits of a campaign file (docs/architecture/cryptogram-campaigns.md, section 8).
 const (
-	MinPassages       = 3
-	MaxPassages       = 10
+	MinPassages = 3
+	// MaxPassages is a safety net, not a target: a campaign is as long as its
+	// story needs (docs/architecture/cryptogram-campaigns.md, section 11.1).
+	MaxPassages       = 40
 	MinPassageLetters = 40
 	MaxPassageLetters = 200
 )
@@ -35,6 +37,8 @@ type ImportFile struct {
 		SourceURL string   `json:"source_url"`
 		License   string   `json:"license"`
 		Topics    []string `json:"topics"`
+		// InOrder opens the campaigns one by one, for the chapters of a novel.
+		InOrder bool `json:"in_order"`
 	} `json:"book"`
 	Campaigns []ImportCampaign `json:"campaigns"`
 }
@@ -163,7 +167,16 @@ func campaignTopics(f *ImportFile, c ImportCampaign) []string {
 		topics[i] = strings.ToLower(strings.TrimSpace(topics[i]))
 	}
 	slices.Sort(topics)
-	return slices.Compact(topics)
+	return nonNil(slices.Compact(topics))
+}
+
+// nonNil turns a nil slice into an empty one, because pq sends nil as NULL
+// and the topic columns are NOT NULL.
+func nonNil(values []string) []string {
+	if values == nil {
+		return []string{}
+	}
+	return values
 }
 
 // Plan compares the file with the database. It changes nothing.
@@ -221,9 +234,26 @@ func Import(ctx context.Context, db *sql.DB, f *ImportFile, replace bool) ([]Pla
 	}
 	defer func() { _ = tx.Rollback() }()
 
+	var bookID uuid.UUID
+	if err := tx.QueryRowContext(ctx, `
+		INSERT INTO game_books (id, slug, title, author, source_url, license, in_order, topics)
+		VALUES ($1, $2, $3, NULLIF($4, ''), NULLIF($5, ''), NULLIF($6, ''), $7, $8)
+		ON CONFLICT (slug) DO UPDATE SET title = EXCLUDED.title, author = EXCLUDED.author, source_url = EXCLUDED.source_url,
+			license = EXCLUDED.license, in_order = EXCLUDED.in_order, topics = EXCLUDED.topics
+		RETURNING id
+	`, core.NewUUID(), f.Book.Slug, f.Book.Title, f.Book.Author, f.Book.SourceURL, f.Book.License, f.Book.InOrder, pq.Array(nonNil(f.Book.Topics))).Scan(&bookID); err != nil {
+		return nil, fmt.Errorf("save book %s: %w", f.Book.Slug, err)
+	}
+
 	for i, c := range f.Campaigns {
 		item := plan[i]
 		if item.State == PlanUnchanged {
+			// The passages and the progress stay. The title, the topics and the
+			// position follow the file, so a new chapter can come in between.
+			if _, err := tx.ExecContext(ctx, `UPDATE game_campaigns SET title = $1, topics = $2, position = $3 WHERE slug = $4`,
+				c.Title, pq.Array(campaignTopics(f, c)), i, item.Slug); err != nil {
+				return nil, fmt.Errorf("update campaign %s: %w", item.Slug, err)
+			}
 			continue
 		}
 		if item.State == PlanChanged {
@@ -231,7 +261,7 @@ func Import(ctx context.Context, db *sql.DB, f *ImportFile, replace bool) ([]Pla
 				return nil, fmt.Errorf("delete campaign %s: %w", item.Slug, err)
 			}
 		}
-		if err := insertCampaign(ctx, tx, f, c, i); err != nil {
+		if err := insertCampaign(ctx, tx, f, c, i, bookID); err != nil {
 			return nil, err
 		}
 	}
@@ -241,13 +271,13 @@ func Import(ctx context.Context, db *sql.DB, f *ImportFile, replace bool) ([]Pla
 	return plan, nil
 }
 
-func insertCampaign(ctx context.Context, tx *sql.Tx, f *ImportFile, c ImportCampaign, position int) error {
+func insertCampaign(ctx context.Context, tx *sql.Tx, f *ImportFile, c ImportCampaign, position int, bookID uuid.UUID) error {
 	campaignID := core.NewUUID()
 	topics := campaignTopics(f, c)
 	_, err := tx.ExecContext(ctx, `
-		INSERT INTO game_campaigns (id, slug, title, book_title, book_author, source_url, license, position, topics)
-		VALUES ($1, $2, $3, $4, NULLIF($5, ''), NULLIF($6, ''), NULLIF($7, ''), $8, $9)
-	`, campaignID, campaignSlug(f, c), c.Title, f.Book.Title, f.Book.Author, f.Book.SourceURL, f.Book.License, position, pq.Array(topics))
+		INSERT INTO game_campaigns (id, slug, title, book_id, position, topics)
+		VALUES ($1, $2, $3, $4, $5, $6)
+	`, campaignID, campaignSlug(f, c), c.Title, bookID, position, pq.Array(topics))
 	if err != nil {
 		return fmt.Errorf("insert campaign %s: %w", c.Slug, err)
 	}

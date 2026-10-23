@@ -2,6 +2,7 @@ package games
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"os"
 	"path/filepath"
@@ -10,6 +11,7 @@ import (
 
 	"atria/internal/testutil"
 
+	"github.com/gofrs/uuid/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -164,5 +166,87 @@ func TestShippedCampaignFilesAreValid(t *testing.T) {
 		_, err = ReadImportFile(f)
 		f.Close()
 		assert.NoError(t, err, path)
+	}
+}
+
+const novelFile = `{
+	"book": {"slug": "test-novel", "title": "Test Novel", "author": "A. Writer", "in_order": true},
+	"campaigns": [
+		{"slug": "chapter-one", "title": "Chapter One", "reviewed": true, "passages": [
+			"Once upon a time a wise old king lived in a castle by the sea.",
+			"Every morning the king walked along the shore and talked to the fishermen.",
+			"One day a great storm came, and the king helped the people of the village."]},
+		{"slug": "chapter-two", "title": "Chapter Two", "reviewed": true, "passages": [
+			"After the storm the fishermen built new boats for the whole village.",
+			"The king gave them wood from the old forest behind the castle walls.",
+			"In the spring the boats sailed out again, and the nets were full of fish."]}
+	]
+}`
+
+func solveCampaign(t *testing.T, db *sql.DB, userID uuid.UUID, campaignID uuid.UUID) {
+	t.Helper()
+	_, err := db.Exec(`
+		INSERT INTO game_cryptogram_progress (id, user_id, cryptogram_id, cipher_mapping, completed_at)
+		SELECT gen_random_uuid(), $1, id, '{}'::jsonb, NOW() FROM game_cryptograms WHERE campaign_id = $2
+		ON CONFLICT (user_id, cryptogram_id) DO UPDATE SET completed_at = NOW()`, userID, campaignID)
+	require.NoError(t, err)
+}
+
+func TestNovelOpensChaptersInOrder(t *testing.T) {
+	db, user := testutil.SetupTestDB(t)
+	ctx := context.Background()
+	_, err := Import(ctx, db, mustRead(t, novelFile), false)
+	require.NoError(t, err)
+
+	campaigns, err := ListCampaigns(ctx, db, user.ID, "")
+	require.NoError(t, err)
+	require.Len(t, campaigns, 2)
+	assert.False(t, campaigns[0].Locked())
+	assert.Equal(t, "Chapter One", campaigns[1].LockedBy, "the second chapter waits for the first")
+
+	_, err = GetPuzzle(ctx, db, user.ID, *campaigns[1].NextID)
+	var locked *LockedError
+	require.True(t, errors.As(err, &locked), "the first passage of a locked chapter is locked, got %v", err)
+
+	book, err := GetBook(ctx, db, user.ID, "test-novel")
+	require.NoError(t, err)
+	assert.True(t, book.InOrder)
+	assert.Equal(t, 6, book.Total)
+	assert.Equal(t, *campaigns[0].NextID, *book.NextID)
+
+	solveCampaign(t, db, user.ID, campaigns[0].ID)
+	campaigns, err = ListCampaigns(ctx, db, user.ID, "")
+	require.NoError(t, err)
+	assert.False(t, campaigns[1].Locked(), "the second chapter opens after the first is solved")
+	_, err = GetPuzzle(ctx, db, user.ID, *campaigns[1].NextID)
+	require.NoError(t, err)
+
+	book, err = GetBook(ctx, db, user.ID, "test-novel")
+	require.NoError(t, err)
+	assert.Equal(t, 3, book.Solved)
+	assert.Equal(t, 1, book.Current, "the current chapter is the second")
+	assert.Len(t, book.Chapters[0].Story, 3, "the story of the solved chapter is on the book page")
+}
+
+func TestImportAllowsLongCampaignsAndKeepsOrder(t *testing.T) {
+	db, user := testutil.SetupTestDB(t)
+	ctx := context.Background()
+	passages := make([]string, 12)
+	for i := range passages {
+		passages[i] = testPassages[i%len(testPassages)]
+	}
+	_, err := Import(ctx, db, mustRead(t, testFile(passages...)), false)
+	require.NoError(t, err, "a campaign may have more than 10 passages")
+
+	// A collection keeps the free order: no campaign is locked.
+	_, err = Import(ctx, db, mustRead(t, novelFile), false)
+	require.NoError(t, err)
+	campaigns, err := ListCampaigns(ctx, db, user.ID, "")
+	require.NoError(t, err)
+	for _, c := range campaigns {
+		if c.BookSlug == "fifty-famous-stories" {
+			assert.False(t, c.Locked())
+			assert.Equal(t, 12, c.Total)
+		}
 	}
 }

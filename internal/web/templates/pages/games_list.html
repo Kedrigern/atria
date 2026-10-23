@@ -26,7 +26,7 @@
     {{if eq .Tab "campaigns"}}
         {{range .Books}}
         <section class="game-book">
-            <h2 class="section-title">{{.Title}}{{if .Author}} <span class="text-muted">· {{.Author}}</span>{{end}}</h2>
+            <h2 class="section-title"><a href="/games/books/{{.Slug}}" hx-get="/games/books/{{.Slug}}" hx-target="#main-content" hx-push-url="true">{{.Title}}</a>{{if .Author}} <span class="text-muted">· {{.Author}}</span>{{end}}</h2>
             <div class="game-library">
                 {{range .Open}}{{template "campaign_card" .}}{{end}}
             </div>
@@ -71,6 +71,9 @@
         {{if .Done}}
         <span class="badge badge-success">Solved</span>
         <a class="button-link outline" href="/games/campaigns/{{.ID}}" hx-get="/games/campaigns/{{.ID}}" hx-target="#main-content" hx-push-url="true">Read the story</a>
+        {{else if .Locked}}
+        <span class="badge">Locked</span>
+        <span class="list-item-meta">Opens after “{{.LockedBy}}”</span>
         {{else if .NextID}}
         <a class="button-link btn-primary" href="/games/cryptograms/{{.NextID}}" hx-get="/games/cryptograms/{{.NextID}}" hx-target="#main-content" hx-push-url="true">{{if .Solved}}Continue{{else}}Start{{end}}</a>
         {{end}}
