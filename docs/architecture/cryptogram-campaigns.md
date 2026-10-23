@@ -173,7 +173,61 @@ You cannot open a passage before you solve the passages before it. Atria then sh
 1. The data model, the import, and the web interface. A small test campaign shows the flow.
 2. The script and the reviewed file with the five stories.
 
-## 11. Decisions and open questions
+## 11. Novels: books with chapters
+
+Status: proposed, as an addition to sections 1 to 10.
+
+A collection of short stories, such as "Fifty Famous Stories Retold", has campaigns that you can play in any order. A novel has chapters, and the chapters must come in order. Two novels come next:
+
+| Book | Source | Chapters | Words |
+|---|---|---|---|
+| "Alice's Adventures in Wonderland", Lewis Carroll (1865) | Project Gutenberg #11, the original text | 12 | about 26,500 |
+| "Robinson Crusoe, Told to the Children", John Lang (about 1905) | Project Gutenberg #67907, a retelling for children | 10 | about 21,000 |
+
+The original "Robinson Crusoe" by Daniel Defoe is not a good source. Many of its sentences have more than 100 words, and a passage has at most 200 letters.
+
+### 11.1 Three levels
+
+A novel has three levels: the book, the chapter, and the passage. One chapter is one campaign. Thus the existing campaign pages and the story so far work for a chapter as they are.
+
+A chapter of these books has about 2,000 words. Ten passages keep only the frame of a chapter. Thus the limits of the number of passages change:
+
+- The script makes about one passage for each 100 words, at least 3 and at most 30. The option `--passages` sets another number.
+- The import accepts 3 to 40 passages in a campaign. These limits are a safety net, not a target. The rule for a good campaign is that the story so far keeps the point (section 5).
+- A passage still has 40 to 200 letters, because a longer passage does not fit on the screen of an e-ink reader.
+
+### 11.2 Order of the chapters
+
+The book in the campaign file gets the field `"in_order"`. If it is `true`, only the first campaign of the book is open at the start. A campaign opens after you solve all passages of the campaign before it. Inside a campaign, the passages open one by one, as before. A collection of stories has `"in_order": false`, which is the default.
+
+A locked campaign shows on the games page with the text "Opens after chapter N" and without a button.
+
+### 11.3 The book page
+
+A novel gets a book page at `/games/books/<slug>`. It shows the title, the author, the source, the progress for each chapter, and the button "Continue" for the next passage. Below, it shows the solved passages of all chapters in order, with the chapter titles as headings. The page shows the current chapter first. The earlier chapters are in a closed `details` element "Earlier chapters", so the page stays short on an e-ink reader.
+
+The games page links the title of a book to its book page.
+
+### 11.4 Data model
+
+A new table `game_books` holds the books: `id`, `slug` (unique), `title`, `author`, `source_url`, `license`, `in_order`, and `topics`. The table `game_campaigns` gets the column `book_id`, and the book columns move from `game_campaigns` to `game_books`. The migration makes one book for each book slug of the existing campaigns (the part of the campaign slug before the `/`). The existing campaigns keep their progress.
+
+### 11.5 The script
+
+The script gets the option `--chapters`. With it, the script splits the book at the headings "CHAPTER I", "CHAPTER II", and so on. The title of a chapter is the line after its heading. Without it, the script uses the table of contents, as for "Fifty Famous Stories Retold".
+
+### 11.6 Selection
+
+The selection of the passages is the same as in section 5. For each chapter, the review makes sure that the turn of the chapter and its end are in the passages. Many names in "Alice's Adventures in Wonderland" are rare words, for example "Caterpillar", "Gryphon", and "Mock Turtle". They are a part of the book and they stay. They make a passage harder, and a name that comes back helps in a later passage.
+
+### 11.7 Pull requests
+
+1. This design.
+2. The data model with books, the order of the chapters, the book page, and the new limits.
+3. The script with `--chapters`, and the reviewed file for "Alice's Adventures in Wonderland".
+4. The reviewed file for "Robinson Crusoe, Told to the Children".
+
+## 12. Decisions and open questions
 
 - Must a hint in a campaign passage cost more than in a single puzzle? This design keeps hints the same.
 - Topics are not the tags of Atria. Tags belong to one user and attach to that user's notes and articles. Cryptograms are a catalog that all users share. Thus the catalog has its own topics, and the tags of a user stay free of game content.
