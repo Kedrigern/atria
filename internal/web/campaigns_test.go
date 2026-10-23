@@ -68,3 +68,37 @@ func TestCampaignPages(t *testing.T) {
 	assert.Contains(t, story, "Next passage")
 	assert.NotRegexp(t, inlineStyle, mainContent(story))
 }
+
+func TestBookPageAndLockedChapter(t *testing.T) {
+	db, user := testutil.SetupTestDB(t)
+	ctx := context.Background()
+	file, err := games.ReadImportFile(strings.NewReader(`{
+		"book": {"slug": "web-novel", "title": "Web Novel", "in_order": true},
+		"campaigns": [
+			{"slug": "one", "title": "Into the Forest", "reviewed": true, "passages": [
+				"Once upon a time a wise old king lived in a castle by the sea.",
+				"Every morning the king walked along the shore and talked to the fishermen.",
+				"One day a great storm came, and the king helped the people of the village."]},
+			{"slug": "two", "title": "Back Home", "reviewed": true, "passages": [
+				"After the storm the fishermen built new boats for the whole village.",
+				"The king gave them wood from the old forest behind the castle walls.",
+				"In the spring the boats sailed out again, and the nets were full of fish."]}]}`))
+	require.NoError(t, err)
+	_, err = games.Import(ctx, db, file, false)
+	require.NoError(t, err)
+	r := newTestRouter(t, NewServer(db))
+	asUser(t, user)
+
+	list := getWithCookie(r, "/games", nil).Body.String()
+	assert.Contains(t, list, `href="/games/books/web-novel"`)
+	assert.Contains(t, list, "Opens after “Into the Forest”")
+
+	page := getWithCookie(r, "/games/books/web-novel", nil)
+	require.Equal(t, http.StatusOK, page.Code)
+	body := page.Body.String()
+	assert.Contains(t, body, "Chapters")
+	assert.Contains(t, body, "0 of 6 passages solved")
+	assert.Contains(t, body, ">Start</a>")
+	assert.NotRegexp(t, inlineStyle, mainContent(body))
+	assert.Equal(t, http.StatusNotFound, getWithCookie(r, "/games/books/missing", nil).Code)
+}
