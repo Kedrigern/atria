@@ -513,6 +513,12 @@ func (s *Server) render(c *gin.Context, tmplName string, data gin.H) {
 		// only to the article/note title and body, so the rest of the UI
 		// (toolbar, sidebar, nav) keeps its fixed sizing.
 		data["ContentFontScale"] = strconv.FormatFloat(float64(fontSize)/100, 'f', 2, 64)
+
+		cryptogramFontSize := user.Preferences.CryptogramFontSize
+		if cryptogramFontSize == 0 {
+			cryptogramFontSize = 100
+		}
+		data["CryptogramFontScale"] = strconv.FormatFloat(float64(cryptogramFontSize)/100, 'f', 2, 64)
 	}
 
 	data["Flash"] = s.getFlash(c)
@@ -709,6 +715,8 @@ func (s *Server) handleProfilePreferencesUpdate(c *gin.Context) {
 // handleFontSizeAdjust nudges the user's font-size preference up or down by
 // one step (10%), clamped to the 80-160 range, and redirects back to the
 // page the request came from. Intended for the quick +/- toolbar buttons.
+// With target=cryptogram it changes the size of the cryptogram board instead
+// of the size of articles and notes.
 func (s *Server) handleFontSizeAdjust(c *gin.Context) {
 	user := s.getUser(c)
 	if user == nil {
@@ -718,7 +726,12 @@ func (s *Server) handleFontSizeAdjust(c *gin.Context) {
 
 	prefs := user.Preferences
 
-	fontSize := prefs.FontSize
+	target := &prefs.FontSize
+	if c.PostForm("target") == "cryptogram" {
+		target = &prefs.CryptogramFontSize
+	}
+
+	fontSize := *target
 	if fontSize == 0 {
 		fontSize = 100
 	}
@@ -731,7 +744,7 @@ func (s *Server) handleFontSizeAdjust(c *gin.Context) {
 	if fontSize > 160 {
 		fontSize = 160
 	}
-	prefs.FontSize = fontSize
+	*target = fontSize
 
 	if err := users.UpdatePreferences(c.Request.Context(), s.db, user.ID, prefs); err != nil {
 		s.setFlash(c, "error", "Could not save the text size.")

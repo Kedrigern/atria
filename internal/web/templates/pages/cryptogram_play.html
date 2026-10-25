@@ -1,5 +1,5 @@
 {{define "content"}}
-<div class="centered-view cryptogram-page" data-mobile-title="ATRIA: Cryptogram">
+<div class="centered-view cryptogram-page" style="--cryptogram-scale: {{.CryptogramFontScale}}" data-mobile-title="ATRIA: Cryptogram">
     <header class="page-header">
         <div>
             {{if .Puzzle.Campaign}}
@@ -20,6 +20,7 @@
                 <span class="icon-sm icon-chevron-left" aria-hidden="true"></span> Cryptograms
             </a>
             {{end}}
+            {{template "cryptogram_font_size_controls" .}}
             {{if not .Puzzle.CompletedAt}}
             <form method="post" action="/api/games/cryptograms/{{.Puzzle.ID}}/hint" class="inline-action-form">
                 <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />

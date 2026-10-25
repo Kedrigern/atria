@@ -63,24 +63,26 @@ type User struct {
 
 // UserPreferences
 type UserPreferences struct {
-	Theme            string                 `json:"theme"`
-	PaginationSize   int                    `json:"pagination_size"`
-	RSSInlineDetails bool                   `json:"rss_inline_details"`
-	ArticleImages    string                 `json:"article_images"`
-	FontSize         int                    `json:"font_size"` // Percentage scale applied to html root font-size (e.g. 100 = default, 130 = 30% larger).
-	DomainOverrides  map[string]DomainPrefs `json:"domain_overrides"`
-	DefaultDashboard *uuid.UUID             `json:"default_dashboard_id,omitempty"`
+	Theme              string                 `json:"theme"`
+	PaginationSize     int                    `json:"pagination_size"`
+	RSSInlineDetails   bool                   `json:"rss_inline_details"`
+	ArticleImages      string                 `json:"article_images"`
+	FontSize           int                    `json:"font_size"`            // Percentage scale applied to html root font-size (e.g. 100 = default, 130 = 30% larger).
+	CryptogramFontSize int                    `json:"cryptogram_font_size"` // Percentage scale of the cryptogram board, separate from FontSize.
+	DomainOverrides    map[string]DomainPrefs `json:"domain_overrides"`
+	DefaultDashboard   *uuid.UUID             `json:"default_dashboard_id,omitempty"`
 }
 
 // DefaultPreferences returns the baseline user preferences.
 func DefaultPreferences() UserPreferences {
 	return UserPreferences{
-		Theme:            "system",  // Follow OS theme.
-		PaginationSize:   30,        // Items per page.
-		RSSInlineDetails: true,      // Show inline RSS content.
-		ArticleImages:    "replace", // Enhanced image fetching.
-		FontSize:         100,       // 100% = browser default size.
-		DomainOverrides:  make(map[string]DomainPrefs),
+		Theme:              "system",  // Follow OS theme.
+		PaginationSize:     30,        // Items per page.
+		RSSInlineDetails:   true,      // Show inline RSS content.
+		ArticleImages:      "replace", // Enhanced image fetching.
+		FontSize:           100,       // 100% = browser default size.
+		CryptogramFontSize: 100,       // 100% = the default size of the cryptogram board.
+		DomainOverrides:    make(map[string]DomainPrefs),
 	}
 }
 
