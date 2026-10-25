@@ -231,6 +231,21 @@
 </form>
 {{end}}
 
+{{define "cryptogram_font_size_controls"}}
+<form method="post" action="/api/profile/font-size" class="inline-action-form">
+    <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
+    <input type="hidden" name="target" value="cryptogram" />
+    <input type="hidden" name="delta" value="-1" />
+    <button type="submit" class="outline btn-sm" title="Smaller puzzle text" aria-label="Smaller puzzle text">A-</button>
+</form>
+<form method="post" action="/api/profile/font-size" class="inline-action-form">
+    <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
+    <input type="hidden" name="target" value="cryptogram" />
+    <input type="hidden" name="delta" value="1" />
+    <button type="submit" class="outline btn-sm" title="Larger puzzle text" aria-label="Larger puzzle text">A+</button>
+</form>
+{{end}}
+
 
 
 {{define "toolbar"}}

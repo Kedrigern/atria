@@ -1085,7 +1085,7 @@ form.htmx-request button[type="submit"] {
 .game-card .list-item-title, .game-card p { margin: 0 0 var(--space-1); }
 .game-card-action { display: flex; flex-direction: column; align-items: end; gap: 8px; white-space: nowrap; }
 .cryptogram-context, .cryptogram-finished { margin: 18px 0; padding: 14px 16px; border-left: 3px solid var(--links); background: var(--background-alt); }
-.cryptogram-board { display: flex; flex-wrap: wrap; align-items: end; column-gap: 22px; row-gap: 10px; padding: 22px 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 1.3rem; line-height: 2.4; }
+.cryptogram-board { display: flex; flex-wrap: wrap; align-items: end; column-gap: 22px; row-gap: 10px; padding: 22px 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: calc(1.1rem * var(--cryptogram-scale, 1)); line-height: 2.4; }
 .cryptogram-word { display: inline-flex; align-items: end; gap: 4px; margin-right: 16px; white-space: nowrap; }
 .cipher-input, .cipher-cell { box-sizing: border-box; width: 2.1em; height: 2.35em; padding: 0 0 0.2em; border: 0; border-bottom: 2px solid var(--text-main); border-radius: 0; background: transparent; color: var(--text-bright); font: inherit; font-weight: 700; text-align: center; }
 .cipher-input::placeholder { color: var(--text-muted); font-size: 0.68em; font-weight: 500; opacity: 1; }
@@ -1101,7 +1101,7 @@ form.htmx-request button[type="submit"] {
 .cryptogram-log li { padding: 8px 0; border-bottom: 1px solid var(--border); }
 .cryptogram-log .correct { color: var(--success); }
 .cryptogram-log .wrong { color: var(--danger); font-weight: bold; }
-@media (max-width: 640px) { .game-card { align-items: start; flex-direction: column; } .game-card-action { align-items: start; flex-direction: row; } .cryptogram-board { font-size: 1.1rem; column-gap: 18px; row-gap: 7px; } .cryptogram-word { gap: 2px; margin-right: 12px; } }
+@media (max-width: 640px) { .game-card { align-items: start; flex-direction: column; } .game-card-action { align-items: start; flex-direction: row; } .cryptogram-board { font-size: calc(0.95rem * var(--cryptogram-scale, 1)); column-gap: 18px; row-gap: 7px; } .cryptogram-word { gap: 2px; margin-right: 12px; } }
 
 /* Tables */
 .data-list { width: 100%; border-collapse: collapse; }
