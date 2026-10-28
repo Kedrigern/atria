@@ -523,6 +523,16 @@ func ListArticles(ctx context.Context, db *sql.DB, ownerID uuid.UUID, limit, off
 	return articlesList, rows.Err()
 }
 
+// CountArticles returns the number of articles in the read-it-later inbox of the owner.
+func CountArticles(ctx context.Context, db *sql.DB, ownerID uuid.UUID) (int, error) {
+	var count int
+	err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM articles_inbox_view WHERE owner_id = $1`, ownerID).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count articles: %w", err)
+	}
+	return count, nil
+}
+
 // DeleteArticle marks an active article as deleted without removing it from the database.
 func DeleteArticle(ctx context.Context, db *sql.DB, ownerID, articleID uuid.UUID) error {
 	result, err := db.ExecContext(ctx, `

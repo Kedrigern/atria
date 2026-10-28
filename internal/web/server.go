@@ -623,13 +623,13 @@ func (s *Server) handleHome(c *gin.Context) {
 
 	ctx := c.Request.Context()
 
-	rssItems, err := rss.ListItemsToRead(ctx, s.db, user.ID, 100, 0)
+	unreadCount, err := rss.CountItemsToRead(ctx, s.db, user.ID)
 	if err != nil {
 		s.respondError(c, http.StatusInternalServerError, "Failed to load RSS items", err)
 		return
 	}
 
-	articlesList, err := articles.ListArticles(ctx, s.db, user.ID, 100, 0)
+	inboxCount, err := articles.CountArticles(ctx, s.db, user.ID)
 	if err != nil {
 		s.respondError(c, http.StatusInternalServerError, "Failed to load articles", err)
 		return
@@ -646,8 +646,8 @@ func (s *Server) handleHome(c *gin.Context) {
 	}
 
 	s.render(c, "home.html", gin.H{
-		"UnreadCount": len(rssItems),
-		"InboxCount":  len(articlesList),
+		"UnreadCount": unreadCount,
+		"InboxCount":  inboxCount,
 		"RecentNotes": notesList,
 	})
 }

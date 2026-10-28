@@ -173,6 +173,16 @@ func ListItemsToRead(ctx context.Context, db *sql.DB, ownerID uuid.UUID, limit, 
 	return items, rows.Err()
 }
 
+// CountItemsToRead returns the number of unread RSS items of the owner.
+func CountItemsToRead(ctx context.Context, db *sql.DB, ownerID uuid.UUID) (int, error) {
+	var count int
+	err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM rss_to_read_view WHERE owner_id = $1`, ownerID).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count triage items: %w", err)
+	}
+	return count, nil
+}
+
 // SaveItemAsArticle converts an RSS item into a full article and marks it as read.
 func SaveItemAsArticle(ctx context.Context, db *sql.DB, ownerID, itemID uuid.UUID) (*core.Entity, error) {
 	// 1. Get the link from the RSS item triage
