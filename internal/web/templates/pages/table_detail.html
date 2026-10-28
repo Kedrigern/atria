@@ -11,6 +11,9 @@
             <a href="/tables" class="button-link outline btn-sm">
                 <span class="icon-sm icon-chevron-left" aria-hidden="true"></span> Tables
             </a>
+            <button type="button" hx-post="/api/entity/{{.Table.ID}}/rename" hx-prompt="New title of the table:" class="outline btn-sm" title="Rename" aria-label="Rename">
+                <span class="icon-sm icon-edit" aria-hidden="true"></span>
+            </button>
             <button type="button" class="outline btn-sm" data-open-dialog="table-columns-dialog">Columns</button>
             <a href="/tables/{{.Table.ID}}/export.csv" class="button-link outline btn-sm">Export CSV</a>
             <form method="post" action="/api/tables/{{.Table.ID}}/delete" class="inline-action-form" data-confirm="Move this table to the trash?">
