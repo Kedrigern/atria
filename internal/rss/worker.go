@@ -113,6 +113,12 @@ func FetchFeed(ctx context.Context, db *sql.DB, feedID uuid.UUID) error {
 // maxFeedBytes caps the size of a downloaded feed document.
 const maxFeedBytes = 5 << 20
 
+// FeedUserAgent identifies Atria honestly as a feed reader. Some sites (for
+// example root.cz since October 2026) close the connection when a client sends
+// a Chrome User-Agent but is not a browser, so feeds must not use the
+// browser-like default of netutil.BrowserTransport.
+const FeedUserAgent = "Atria RSS reader (+https://atria.profant.eu)"
+
 // fetchAndStoreFeed downloads one feed (conditionally, using the stored
 // ETag/Last-Modified and the feed's HTTP auth), stores new items and records
 // the outcome with UpdateFetchStatus. ctx is used for database writes; the
@@ -132,6 +138,7 @@ func fetchAndStoreFeed(ctx context.Context, db *sql.DB, client *http.Client, f F
 	if err != nil {
 		return fail(0, err)
 	}
+	req.Header.Set("User-Agent", FeedUserAgent)
 	req.Header.Set("Accept", "application/rss+xml, application/atom+xml, application/feed+json, application/xml;q=0.9, text/xml;q=0.8, */*;q=0.5")
 	if f.ETag.Valid && f.ETag.String != "" {
 		req.Header.Set("If-None-Match", f.ETag.String)
