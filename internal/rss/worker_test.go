@@ -196,6 +196,17 @@ func TestFetchSendsFeedCredentials(t *testing.T) {
 	assert.Equal(t, "secret", pass)
 }
 
+// Feeds identify Atria as a feed reader, not as a browser: root.cz drops
+// connections that send a Chrome User-Agent from a non-browser client.
+func TestFetchSendsFeedReaderUserAgent(t *testing.T) {
+	ctx, db, feedID, fake := setupFeed(t)
+
+	require.NoError(t, rss.FetchFeed(ctx, db, feedID))
+	ua := fake.last().Header.Get("User-Agent")
+	assert.Equal(t, rss.FeedUserAgent, ua)
+	assert.NotContains(t, ua, "Chrome")
+}
+
 func TestScheduledFetchSkipsDeletedFeeds(t *testing.T) {
 	ctx, db, feedID, fake := setupFeed(t)
 
