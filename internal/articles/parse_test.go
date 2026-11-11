@@ -61,3 +61,35 @@ func TestParseURL(t *testing.T) {
 		t.Errorf("expected a user-facing 404 error, got %v", err)
 	}
 }
+
+// Like root.cz, the server closes the connection for a Chrome User-Agent from a
+// non-browser client. The article is then fetched again as Atria itself.
+func TestParseURLRetriesWithHonestUserAgent(t *testing.T) {
+	page := fmt.Sprintf(`<html><head><title>Root story</title></head><body><article><h1>Root story</h1>%s</article></body></html>`,
+		strings.Repeat("<p>Plenty of article text so readability treats this as the main content.</p>", 10))
+	var agents []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		agents = append(agents, r.UserAgent())
+		if strings.Contains(r.UserAgent(), "Chrome") {
+			conn, _, err := w.(http.Hijacker).Hijack()
+			if err == nil {
+				conn.Close()
+			}
+			return
+		}
+		fmt.Fprint(w, page)
+	}))
+	defer srv.Close()
+	ctx := context.WithValue(context.Background(), netutil.AllowLocalKey, true)
+
+	parsed, _, err := ParseURL(ctx, srv.URL+"/story")
+	if err != nil {
+		t.Fatalf("ParseURL: %v", err)
+	}
+	if parsed.Title != "Root story" {
+		t.Errorf("title = %q", parsed.Title)
+	}
+	if len(agents) < 2 || agents[0] != netutil.BrowserUserAgent || agents[len(agents)-1] != netutil.HonestUserAgent {
+		t.Errorf("User-Agents = %q, want the browser first and Atria last", agents)
+	}
+}

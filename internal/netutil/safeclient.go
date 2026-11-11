@@ -14,6 +14,17 @@ type contextKey string
 
 const AllowLocalKey contextKey = "allow_local_ssrf"
 
+// BrowserUserAgent is the default User-Agent of BrowserTransport.
+const BrowserUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+
+// HonestUserAgent identifies Atria as itself. Some sites (for example root.cz
+// since October 2026) close the connection when a client sends a Chrome
+// User-Agent but is not a browser; for them, a request with this value works.
+const HonestUserAgent = "Atria (+https://atria.profant.eu)"
+
+// ErrBlockedAddress is returned when a URL resolves to an internal address.
+var ErrBlockedAddress = errors.New("SSRF blocked: access to internal IP address is not allowed")
+
 // BrowserTransport mimic standard browser to bypass Cloudflare etc protection against bots
 type BrowserTransport struct {
 	Transport http.RoundTripper
@@ -24,7 +35,7 @@ func (t *BrowserTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 
 	ua := reqClone.Header.Get("User-Agent")
 	if ua == "" || strings.Contains(ua, "Go-http-client") || strings.Contains(ua, "Gofeed") {
-		reqClone.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36")
+		reqClone.Header.Set("User-Agent", BrowserUserAgent)
 	}
 
 	if reqClone.Header.Get("Accept") == "" {
@@ -124,7 +135,7 @@ func SafeHTTPClient() *http.Client {
 			if !allowLocal {
 				for _, ip := range ips {
 					if IsBlockedIP(ip.IP) {
-						return nil, errors.New("SSRF blocked: access to internal IP address is not allowed")
+						return nil, ErrBlockedAddress
 					}
 				}
 			}
