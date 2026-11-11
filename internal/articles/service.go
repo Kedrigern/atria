@@ -209,7 +209,16 @@ func fetchPage(ctx context.Context, urlStr string) (string, *url.URL, error) {
 		return "", nil, core.NewUserError("invalid URL: %v", err)
 	}
 
-	resp, err := netutil.SafeHTTPClient().Do(req)
+	client := netutil.SafeHTTPClient()
+	resp, err := client.Do(req)
+	if err != nil && ctx.Err() == nil && !errors.Is(err, netutil.ErrBlockedAddress) {
+		// The client poses as a browser, which bypasses some bot protection.
+		// Other sites close the connection for exactly that reason, so try
+		// once more as Atria itself.
+		honest := req.Clone(ctx)
+		honest.Header.Set("User-Agent", netutil.HonestUserAgent)
+		resp, err = client.Do(honest)
+	}
 	if err != nil {
 		return "", nil, core.NewUserError("failed to fetch URL: %v", err)
 	}
