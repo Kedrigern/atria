@@ -71,6 +71,33 @@ type UserPreferences struct {
 	CryptogramFontSize int                    `json:"cryptogram_font_size"` // Percentage scale of the cryptogram board, separate from FontSize.
 	DomainOverrides    map[string]DomainPrefs `json:"domain_overrides"`
 	DefaultDashboard   *uuid.UUID             `json:"default_dashboard_id,omitempty"`
+	HiddenSections     []string               `json:"hidden_sections,omitempty"` // Keys from Sections that the menu and the home page leave out.
+}
+
+// Section is a part of Atria that a user can leave out of the menu and the home page.
+// A hidden section still works by its address.
+type Section struct {
+	Key   string
+	Title string
+}
+
+// Sections lists the sections a user can hide, in menu order.
+var Sections = []Section{
+	{Key: "rss", Title: "RSS"},
+	{Key: "read", Title: "Read-it-later"},
+	{Key: "notes", Title: "Notes"},
+	{Key: "ebooks", Title: "E-books"},
+	{Key: "games", Title: "Games"},
+	{Key: "tables", Title: "Tables"},
+}
+
+// HiddenSectionSet returns the hidden sections as a set, for templates.
+func (p UserPreferences) HiddenSectionSet() map[string]bool {
+	set := make(map[string]bool, len(p.HiddenSections))
+	for _, key := range p.HiddenSections {
+		set[key] = true
+	}
+	return set
 }
 
 // DefaultPreferences returns the baseline user preferences.

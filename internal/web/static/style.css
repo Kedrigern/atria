@@ -1120,6 +1120,7 @@ form.htmx-request button[type="submit"] {
 .table-column-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; align-items: end; border: 1px solid var(--border); border-radius: 6px; padding: 10px; margin-bottom: 8px; }
 .table-column-row textarea { min-height: 2.4em; }
 .table-column-move { display: flex; gap: 8px; }
+.profile-sections .checkbox-label { display: inline-flex; margin-right: 1.25rem; }
 /* The first column cannot move up and the last cannot move down. */
 .table-column-row:first-child [data-table-move-column="up"],
 .table-column-row:last-child [data-table-move-column="down"] { visibility: hidden; }
