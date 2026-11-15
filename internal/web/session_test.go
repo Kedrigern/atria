@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	"atria/internal/core"
 	"atria/internal/notes"
@@ -130,6 +131,8 @@ func TestSessionLifecycle(t *testing.T) {
 		var lastLogin sql.NullTime
 		require.NoError(t, db.QueryRow(`SELECT last_login_at FROM users WHERE id = $1`, user.ID).Scan(&lastLogin))
 		assert.True(t, lastLogin.Valid)
+		// Times are stored in UTC, whatever the time zone of the database.
+		assert.WithinDuration(t, time.Now(), lastLogin.Time, time.Minute, "last login is the time of the login")
 	})
 
 	t.Run("deleting the user ends their sessions", func(t *testing.T) {

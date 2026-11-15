@@ -157,6 +157,12 @@ func (s *Server) AuthMiddleware() gin.HandlerFunc {
 				}
 				user.Role = newRole
 			}
+
+			// A session login records last_login_at itself; with the proxy,
+			// Atria never sees the login, so it records the request.
+			if err := users.TouchLastLogin(c.Request.Context(), s.db, user.ID, user.LastLoginAt); err != nil {
+				log.Printf("ERROR: failed to record last login of %s: %v", user.Email, err)
+			}
 		}
 
 		c.Set("currentUser", user)
