@@ -4,6 +4,7 @@ import (
 	"atria/internal/articles"
 	"atria/internal/core"
 	"atria/internal/games"
+	"atria/internal/manuscripts"
 	"atria/internal/notes"
 	"atria/internal/rss"
 	"atria/internal/search"
@@ -280,6 +281,15 @@ func (s *Server) SetupRouter() *gin.Engine {
 		ebooks.GET("/:id/download", s.handleEbookDownload)
 	}
 
+	// Manuscripts
+	manuscriptPages := auth.Group("/manuscripts")
+	{
+		manuscriptPages.GET("", s.handleManuscriptList)
+		manuscriptPages.GET("/:id", s.handleManuscriptDetail)
+		manuscriptPages.GET("/:id/edit", s.handleManuscriptEdit)
+		manuscriptPages.GET("/:id/download", s.handleManuscriptDownload)
+	}
+
 	// Tag details are content navigation, not settings.
 	auth.GET("/tags/:name", s.handleTagDetail)
 
@@ -361,6 +371,14 @@ func (s *Server) SetupRouter() *gin.Engine {
 			apiEbooks.POST("/:id/cover", s.handleEbookReplace("cover"))
 			apiEbooks.POST("/:id/file", s.handleEbookReplace("epub"))
 			apiEbooks.POST("/:id/delete", s.handleEbookDelete)
+		}
+
+		// API: Manuscripts
+		apiManuscripts := api.Group("/manuscripts")
+		{
+			apiManuscripts.POST("/import", s.handleManuscriptImport)
+			apiManuscripts.POST("/:id/update", s.handleManuscriptUpdate)
+			apiManuscripts.POST("/:id/delete", s.handleManuscriptDelete)
 		}
 
 		// API: Notes
@@ -653,10 +671,17 @@ func (s *Server) handleHome(c *gin.Context) {
 		notesList = notesList[:5]
 	}
 
+	manuscriptCount, err := manuscripts.Count(ctx, s.db, user.ID)
+	if err != nil {
+		s.respondError(c, http.StatusInternalServerError, "Failed to load manuscripts", err)
+		return
+	}
+
 	s.render(c, "home.html", gin.H{
-		"UnreadCount": unreadCount,
-		"InboxCount":  inboxCount,
-		"RecentNotes": notesList,
+		"UnreadCount":     unreadCount,
+		"InboxCount":      inboxCount,
+		"RecentNotes":     notesList,
+		"ManuscriptCount": manuscriptCount,
 	})
 }
 

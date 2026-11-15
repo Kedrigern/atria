@@ -340,3 +340,20 @@ func List(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]Summary, error)
 	}
 	return list, rows.Err()
 }
+
+// Count returns the number of the owner's manuscripts.
+func Count(ctx context.Context, db *sql.DB, ownerID uuid.UUID) (int, error) {
+	var n int
+	err := db.QueryRowContext(ctx, `
+		SELECT COUNT(*) FROM entities
+		WHERE owner_id = $1 AND type = $2 AND deleted_at IS NULL`, ownerID, core.TypeManuscript).Scan(&n)
+	if err != nil {
+		return 0, fmt.Errorf("count manuscripts: %w", err)
+	}
+	return n, nil
+}
+
+// StandardPages is the length in standard pages of 1 800 characters.
+func (s Summary) StandardPages() float64 {
+	return float64(s.Characters) / 1800
+}

@@ -87,6 +87,7 @@ var Sections = []Section{
 	{Key: "rss", Title: "RSS"},
 	{Key: "read", Title: "Read-it-later"},
 	{Key: "notes", Title: "Notes"},
+	{Key: "manuscripts", Title: "Manuscripts"},
 	{Key: "ebooks", Title: "E-books"},
 	{Key: "games", Title: "Games"},
 	{Key: "tables", Title: "Tables"},

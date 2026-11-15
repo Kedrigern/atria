@@ -1,0 +1,53 @@
+{{define "content"}}
+<div class="centered-view wide" style="--content-scale: {{.ContentFontScale}}" data-mobile-title="ATRIA: Manuscript">
+    {{template "flash_message" .}}
+
+    <div class="article-layout">
+        <div>
+            <header class="page-header">
+                <div>
+                    <h1 class="page-title">{{.Manuscript.Title}}</h1>
+                    <p class="page-subtitle">{{if .Manuscript.Author}}{{.Manuscript.Author}}{{else}}Unknown author{{end}}{{if .Manuscript.Language}} · {{.Manuscript.Language}}{{end}} · <span class="icon-sm icon-folder" aria-hidden="true"></span> {{.Manuscript.Path}}</p>
+                </div>
+                <div class="page-actions">
+                    <a href="/manuscripts" hx-get="/manuscripts" hx-target="#main-content" hx-push-url="true" class="button-link outline btn-sm">
+                        <span class="icon-sm icon-chevron-left" aria-hidden="true"></span> Manuscripts
+                    </a>
+                    <a href="/manuscripts/{{.ID}}/edit" class="button-link outline btn-sm">Edit</a>
+                    <form method="post" action="/api/manuscripts/{{.ID}}/delete" class="inline-action-form" data-confirm="Move this manuscript to the trash?">
+                        <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
+                        <button type="submit" class="outline btn-sm btn-danger" title="Move to trash" aria-label="Move to trash"><span class="icon-sm icon-trash" aria-hidden="true"></span></button>
+                    </form>
+                    <a href="/manuscripts/{{.ID}}/download" class="button-link btn-primary btn-sm"><span class="icon-sm icon-download" aria-hidden="true"></span> Markdown</a>
+                </div>
+            </header>
+
+            {{if .Manuscript.Description}}<p>{{.Manuscript.Description}}</p>{{end}}
+
+            {{with .Check}}
+            <p class="reading-meta">{{.Chapters}} chapters · {{.Footnotes}} footnotes · {{printf "%.1f" .StandardPages}} standard pages · <span title="Pages of the printed original, from the page markers">{{if .OriginalPages}}{{.OriginalPages}} original pages{{else}}no page markers{{end}}</span></p>
+            {{if .Warnings}}
+            <details class="book-check">
+                <summary>Markdown check: {{len .Warnings}} warnings</summary>
+                <ul>
+                    {{range .Warnings}}
+                    <li>Line {{.Line}}: {{.Message}} <code>{{.Quote}}</code></li>
+                    {{end}}
+                </ul>
+            </details>
+            {{else}}
+            <p class="form-help">Markdown check: no warnings.</p>
+            {{end}}
+            {{end}}
+
+            <div class="reading-body" data-render-math>{{.Content}}</div>
+        </div>
+
+        <aside class="article-sidebar">
+            <div id="toc-sidebar-target" class="mb-3"></div>
+            {{template "tags_section" .}}
+            {{template "links_section" .}}
+        </aside>
+    </div>
+</div>
+{{end}}

@@ -1,0 +1,47 @@
+{{define "content"}}
+<div class="centered-view" data-mobile-title="ATRIA: Manuscripts">
+    {{template "flash_message" .}}
+
+    <header class="page-header">
+        <h1 class="page-title">Manuscripts</h1>
+    </header>
+
+    <form method="post" action="/api/manuscripts/import" enctype="multipart/form-data" class="manuscript-upload">
+        <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
+        <div class="form-group">
+            <label for="manuscript-file">Markdown file</label>
+            <input id="manuscript-file" type="file" name="file" accept=".md,.markdown,text/markdown,text/plain" class="form-control" required />
+            <p class="form-help">One book per file. Atria keeps the file as it is and checks its headings, footnotes and page markers. The title, author and language come from the front matter of the file, if it has them.</p>
+        </div>
+        <div class="form-group">
+            <label for="manuscript-path">Folder</label>
+            <input id="manuscript-path" type="text" name="path" value="/" class="form-control" />
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn-primary">Upload</button>
+        </div>
+    </form>
+
+    {{if .Manuscripts}}
+    <div class="table-scroll">
+        <table class="data-list">
+            <thead>
+                <tr><th>Title</th><th>Author</th><th class="col-optional">Folder</th><th>Standard pages</th></tr>
+            </thead>
+            <tbody>
+                {{range .Manuscripts}}
+                <tr>
+                    <td><a href="/manuscripts/{{.ID}}" hx-get="/manuscripts/{{.ID}}" hx-target="#main-content" hx-push-url="true">{{.Title}}</a></td>
+                    <td>{{.Author}}</td>
+                    <td class="col-optional">{{.Path}}</td>
+                    <td>{{printf "%.1f" .StandardPages}}</td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+    {{else}}
+    <p class="page-empty-hint">You have no manuscripts yet. Upload a Markdown file of a book.</p>
+    {{end}}
+</div>
+{{end}}

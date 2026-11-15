@@ -92,6 +92,32 @@ fmt.Println("hello")
 ```
 """
 
+MANUSCRIPT = """---
+title: "Paměti mlynáře"
+author: "Jan Novák"
+lang: "cs"
+---
+
+# Paměti mlynáře
+
+<!-- page 1 -->
+
+## Kapitola první
+
+Mlýn stál u řeky a mlynář v něm mlel obilí[^1] pro celou ves.
+
+<!-- page 2 -->
+
+Druhého dne přijel kupec z Plzně a přivezl novou mlýnskou ků-
+ru, kterou mlynář toužebně čekal.
+
+<!-- page 4 -->
+
+Večer se ve mlýně sešli sousedé.
+
+[^1]: Žito a pšenice.
+"""
+
 TABLE = "Kniha;Autor;Strany;Přečteno\nDune;Frank Herbert;612;ano\nSaturnin;Zdeněk Jirotka;240;ne\nMalý princ;Antoine de Saint-Exupéry;96;ano\n"
 
 
@@ -197,6 +223,8 @@ def seed(binary, env, work):
         run(binary, env, "table", "import", str(work / "books.csv"), "--title", "Knihovna")
         run(binary, env, "ebook", "create", "Reading plan 2026", "How to read more deeply", "--title", "Weekend reading")
         run(binary, env, "games", "import", str(work / "campaign.json"))
+        (work / "mlynar.md").write_text(MANUSCRIPT)
+        run(binary, env, "manuscript", "import", "--path", "/books", str(work / "mlynar.md"))
     finally:
         server.shutdown()
 
@@ -216,6 +244,7 @@ def pages(base):
         "ebook": first_link(base, "/ebooks", "/ebooks"),
         "table": first_link(base, "/tables", "/tables"),
         "campaign": first_link(base, "/games", "/games/campaigns"),
+        "manuscript": first_link(base, "/manuscripts", "/manuscripts"),
     }
     result = [
         ("01-home", "/"), ("02-notes", "/notes"), ("03-note", found["note"]),
@@ -226,6 +255,7 @@ def pages(base):
         ("14-search", "/search?q=reading"), ("15-settings", "/settings/rss"),
         ("16-storage", "/settings/storage"), ("17-profile", "/profile"), ("18-login", "/login"),
         ("19-campaign", found["campaign"]), ("20-games-single", "/games?tab=single"), ("21-book", "/games/books/sample-stories"),
+        ("22-manuscripts", "/manuscripts"), ("23-manuscript", found["manuscript"]),
     ]
     return [(name, path) for name, path in result if path]
 

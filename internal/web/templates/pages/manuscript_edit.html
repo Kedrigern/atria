@@ -1,0 +1,43 @@
+{{define "content"}}
+<div class="centered-view" data-mobile-title="ATRIA: Manuscript">
+    <header class="page-header">
+        <h1 class="page-title">Edit manuscript</h1>
+    </header>
+
+    {{template "flash_message" .}}
+
+    <form method="post" action="/api/manuscripts/{{.Manuscript.ID}}/update" enctype="multipart/form-data">
+        <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
+        <div class="form-group">
+            <label for="manuscript-edit-title">Title</label>
+            <input id="manuscript-edit-title" name="title" value="{{.Manuscript.Title}}" class="form-control" required />
+        </div>
+        <div class="form-group">
+            <label for="manuscript-edit-author">Author</label>
+            <input id="manuscript-edit-author" name="author" value="{{.Manuscript.Author}}" class="form-control" />
+        </div>
+        <div class="form-group">
+            <label for="manuscript-edit-language">Language</label>
+            <input id="manuscript-edit-language" name="language" value="{{.Manuscript.Language}}" class="form-control" />
+            <p class="form-help">A language code, for example cs or en.</p>
+        </div>
+        <div class="form-group">
+            <label for="manuscript-edit-description">Description</label>
+            <textarea id="manuscript-edit-description" name="description" class="form-control" rows="3">{{.Manuscript.Description}}</textarea>
+        </div>
+        <div class="form-group">
+            <label for="manuscript-edit-path">Folder</label>
+            <input id="manuscript-edit-path" type="text" name="path" value="{{.Manuscript.Path}}" class="form-control" />
+        </div>
+        <div class="form-group">
+            <label for="manuscript-edit-file">New Markdown file</label>
+            <input id="manuscript-edit-file" type="file" name="file" accept=".md,.markdown,text/markdown,text/plain" class="form-control" />
+            <p class="form-help">Optional. The new file replaces the text of the book. The tags and links stay.</p>
+        </div>
+        <div class="form-actions">
+            <a href="/manuscripts/{{.Manuscript.ID}}" class="button-link outline">Cancel</a>
+            <button type="submit" class="btn-primary">Save</button>
+        </div>
+    </form>
+</div>
+{{end}}
