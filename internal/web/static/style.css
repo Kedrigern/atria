@@ -1173,6 +1173,14 @@ form.htmx-request button[type="submit"] {
     font-size: var(--text-sm);
     color: var(--text-muted);
 }
+/* Downloads and publishing on the manuscript page. */
+.manuscript-export {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: center;
+    margin-bottom: var(--space-3);
+}
 .page-actions {
     display: flex;
     flex-wrap: wrap;

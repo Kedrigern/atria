@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"slices"
 
 	"github.com/spf13/cobra"
 
@@ -15,6 +16,8 @@ import (
 var (
 	manuscriptPath    string
 	manuscriptReplace bool
+	manuscriptFormat  string
+	manuscriptOut     string
 )
 
 var manuscriptCmd = &cobra.Command{
@@ -117,10 +120,81 @@ var manuscriptRmCmd = &cobra.Command{
 	},
 }
 
+var manuscriptExportCmd = &cobra.Command{
+	Use:   "export <uuid|short-uuid|\"Title\"> [--format=epub|docx|pdf|md] [--out=FILE]",
+	Short: "Writes a manuscript as EPUB, DOCX, PDF or Markdown",
+	Long: `Writes a manuscript to a file. EPUB has the page numbers of the original
+as a page list for e-book readers. DOCX and PDF need pandoc (PDF also typst)
+and show the page numbers of the original in brackets, for example [15].
+The default file name is the slug of the title with the format extension.`,
+	Args: cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		entity, err := resolveEntity(app.Ctx, app.DB, app.Owner.ID, core.TypeManuscript, args[0], false)
+		if err != nil {
+			return err
+		}
+		m, err := manuscripts.Get(app.Ctx, app.DB, app.Owner.ID, entity.ID)
+		if err != nil {
+			return err
+		}
+		out := manuscriptOut
+		if out == "" {
+			out = m.Slug + "." + manuscriptFormat
+		}
+		switch manuscriptFormat {
+		case "md":
+			err = os.WriteFile(out, []byte(m.Markdown), 0o644)
+		case "epub":
+			var pages int
+			pages, err = manuscripts.WriteEPUB(m, out)
+			if err == nil {
+				fmt.Fprintf(cmd.OutOrStdout(), "%d pages of the original in the page list\n", pages)
+			}
+		case manuscripts.FormatDOCX, manuscripts.FormatPDF:
+			if !slices.Contains(manuscripts.Formats(), manuscriptFormat) {
+				return fmt.Errorf("%s needs pandoc on this computer, and PDF also typst", manuscriptFormat)
+			}
+			err = manuscripts.Convert(app.Ctx, m, manuscriptFormat, out)
+		default:
+			return fmt.Errorf("unknown format %q (use epub, docx, pdf or md)", manuscriptFormat)
+		}
+		if err != nil {
+			return err
+		}
+		fmt.Fprintf(cmd.OutOrStdout(), "Wrote %s\n", out)
+		return nil
+	},
+}
+
+var manuscriptPublishCmd = &cobra.Command{
+	Use:   "publish <uuid|short-uuid|\"Title\">",
+	Short: "Makes an e-book from a manuscript",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		entity, err := resolveEntity(app.Ctx, app.DB, app.Owner.ID, core.TypeManuscript, args[0], false)
+		if err != nil {
+			return err
+		}
+		m, err := manuscripts.Get(app.Ctx, app.DB, app.Owner.ID, entity.ID)
+		if err != nil {
+			return err
+		}
+		book, err := manuscripts.Publish(app.Ctx, app.DB, app.Owner.ID, m)
+		if err != nil {
+			return err
+		}
+		fmt.Fprintf(cmd.OutOrStdout(), "✅ E-book %s  %s\n", ShortID(book.ID), book.Title)
+		return nil
+	},
+}
+
 func init() {
 	manuscriptImportCmd.Flags().StringVarP(&manuscriptPath, "path", "p", "/", "folder of the manuscripts, for example /books")
 	manuscriptImportCmd.Flags().BoolVar(&manuscriptReplace, "replace", false, "replace a manuscript with the same title in the folder")
 	manuscriptListCmd.Flags().StringVarP(&listFormat, "format", "f", "table", "output format: table, csv or json")
-	manuscriptCmd.AddCommand(manuscriptImportCmd, manuscriptListCmd, manuscriptShowCmd, manuscriptRmCmd, newRenameCmd(core.TypeManuscript))
+	manuscriptExportCmd.Flags().StringVarP(&manuscriptFormat, "format", "f", "epub", "epub, docx, pdf or md")
+	manuscriptExportCmd.Flags().StringVarP(&manuscriptOut, "out", "o", "", "output file (default: <slug>.<format>)")
+	manuscriptCmd.AddCommand(manuscriptImportCmd, manuscriptListCmd, manuscriptShowCmd, manuscriptRmCmd, newRenameCmd(core.TypeManuscript),
+		manuscriptExportCmd, manuscriptPublishCmd)
 	rootCmd.AddCommand(manuscriptCmd)
 }

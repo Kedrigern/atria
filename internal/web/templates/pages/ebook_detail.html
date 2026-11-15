@@ -32,7 +32,7 @@
     <ol class="meta-list">
         {{range .Ebook.Sources}}
         <li class="meta-list-item">
-            {{if eq .Type "note"}}<a href="/notes/{{.ID}}">{{.Title}}</a>{{else}}<a href="/read/{{.ID}}">{{.Title}}</a>{{end}}
+            {{if eq .Type "note"}}<a href="/notes/{{.ID}}">{{.Title}}</a>{{else if eq .Type "manuscript"}}<a href="/manuscripts/{{.ID}}">{{.Title}}</a>{{else}}<a href="/read/{{.ID}}">{{.Title}}</a>{{end}}
             <span class="badge">{{.Type}}</span>
         </li>
         {{else}}

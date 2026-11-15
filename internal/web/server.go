@@ -288,6 +288,7 @@ func (s *Server) SetupRouter() *gin.Engine {
 		manuscriptPages.GET("/:id", s.handleManuscriptDetail)
 		manuscriptPages.GET("/:id/edit", s.handleManuscriptEdit)
 		manuscriptPages.GET("/:id/download", s.handleManuscriptDownload)
+		manuscriptPages.GET("/:id/export/:format", s.handleManuscriptExport)
 	}
 
 	// Tag details are content navigation, not settings.
@@ -379,6 +380,7 @@ func (s *Server) SetupRouter() *gin.Engine {
 			apiManuscripts.POST("/import", s.handleManuscriptImport)
 			apiManuscripts.POST("/:id/update", s.handleManuscriptUpdate)
 			apiManuscripts.POST("/:id/delete", s.handleManuscriptDelete)
+			apiManuscripts.POST("/:id/publish", s.handleManuscriptPublish)
 		}
 
 		// API: Notes

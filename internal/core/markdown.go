@@ -9,6 +9,8 @@ import (
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/parser"
+	"github.com/yuin/goldmark/renderer"
+	"github.com/yuin/goldmark/renderer/html"
 	"github.com/yuin/goldmark/text"
 	"github.com/yuin/goldmark/util"
 )
@@ -50,7 +52,18 @@ func (s *headingShifter) Transform(node *ast.Document, reader text.Reader, pc pa
 
 // RenderMarkdown parses raw Markdown, renders HTML with shifted headings, and returns front-matter metadata.
 func RenderMarkdown(source []byte) (string, map[string]interface{}, error) {
+	return renderMarkdown(source)
+}
+
+// RenderMarkdownXHTML is RenderMarkdown with XHTML output (<br />, <hr />),
+// for EPUB files.
+func RenderMarkdownXHTML(source []byte) (string, map[string]interface{}, error) {
+	return renderMarkdown(source, html.WithXHTML())
+}
+
+func renderMarkdown(source []byte, rendererOptions ...renderer.Option) (string, map[string]interface{}, error) {
 	md := goldmark.New(
+		goldmark.WithRendererOptions(rendererOptions...),
 		goldmark.WithExtensions(
 			extension.GFM,      // Tables, task lists, etc.
 			extension.Footnote, // [^1] references and definitions, common in books.
