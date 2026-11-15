@@ -40,10 +40,28 @@ func CreateSession(ctx context.Context, db *sql.DB, userID uuid.UUID, ttl time.D
 	}
 
 	// Best effort housekeeping; a failure here must not block the login.
-	_, _ = db.ExecContext(ctx, `UPDATE users SET last_login_at = NOW() WHERE id = $1`, userID)
+	_, _ = db.ExecContext(ctx, `UPDATE users SET last_login_at = NOW() AT TIME ZONE 'UTC' WHERE id = $1`, userID)
 	_, _ = db.ExecContext(ctx, `DELETE FROM sessions WHERE expires_at < NOW()`)
 
 	return token, nil
+}
+
+// LastLoginInterval is how often a request through the login proxy updates
+// last_login_at. The proxy has no login event, so the time is when the user
+// was last seen, to this precision.
+const LastLoginInterval = time.Hour
+
+// TouchLastLogin records a request of a user who signed in at the login
+// proxy. lastLogin is the stored value; nothing is written when it is newer
+// than LastLoginInterval.
+func TouchLastLogin(ctx context.Context, db *sql.DB, userID uuid.UUID, lastLogin *time.Time) error {
+	if lastLogin != nil && time.Since(*lastLogin) < LastLoginInterval {
+		return nil
+	}
+	if _, err := db.ExecContext(ctx, `UPDATE users SET last_login_at = NOW() AT TIME ZONE 'UTC' WHERE id = $1`, userID); err != nil {
+		return fmt.Errorf("update last login: %w", err)
+	}
+	return nil
 }
 
 // SessionUserID returns the user of an active session.

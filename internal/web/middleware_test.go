@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"atria/internal/core"
 	"atria/internal/testutil"
@@ -95,6 +96,12 @@ func TestAuthMiddleware(t *testing.T) {
 
 		resp := decodeAuthResponse(t, w)
 		assert.Equal(t, testUser.Email, resp.Email)
+
+		// The proxy has no login event in Atria; the request is the login.
+		user, err := core.FindUser(t.Context(), db, testUser.Email)
+		require.NoError(t, err)
+		require.NotNil(t, user.LastLoginAt, "a user who signed in at the proxy has a last login")
+		assert.WithinDuration(t, time.Now(), *user.LastLoginAt, time.Minute, "last login is the time of the request")
 	})
 
 	t.Run("Production: Missing header blocks access (ignores ATRIA_USER)", func(t *testing.T) {
