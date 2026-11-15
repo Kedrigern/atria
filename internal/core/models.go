@@ -34,6 +34,7 @@ const (
 	TypeSpreadsheet EntityType = "spreadsheet"
 	TypeFolder      EntityType = "folder"
 	TypeEbook       EntityType = "ebook"
+	TypeManuscript  EntityType = "manuscript"
 )
 
 type AuthSource string

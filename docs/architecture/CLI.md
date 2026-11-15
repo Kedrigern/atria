@@ -78,6 +78,18 @@ Used to manage instance accounts and access. No user context required.
 * `atria check <file.md> [<file.md> ...]`
   Checks Markdown files of converted books without a database or a user. It reports headings that skip a level, footnotes without a definition, gaps in the page markers and words broken across lines. A page marker starts its page of the original: `<!-- 15 -->` or `<!-- page 41 (pdf 38) -->`. The marker `<!-- page ? (pdf 12) -->` is a page with an unknown number. It prints the chapters, footnotes, standard pages and original pages, then each warning with its line. YAML front matter is skipped. Warnings do not change the exit status. See `docs/architecture/manuscripts.md` §3 and §3a.
 
+### Manuscripts (`manuscript`)
+Books stored as Markdown files, one file per book. See `docs/architecture/manuscripts.md`.
+
+* `atria manuscript import <file.md> [<file.md> ...] [--path=/books] [--replace]`
+  Imports the files into the folder and prints the check of each file, as `atria check` does. Atria keeps each file exactly as it is. The title comes from the front matter, then from the first `#` heading, then from the file name. The author and the language come from the front matter (`author`, `lang`). If a manuscript with the same title is in the folder, the file is not imported. With `--replace`, the file replaces the content of that manuscript, and its ID, tags and links stay. A file that fails does not stop the other files.
+* `atria manuscript list [--format=table|csv|json]`
+  Lists the manuscripts with their folder, author, language and standard pages.
+* `atria manuscript show <uuid|short-uuid|"Title">`
+  Prints the Markdown file of a manuscript.
+* `atria manuscript rename <uuid|short-uuid|"Title"> <new title>` and `atria manuscript rm <uuid|short-uuid|"Title">`
+  Renames a manuscript or moves it to the trash.
+
 ### Spreadsheets (`table` or alias `tab`)
 * `atria table list`
   Lists all saved tabular data embedded in the knowledge base.

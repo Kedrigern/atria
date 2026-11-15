@@ -20,6 +20,7 @@ func runCLI(t *testing.T, args ...string) (string, error) {
 	listFormat, usageUser, userRmForce, pruneDays, pruneDryRun = "table", "", false, 0, false
 	showLong, searchIn, searchAll = false, "", false
 	noteEditFile, noteEditTitle, noteEditPath = "", "", ""
+	manuscriptPath, manuscriptReplace = "/", false
 	for _, name := range []string{"title", "path", "file"} {
 		noteEditCmd.Flags().Lookup(name).Changed = false
 	}
