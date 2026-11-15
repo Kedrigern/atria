@@ -10,7 +10,18 @@
             <p class="reading-meta">
                 <span class="icon-sm icon-folder" aria-hidden="true"></span>
                 {{.Note.Path}}
+                {{with .BookCheck}} · <span title="Pages of the printed original, from the page markers">{{.OriginalPages}} original pages</span>{{end}}
             </p>
+            {{with .BookCheck}}{{if .Warnings}}
+            <details class="book-check">
+                <summary>Markdown check: {{len .Warnings}} warnings</summary>
+                <ul>
+                    {{range .Warnings}}
+                    <li>Line {{.Line}}: {{.Message}} <code>{{.Quote}}</code></li>
+                    {{end}}
+                </ul>
+            </details>
+            {{end}}{{end}}
 
             <div id="note-view" class="reading-body" data-render-math>{{.Content}}</div>
 

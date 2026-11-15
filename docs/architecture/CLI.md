@@ -74,6 +74,10 @@ Used to manage instance accounts and access. No user context required.
   - If the target is a single note, it deletes it.
   - If the target is a folder, the command will fail safely UNLESS the `--recursive` (or `-r`) flag is provided. This prevents accidental mass deletion.
 
+### Markdown check (`check`)
+* `atria check <file.md> [<file.md> ...]`
+  Checks Markdown files of converted books without a database or a user: headings that skip a level, footnotes without a definition, gaps in the page markers of the original (`<!-- 15 -->`) and words broken across lines. It prints the chapters, footnotes, standard pages and original pages, then each warning with its line. Warnings do not change the exit status. See `docs/architecture/manuscripts.md` §3 and §3a.
+
 ### Spreadsheets (`table` or alias `tab`)
 * `atria table list`
   Lists all saved tabular data embedded in the knowledge base.
