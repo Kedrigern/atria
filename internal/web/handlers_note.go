@@ -5,6 +5,7 @@ import (
 	"atria/internal/core"
 	"atria/internal/export"
 	"atria/internal/links"
+	"atria/internal/mdcheck"
 	"atria/internal/notes"
 	"fmt"
 	"html/template"
@@ -99,9 +100,17 @@ func (s *Server) handleNoteDetail(c *gin.Context) {
 	atts, _ := attachments.GetEntityAttachments(c.Request.Context(), s.db, user.ID, id)
 	outgoingLinks, incomingLinks, _ := links.GetEntityLinks(c.Request.Context(), s.db, user.ID, id)
 
+	// Only a note with page markers of a printed original gets the book check;
+	// for ordinary notes most warnings (no # heading, ...) would be noise.
+	var bookCheck *mdcheck.Report
+	if report := mdcheck.Check([]byte(note.MarkdownContent)); report.OriginalPages > 0 {
+		bookCheck = &report
+	}
+
 	s.render(c, "note_detail.html", gin.H{
 		"Note":          note,
 		"ID":            note.ID.String(),
+		"BookCheck":     bookCheck,
 		"Content":       template.HTML(htmlStr),
 		"Tags":          tags,
 		"Attachments":   atts,
