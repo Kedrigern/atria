@@ -46,6 +46,14 @@
                     </label>
                     <label>Decimals <input type="number" name="decimals" min="0" max="10" /></label>
                     <label>Options <small class="text-muted">(for select, one per line)</small><textarea name="options" rows="2"></textarea></label>
+                    <div class="table-column-move">
+                        <button type="button" class="outline btn-sm" data-table-move-column="up" title="Move up" aria-label="Move the column up">
+                            <span class="icon-sm icon-chevron-up" aria-hidden="true"></span>
+                        </button>
+                        <button type="button" class="outline btn-sm" data-table-move-column="down" title="Move down" aria-label="Move the column down">
+                            <span class="icon-sm icon-chevron-down" aria-hidden="true"></span>
+                        </button>
+                    </div>
                     <button type="button" class="outline btn-sm btn-danger" data-table-remove-column>Remove column</button>
                 </fieldset>
             </template>
@@ -62,5 +70,5 @@
     </dialog>
 </div>
 <script src="/static/tabulator.min.js"></script>
-<script src="/static/tables.js?v=4"></script>
+<script src="/static/tables.js?v=5"></script>
 {{end}}

@@ -118,6 +118,24 @@ func TestTablesWeb(t *testing.T) {
 		assert.Contains(t, w.Body.String(), "Mléko,31.50")
 	})
 
+	t.Run("reordered columns keep their values", func(t *testing.T) {
+		// The Columns dialog sends the columns in the order the user arranged.
+		var current struct {
+			Table tables.Table `json:"table"`
+		}
+		require.NoError(t, json.Unmarshal(jsonRequest(r, user, http.MethodGet, api, nil).Body.Bytes(), &current))
+		reversed := []tables.Column{}
+		for i := len(current.Table.Columns) - 1; i >= 0; i-- {
+			reversed = append(reversed, current.Table.Columns[i])
+		}
+		w := jsonRequest(r, user, http.MethodPut, api+"/columns", map[string]any{"schema_version": current.Table.SchemaVersion, "columns": reversed})
+		require.Equal(t, http.StatusOK, w.Code, w.Body.String())
+
+		export := getWithCookie(r, "/tables/"+tableID+"/export.csv", nil).Body.String()
+		assert.True(t, strings.HasPrefix(export, "qty,Cena,Položka\n"), "the export follows the new column order: %q", export)
+		assert.Contains(t, export, "\n,31.50,Mléko\n", "each value stays in its own column after the move")
+	})
+
 	t.Run("other user cannot read or write", func(t *testing.T) {
 		other, err := users.CreateUser(ctx, db, "intruder@atria.local", "Intruder", "pass", core.RoleUser)
 		require.NoError(t, err)
