@@ -339,6 +339,7 @@ func (s *Server) SetupRouter() *gin.Engine {
 			apiTables.POST("/import", s.handleTableImport)
 			apiTables.GET("/:id", s.handleTableData)
 			apiTables.POST("/:id/delete", s.handleTableDelete)
+			apiTables.POST("/:id/move", s.handleTableMove)
 			apiTables.POST("/:id/rows", s.handleTableRowCreate)
 			apiTables.PATCH("/:id/rows/:row", s.handleTableRowUpdate)
 			apiTables.DELETE("/:id/rows/:row", s.handleTableRowDelete)

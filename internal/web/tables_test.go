@@ -7,10 +7,12 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
 	"atria/internal/core"
+	"atria/internal/notes"
 	"atria/internal/tables"
 	"atria/internal/testutil"
 	"atria/internal/users"
@@ -30,6 +32,56 @@ func jsonRequest(r http.Handler, user *core.User, method, path string, body any)
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 	return w
+}
+
+// A table can be created in a folder, moved to another one and back to the top
+// level. Tables share folders with notes, so no folder is created twice.
+func TestTableFolders(t *testing.T) {
+	db, user := testutil.SetupTestDB(t)
+	ctx := context.Background()
+	r := newTestRouter(t, NewServer(db))
+	asUser(t, user)
+
+	_, err := notes.CreateNote(ctx, db, user.ID, "Rozpočet", "/Finance", "Plán výdajů.")
+	require.NoError(t, err)
+
+	w := postForm(r, "/api/tables/create", user, url.Values{"title": {"Výdaje 2026"}, "path": {"/Finance/2026"}})
+	require.Equal(t, http.StatusSeeOther, w.Code, w.Body.String())
+	tableID := strings.TrimPrefix(w.Header().Get("Location"), "/tables/")
+
+	path := func() string {
+		var data struct {
+			Table tables.Table `json:"table"`
+		}
+		require.NoError(t, json.Unmarshal(jsonRequest(r, user, http.MethodGet, "/api/tables/"+tableID, nil).Body.Bytes(), &data))
+		return data.Table.Path
+	}
+	assert.Equal(t, "/finance/2026", path(), "the new table is in the folder from the form")
+	var financeFolders int
+	require.NoError(t, db.QueryRow(`SELECT COUNT(*) FROM entities WHERE owner_id = $1 AND type = 'folder' AND title = 'Finance' AND deleted_at IS NULL`, user.ID).Scan(&financeFolders))
+	assert.Equal(t, 1, financeFolders, "the table uses the folder of the note, not a second one")
+
+	list := mainContent(getWithCookie(r, "/tables", nil).Body.String())
+	folder := strings.Index(list, "2026\n        </summary>")
+	link := strings.Index(list, `href="/tables/`+tableID+`"`)
+	assert.True(t, folder >= 0 && link > folder, "the list shows the table inside its folder:\n%s", list)
+	assert.Contains(t, mainContent(getWithCookie(r, "/tables/"+tableID, nil).Body.String()), "Folder <code>/finance/2026</code>")
+
+	move := func(to string) {
+		req := httptest.NewRequest(http.MethodPost, "/api/tables/"+tableID+"/move",
+			strings.NewReader(url.Values{"_csrf": {csrfTokenFor(user.Email)}}.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		req.Header.Set("HX-Request", "true")
+		req.Header.Set("HX-Prompt", url.QueryEscape(to))
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+		require.Equal(t, http.StatusOK, w.Code, w.Body.String())
+	}
+	move("Archiv/Účty")
+	assert.Equal(t, "/archiv/účty", path(), "the move prompt accepts a path without the leading slash and with diacritics")
+	move("/")
+	assert.Equal(t, "/", path(), "/ moves the table out of any folder")
+	assert.NotContains(t, mainContent(getWithCookie(r, "/tables", nil).Body.String()), "<summary", "a top-level table needs no folder in the list")
 }
 
 func TestTablesWeb(t *testing.T) {

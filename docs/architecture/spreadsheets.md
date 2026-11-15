@@ -293,6 +293,8 @@ Limits are constants in one place and reported as user errors when hit.
 
 * **Entities:** tables and views are entities → title, tags, links,
   attachments, visibility, trash, `short_id` and title lookup work unchanged.
+* **Folders:** a table can be in a folder (`parent_id`), like a note. Notes and
+  tables share folders. The table list groups tables by folder.
 * **Search:** a trigger builds `spreadsheet_rows.search_vector` from the text,
   select and url values; search returns the *table* (with the matching row as
   the snippet), filtered like notes (owner, visibility, not deleted).
@@ -312,7 +314,8 @@ Limits are constants in one place and reported as user errors when hit.
 | POST | `/api/tables/:id/rows` | insert row(s) after a given position |
 | PATCH | `/api/tables/:id/rows/:row` | update cells `{version, values: {col: v}}` → 409 on conflict |
 | DELETE | `/api/tables/:id/rows/:row` | delete row |
-| PUT | `/api/tables/:id/columns` | replace column definitions `{schema_version, columns}` |
+| PUT | `/api/tables/:id/columns` | replace column definitions `{schema_version, columns}`, in the column order |
+| POST | `/api/tables/:id/move` | move the table to the folder in the `HX-Prompt` header (`/` = no folder) |
 | POST | `/api/tables/import` | CSV/Parquet upload → new table |
 | GET | `/tables/:id/export.(csv\|parquet)` | download |
 | GET/POST | `/views/:id`, `/api/views/:id/run` | view page / run (JSON) |

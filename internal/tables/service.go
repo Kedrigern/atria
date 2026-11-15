@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"atria/internal/core"
@@ -90,7 +91,8 @@ func createTx(ctx context.Context, tx *sql.Tx, ownerID uuid.UUID, title, sqlName
 }
 
 const tableSelect = `
-	SELECT e.id, e.short_id, e.owner_id, e.visibility, e.title, e.slug, e.created_at, e.updated_at,
+	SELECT e.id, e.short_id, e.owner_id, e.parent_id, COALESCE(entity_path(e.parent_id), '/'),
+	       e.visibility, e.title, e.slug, e.created_at, e.updated_at,
 	       s.sql_name, s.columns, s.schema_version,
 	       (SELECT COUNT(*) FROM spreadsheet_rows r WHERE r.spreadsheet_id = s.id)
 	FROM spreadsheets s JOIN entities e ON e.id = s.id`
@@ -98,7 +100,7 @@ const tableSelect = `
 func scanTable(scan func(...any) error) (*Table, error) {
 	var t Table
 	var cols []byte
-	if err := scan(&t.ID, &t.ShortID, &t.OwnerID, &t.Visibility, &t.Title, &t.Slug, &t.CreatedAt, &t.UpdatedAt,
+	if err := scan(&t.ID, &t.ShortID, &t.OwnerID, &t.ParentID, &t.Path, &t.Visibility, &t.Title, &t.Slug, &t.CreatedAt, &t.UpdatedAt,
 		&t.SQLName, &cols, &t.SchemaVersion, &t.RowCount); err != nil {
 		return nil, err
 	}
@@ -136,6 +138,38 @@ func List(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]Table, error) {
 		list = append(list, *t)
 	}
 	return list, rows.Err()
+}
+
+// MoveToFolder puts the table into the folder at path, for example "/finance/2026",
+// and creates missing folders. An empty path or "/" moves the table out of any folder.
+// Tables share folders with notes.
+func MoveToFolder(ctx context.Context, db *sql.DB, ownerID, tableID uuid.UUID, path string) error {
+	var parts []string
+	for _, part := range strings.Split(path, "/") {
+		if part = strings.TrimSpace(part); part != "" {
+			parts = append(parts, part)
+		}
+	}
+	path = "/" + strings.Join(parts, "/")
+
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	if _, err := lockTable(ctx, tx, ownerID, tableID); err != nil {
+		return err
+	}
+	parentID, err := core.EnsurePath(ctx, tx, ownerID, path)
+	if err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, `UPDATE entities SET parent_id = $1, path = $2, updated_at = NOW() WHERE id = $3`,
+		parentID, path, tableID); err != nil {
+		return fmt.Errorf("move table: %w", err)
+	}
+	return tx.Commit()
 }
 
 // Rows returns a page of rows in their manual order. limit <= 0 means all.
