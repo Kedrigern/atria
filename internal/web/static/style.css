@@ -397,6 +397,10 @@ a.button-link.btn-primary:hover,
     -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='18 15 12 9 6 15'/%3E%3C/svg%3E");
     mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='18 15 12 9 6 15'/%3E%3C/svg%3E");
 }
+.icon-chevron-down {
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+}
 .icon-expand {
     -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='7 13 12 18 17 13'/%3E%3Cpolyline points='7 6 12 11 17 6'/%3E%3C/svg%3E");
     mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='7 13 12 18 17 13'/%3E%3Cpolyline points='7 6 12 11 17 6'/%3E%3C/svg%3E");
@@ -1115,6 +1119,10 @@ form.htmx-request button[type="submit"] {
 .table-columns-dialog { max-width: 760px; width: 95vw; }
 .table-column-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; align-items: end; border: 1px solid var(--border); border-radius: 6px; padding: 10px; margin-bottom: 8px; }
 .table-column-row textarea { min-height: 2.4em; }
+.table-column-move { display: flex; gap: 8px; }
+/* The first column cannot move up and the last cannot move down. */
+.table-column-row:first-child [data-table-move-column="up"],
+.table-column-row:last-child [data-table-move-column="down"] { visibility: hidden; }
 #table-editor .tabulator-cell a { color: var(--links); }
 #table-editor.tabulator, #table-editor .tabulator-tableholder, #table-editor .tabulator-row { background-color: var(--background); color: var(--text-main); }
 #table-editor .tabulator-header, #table-editor .tabulator-header .tabulator-col { background-color: var(--background-alt); color: var(--text-main); border-color: var(--border); }

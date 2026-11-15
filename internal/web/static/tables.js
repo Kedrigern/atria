@@ -304,6 +304,14 @@
     dialog?.querySelector("[data-table-save-columns]")?.addEventListener("click", saveColumns);
     columnsContainer?.addEventListener("click", (event) => {
         if (event.target.closest("[data-table-remove-column]")) event.target.closest("fieldset").remove();
+        // The order of the fieldsets is the column order that saveColumns sends.
+        const move = event.target.closest("[data-table-move-column]");
+        if (move) {
+            const fieldset = move.closest("fieldset");
+            if (move.dataset.tableMoveColumn === "up") fieldset.previousElementSibling?.before(fieldset);
+            else fieldset.nextElementSibling?.after(fieldset);
+            move.focus();
+        }
     });
     dialog?.addEventListener("close", () => meta && renderColumnsDialog());
 
