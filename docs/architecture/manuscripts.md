@@ -31,6 +31,18 @@ Start of the text of page sixteen…
 
 A marker `<!-- N -->` is where page N of the original ends. The text before the first marker belongs to page 1 or to the page before the first marker number.
 
+Converted books do not all use the same form. Atria accepts these forms of a marker:
+
+| Form | Example |
+| --- | --- |
+| A number | `<!-- 15 -->` |
+| A number with a page word | `<!-- p. 15 -->`, `<!-- s. 15 -->`, `<!-- str. 15 -->`, `<!-- page 15 -->` |
+| A Roman number, for front matter | `<!-- xiv -->`, `<!-- p. xiv -->` |
+
+Upper and lower case are the same. A marker is always an HTML comment, so it never shows in a rendered page by accident. Forms without a comment, for example `[15]`, are not markers, because the same text is common in normal prose and in references. The final list of forms comes from the real books (§8).
+
+Roman numbers form their own sequence before the Arabic numbers. Each sequence must grow by one.
+
 Atria reads the markers as follows:
 
 * **Original pages:** the number of the last marker. If text follows the last marker, the count is that number plus one.
@@ -40,6 +52,19 @@ Atria reads the markers as follows:
 * **DOCX and PDF:** each marker becomes a small page number in the text, for example `[15]`. The exact form is decided in step 6.
 
 Other HTML comments stay comments. A note can use the same markers. The parser is shared code, so notes can show original pages too.
+
+## 3a. Markdown check
+
+A converted book often has small errors. Atria checks a Markdown file before an upload and shows a report. The report has warnings, not errors: the user decides whether to upload the file as it is or to correct it first. The same check is on the manuscript page. The CLI has it too (`atria manuscript check book.md`), so a user can check a file before an upload.
+
+| Area | What the check finds |
+| --- | --- |
+| Headings | No `#` heading. More than one `#` title where chapters use `##`. A level that skips one (`##` then `####`). An empty heading. A heading longer than 200 characters, often a paragraph with a `#` by mistake. |
+| Footnotes | A reference `[^n]` without a definition. A definition that no reference uses. The same label defined twice. |
+| Page markers | Gaps, repeated numbers and numbers that go back. A Roman number after the Arabic numbers. A comment that looks like a marker but does not match a form from §3, for example `<!-- 15a -->`. |
+| Text | Words broken across lines by a scanner (`slo-` at the end of a line), invalid UTF-8. |
+
+Each warning has the line number and a short quote of the line. The report also shows the counts: chapters, footnotes, standard pages and original pages.
 
 ## 4. Data
 
@@ -79,8 +104,8 @@ Atria has more and more sections. Each user chooses in the profile which section
 Small steps first. Each step is one pull request and can be released alone.
 
 1. **Section settings** (§6): a preference with the hidden sections, the sidebar and the home page use it, the profile page sets it.
-2. **Original page markers in notes** (§3): the shared parser, the original page count and the marker check on the note page.
-3. **Manuscripts, basic:** migration, service, list and detail pages, Markdown upload, editing, CLI `atria manuscript import` for many files at once.
+2. **Markdown check and page markers** (§3, §3a): the shared parser and check, the CLI `atria check book.md`, and the original page count and the check report on the note page.
+3. **Manuscripts, basic:** migration, service, list and detail pages, Markdown upload with the check report, editing, CLI `atria manuscript import` for many files at once.
 4. **Manuscript export:** Markdown and EPUB download, "Publish as e-book".
 5. **EPUB page list** (§3): page breaks and `page-list` in generated EPUBs.
 6. **pandoc and typst:** the server change on dakara first, then DOCX and PDF export.
@@ -89,3 +114,4 @@ Small steps first. Each step is one pull request and can be released alone.
 
 * The interface of Atria is in English only (`docs/architecture/ui.md`). The first user of manuscripts reads Czech. Is that acceptable, or is a translation needed?
 * The form of page markers in DOCX and PDF (§3).
+* The marker forms in §3 are a first guess. Two or three real books will show the forms that are in use. They will also show which rules in §3a give too many false warnings.
