@@ -24,12 +24,12 @@ A **manuscript** is the editable Markdown source of one book, with book metadata
 The converted books keep the page numbers of the printed original, so that the user can cite them. A marker is an HTML comment on its own, with only a number:
 
 ```markdown
-…end of the text of page fifteen.
+…end of the text of page fourteen.
 <!-- 15 -->
-Start of the text of page sixteen…
+Start of the text of page fifteen…
 ```
 
-A marker `<!-- N -->` is where page N of the original ends. The text before the first marker belongs to page 1 or to the page before the first marker number.
+A marker `<!-- N -->` is where page N of the original starts. This is the form that the PDF converter (the `pdf-to-markdown-docling` skill) writes, and it is the same place as an EPUB 3 page break. When a paragraph continues on the next page, the marker is inside the paragraph. Body text before the first marker belongs to the page before the first marker number. A heading alone before the first marker, for example a title that the converter added, does not make a page.
 
 Converted books do not all use the same form. Atria accepts these forms of a marker:
 
@@ -38,6 +38,8 @@ Converted books do not all use the same form. Atria accepts these forms of a mar
 | A number | `<!-- 15 -->` |
 | A number with a page word | `<!-- p. 15 -->`, `<!-- s. 15 -->`, `<!-- str. 15 -->`, `<!-- page 15 -->` |
 | A Roman number, for front matter | `<!-- xiv -->`, `<!-- p. xiv -->` |
+| The PDF page after the number, from the converter | `<!-- page 41 (pdf 38) -->` |
+| A page with an unknown printed number | `<!-- page ? (pdf 12) -->` |
 
 Upper and lower case are the same. A marker is always an HTML comment, so it never shows in a rendered page by accident. Forms without a comment, for example `[15]`, are not markers, because the same text is common in normal prose and in references. The final list of forms comes from the real books (§8).
 
@@ -45,8 +47,8 @@ Roman numbers form their own sequence before the Arabic numbers. Each sequence m
 
 Atria reads the markers as follows:
 
-* **Original pages:** the number of the last marker. If text follows the last marker, the count is that number plus one.
-* **Check:** the numbers must grow by one. Atria lists gaps, repeats and numbers that go back, with the line number. This finds conversion errors.
+* **Original pages:** the pages from the first Arabic marker to the highest one. If body text comes before the first marker, the page before it counts too. A book from page 1 to page 277 has 277 pages. An article on pages 211 to 226 has 16 pages.
+* **Check:** the numbers must grow by one. A page with an unknown number (`?`) fills one place in a gap. Atria lists gaps, repeats and numbers that go back, with the line number. This finds conversion errors. The converter can put a block of notes at the end and mark each note with its page. Such a run of markers that go back gives only one warning.
 * **Display:** the web page of a manuscript shows each marker as a small page number in the margin.
 * **EPUB:** each marker becomes an EPUB 3 page break (`epub:type="pagebreak"`), and the navigation document gets a `page-list`. E-book readers then show the page of the original, so citations work there too.
 * **DOCX and PDF:** each marker becomes a small page number in the text, for example `[15]`. The exact form is decided in step 6.
@@ -114,4 +116,4 @@ Small steps first. Each step is one pull request and can be released alone.
 
 * The interface of Atria is in English only (`docs/architecture/ui.md`). The first user of manuscripts reads Czech. Is that acceptable, or is a translation needed?
 * The form of page markers in DOCX and PDF (§3).
-* The marker forms in §3 are a first guess. Two or three real books will show the forms that are in use. They will also show which rules in §3a give too many false warnings.
+* The marker forms in §3 come from seven books converted with the PDF converter (2026-11-15). On these books, the rules in §3a gave no false warnings except one per notes block that is marked with pages. Books that were converted by hand can use other forms.
