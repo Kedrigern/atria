@@ -52,13 +52,13 @@
         {{range .OutgoingLinks}}
         <li class="meta-list-item">
             <span class="icon-sm icon-link" title="Links to" aria-label="Links to"></span>
-            <a href="/{{if eq .Type "note"}}notes{{else}}read{{end}}/{{.ID}}" class="meta-list-link">{{.Title}}</a>
+            <a href="/{{if eq .Type "note"}}notes{{else if eq .Type "manuscript"}}manuscripts{{else}}read{{end}}/{{.ID}}" class="meta-list-link">{{.Title}}</a>
         </li>
         {{end}}
         {{range .IncomingLinks}}
         <li class="meta-list-item">
             <span class="icon-sm icon-arrow-left text-muted" title="Linked from" aria-label="Linked from"></span>
-            <a href="/{{if eq .Type "note"}}notes{{else}}read{{end}}/{{.ID}}" class="meta-list-link">{{.Title}}</a>
+            <a href="/{{if eq .Type "note"}}notes{{else if eq .Type "manuscript"}}manuscripts{{else}}read{{end}}/{{.ID}}" class="meta-list-link">{{.Title}}</a>
         </li>
         {{end}}
     </ul>
@@ -430,6 +430,8 @@
         <h2 class="list-item-title">
             {{if eq .Type "note"}}
             <a href="/notes/{{.ID}}" hx-get="/notes/{{.ID}}" hx-target="#main-content" hx-push-url="true">{{.Title}}</a>
+            {{else if eq .Type "manuscript"}}
+            <a href="/manuscripts/{{.ID}}" hx-get="/manuscripts/{{.ID}}" hx-target="#main-content" hx-push-url="true">{{.Title}}</a>
             {{else if eq .Type "article"}}
             <a href="/read/{{.ID}}" hx-get="/read/{{.ID}}" hx-target="#main-content" hx-push-url="true">{{.Title}}</a>
             {{else}}

@@ -34,6 +34,7 @@ const (
 	TypeSpreadsheet EntityType = "spreadsheet"
 	TypeFolder      EntityType = "folder"
 	TypeEbook       EntityType = "ebook"
+	TypeManuscript  EntityType = "manuscript"
 )
 
 type AuthSource string
@@ -86,6 +87,7 @@ var Sections = []Section{
 	{Key: "rss", Title: "RSS"},
 	{Key: "read", Title: "Read-it-later"},
 	{Key: "notes", Title: "Notes"},
+	{Key: "manuscripts", Title: "Manuscripts"},
 	{Key: "ebooks", Title: "E-books"},
 	{Key: "games", Title: "Games"},
 	{Key: "tables", Title: "Tables"},

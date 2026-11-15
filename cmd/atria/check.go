@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -26,20 +27,24 @@ the exit status; only a file that cannot be read does.`,
 			if err != nil {
 				return err
 			}
-			report := mdcheck.Check(src)
-			fmt.Fprintf(out, "%s: %d chapters, %d footnotes, %.1f standard pages, ", path, report.Chapters, report.Footnotes, report.StandardPages())
-			if report.OriginalPages > 0 {
-				fmt.Fprintf(out, "%d original pages, ", report.OriginalPages)
-			} else {
-				fmt.Fprint(out, "no page markers, ")
-			}
-			fmt.Fprintf(out, "%d warnings\n", len(report.Warnings))
-			for _, w := range report.Warnings {
-				fmt.Fprintf(out, "  line %d [%s] %s: %s\n", w.Line, w.Rule, w.Message, w.Quote)
-			}
+			printCheckReport(out, path, mdcheck.Check(src))
 		}
 		return nil
 	},
+}
+
+// printCheckReport prints the summary line and the warnings of a check.
+func printCheckReport(out io.Writer, name string, report mdcheck.Report) {
+	fmt.Fprintf(out, "%s: %d chapters, %d footnotes, %.1f standard pages, ", name, report.Chapters, report.Footnotes, report.StandardPages())
+	if report.OriginalPages > 0 {
+		fmt.Fprintf(out, "%d original pages, ", report.OriginalPages)
+	} else {
+		fmt.Fprint(out, "no page markers, ")
+	}
+	fmt.Fprintf(out, "%d warnings\n", len(report.Warnings))
+	for _, w := range report.Warnings {
+		fmt.Fprintf(out, "  line %d [%s] %s: %s\n", w.Line, w.Rule, w.Message, w.Quote)
+	}
 }
 
 func init() {

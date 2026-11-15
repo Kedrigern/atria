@@ -22,6 +22,13 @@
         </a>
         {{end}}
 
+        {{if not .Hidden.manuscripts}}
+        <a href="/manuscripts" hx-get="/manuscripts" hx-target="#main-content" hx-push-url="true" class="dashboard-card">
+            <h2 class="dashboard-title"><span class="icon icon-file" aria-hidden="true"></span> Manuscripts</h2>
+            <p>Books: <strong>{{.ManuscriptCount}}</strong></p>
+        </a>
+        {{end}}
+
         {{if not .Hidden.games}}
         <a href="/games" hx-get="/games" hx-target="#main-content" hx-push-url="true" class="dashboard-card">
             <h2 class="dashboard-title"><span class="icon icon-dice" aria-hidden="true"></span> Cryptograms</h2>

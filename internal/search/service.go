@@ -15,7 +15,7 @@ import (
 // SearchResult holds a single hit returned by Search.
 type SearchResult struct {
 	ID       uuid.UUID
-	Type     string // "note", "article", "rss_item"
+	Type     string // "note", "article", "rss_item", "manuscript"
 	Title    string
 	Headline string // ts_headline snippet; raw text, render via HeadlineHTML
 	Rank     float64
@@ -79,6 +79,29 @@ WHERE (n.search_vector @@ q
   AND e.deleted_at IS NULL
   AND (e.owner_id = $2 OR e.visibility IN ('users', 'public'))`
 
+// manuscriptsSubquery is a sub-SELECT for manuscripts. Books are private
+// drafts, so only the owner finds them. $1 = search query string, $2 = ownerID.
+const manuscriptsSubquery = `
+SELECT
+    e.id,
+    'manuscript'                                              AS type,
+    e.title,
+    ts_headline('english', m.markdown_content, q, '` + tsHeadlineOpts + `') AS headline,
+    ts_rank(
+        m.search_vector ||
+        setweight(to_tsvector('english', COALESCE((SELECT string_agg(replace(t.name, '-', ' '), ' ') FROM tags t JOIN rel_entity_tags ret ON t.id = ret.tag_id WHERE ret.entity_id = e.id), '')), 'A'),
+        q
+    ) AS rank,
+    e.owner_id
+FROM manuscripts m
+JOIN entities e ON e.id = m.id
+, websearch_to_tsquery('english', $1) q
+WHERE (m.search_vector @@ q
+   OR e.id IN (SELECT ret.entity_id FROM rel_entity_tags ret JOIN tags t ON ret.tag_id = t.id WHERE to_tsvector('english', replace(t.name, '-', ' ')) @@ q)
+)
+  AND e.deleted_at IS NULL
+  AND e.owner_id = $2`
+
 // articlesSubqueryBase is the articles sub-SELECT without an archived filter.
 // $1 = search query string, $2 = ownerID.
 const articlesSubqueryBase = `
@@ -134,6 +157,7 @@ const rssItemsSubqueryBase = `
 //   - "notes"    → notes only
 //   - "articles" → articles only
 //   - "rss"      → rss_items only
+//   - "manuscripts" → manuscripts only (the owner's only)
 //
 // When includeArchived is false, archived articles and unread-only RSS items are
 // excluded. When true, all matching content is returned regardless of archived/read state.
@@ -166,8 +190,10 @@ func Search(ctx context.Context, db *sql.DB, ownerID uuid.UUID, query string, fi
 		parts = append(parts, articlesSubquery)
 	case "rss":
 		parts = append(parts, rssItemsSubquery)
+	case "manuscripts":
+		parts = append(parts, manuscriptsSubquery)
 	default: // "" or anything unrecognised → search everything
-		parts = append(parts, notesSubquery, articlesSubquery, rssItemsSubquery)
+		parts = append(parts, notesSubquery, articlesSubquery, rssItemsSubquery, manuscriptsSubquery)
 	}
 
 	// Wrap the union in an outer SELECT with ordering and a hard limit.

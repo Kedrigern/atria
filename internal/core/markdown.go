@@ -52,8 +52,9 @@ func (s *headingShifter) Transform(node *ast.Document, reader text.Reader, pc pa
 func RenderMarkdown(source []byte) (string, map[string]interface{}, error) {
 	md := goldmark.New(
 		goldmark.WithExtensions(
-			extension.GFM, // Tables, task lists, etc.
-			meta.Meta,     // YAML front matter support.
+			extension.GFM,      // Tables, task lists, etc.
+			extension.Footnote, // [^1] references and definitions, common in books.
+			meta.Meta,          // YAML front matter support.
 		),
 		goldmark.WithParserOptions(
 			parser.WithAutoHeadingID(),

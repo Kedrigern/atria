@@ -107,8 +107,8 @@ Small steps first. Each step is one pull request and can be released alone.
 
 1. **Section settings** (§6): a preference with the hidden sections, the sidebar and the home page use it, the profile page sets it.
 2. **Markdown check and page markers** (§3, §3a): the shared parser and check, the CLI `atria check book.md`, and the original page count and the check report on the note page.
-3. **Manuscripts, basic:** migration, service, list and detail pages, Markdown upload with the check report, editing, CLI `atria manuscript import` for many files at once.
-4. **Manuscript export:** Markdown and EPUB download, "Publish as e-book".
+3. **Manuscripts, basic:** migration, service, the CLI (`atria manuscript import` for many files at once, `list`, `show`, `rename`, `rm`), and the web: list and detail pages, Markdown upload with the check report, editing of the metadata, replacing the file, Markdown download, a section in the profile settings, and search. Atria keeps each file exactly as it is, front matter included.
+4. **Manuscript export:** EPUB download, "Publish as e-book".
 5. **EPUB page list** (§3): page breaks and `page-list` in generated EPUBs.
 6. **pandoc and typst:** the server change on dakara first, then DOCX and PDF export.
 
