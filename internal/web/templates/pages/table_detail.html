@@ -5,7 +5,7 @@
     <header class="page-header">
         <div>
             <h1 class="page-title">{{.Table.Title}}</h1>
-            <p class="page-subtitle">SQL name <code>{{.Table.SQLName}}</code> · <span data-table-rowcount>{{.Table.RowCount}}</span> rows</p>
+            <p class="page-subtitle">{{if ne .Table.Path "/"}}Folder <code>{{.Table.Path}}</code> · {{end}}SQL name <code>{{.Table.SQLName}}</code> · <span data-table-rowcount>{{.Table.RowCount}}</span> rows</p>
         </div>
         <div class="page-actions">
             <a href="/tables" class="button-link outline btn-sm">
@@ -13,6 +13,9 @@
             </a>
             <button type="button" hx-post="/api/entity/{{.Table.ID}}/rename" hx-prompt="New title of the table:" class="outline btn-sm" title="Rename" aria-label="Rename">
                 <span class="icon-sm icon-edit" aria-hidden="true"></span>
+            </button>
+            <button type="button" hx-post="/api/tables/{{.Table.ID}}/move" hx-prompt="Folder, for example /finance/2026 (empty or / for none):" class="outline btn-sm" title="Move to a folder" aria-label="Move to a folder">
+                <span class="icon-sm icon-folder" aria-hidden="true"></span>
             </button>
             <button type="button" class="outline btn-sm" data-open-dialog="table-columns-dialog">Columns</button>
             <a href="/tables/{{.Table.ID}}/export.csv" class="button-link outline btn-sm">Export CSV</a>

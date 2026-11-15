@@ -4,31 +4,20 @@
 
     <header class="page-header">
         <h1 class="page-title">Tables</h1>
+        {{if .TreeRoot.Children}}
+        <div class="page-actions">
+            <button type="button" class="outline btn-sm" title="Expand all folders" aria-label="Expand all folders" data-tree-open="true">
+                <span class="icon-sm icon-expand" aria-hidden="true"></span>
+            </button>
+            <button type="button" class="outline btn-sm" title="Collapse all folders" aria-label="Collapse all folders" data-tree-open="false">
+                <span class="icon-sm icon-collapse" aria-hidden="true"></span>
+            </button>
+        </div>
+        {{end}}
     </header>
 
     {{if .Tables}}
-    <table class="data-list">
-        <thead>
-            <tr>
-                <th>Title</th>
-                <th class="col-optional">SQL name</th>
-                <th class="num col-optional">Columns</th>
-                <th class="num">Rows</th>
-                <th>Updated</th>
-            </tr>
-        </thead>
-        <tbody>
-            {{range .Tables}}
-            <tr>
-                <td><a href="/tables/{{.ID}}"><strong>{{.Title}}</strong></a></td>
-                <td class="col-optional"><code>{{.SQLName}}</code></td>
-                <td class="num col-optional">{{len .Columns}}</td>
-                <td class="num">{{.RowCount}}</td>
-                <td>{{formatDate .UpdatedAt}}</td>
-            </tr>
-            {{end}}
-        </tbody>
-    </table>
+    <div class="note-tree">{{template "table_folder" .TreeRoot}}</div>
     {{else}}
     <p class="page-empty-hint">You have no tables yet. Create an empty table or import a CSV file.</p>
     {{end}}
@@ -45,6 +34,11 @@
                 <label for="new-table-sql-name">SQL name</label>
                 <input id="new-table-sql-name" type="text" name="sql_name" class="form-control" pattern="[a-z_][a-z0-9_]*" maxlength="63" placeholder="expenses_2026" />
                 <p class="form-help">Optional. Views use this name. Use a-z, 0-9 and _.</p>
+            </div>
+            <div class="form-group">
+                <label for="new-table-path">Folder</label>
+                <input id="new-table-path" type="text" name="path" class="form-control" maxlength="255" placeholder="/finance/2026" />
+                <p class="form-help">Optional. Notes and tables share folders.</p>
             </div>
             <div class="form-actions">
                 <button type="submit" class="btn-primary">Create table</button>
@@ -63,6 +57,11 @@
                 <label for="import-table-title">Title</label>
                 <input id="import-table-title" type="text" name="title" class="form-control" maxlength="255" />
                 <p class="form-help">Optional. The default is the file name.</p>
+            </div>
+            <div class="form-group">
+                <label for="import-table-path">Folder</label>
+                <input id="import-table-path" type="text" name="path" class="form-control" maxlength="255" placeholder="/finance/2026" />
+                <p class="form-help">Optional.</p>
             </div>
             <div class="form-actions">
                 <button type="submit" class="outline">Import CSV</button>

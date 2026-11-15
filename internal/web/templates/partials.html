@@ -371,6 +371,45 @@
     {{end}}
 {{end}}
 
+{{define "table_folder"}}
+    {{if .Tables}}
+    <table class="data-list">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th class="col-optional">SQL name</th>
+                <th class="num col-optional">Columns</th>
+                <th class="num">Rows</th>
+                <th>Updated</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Tables}}
+            <tr>
+                <td><a href="/tables/{{.ID}}"><strong>{{.Title}}</strong></a></td>
+                <td class="col-optional"><code>{{.SQLName}}</code></td>
+                <td class="num col-optional">{{len .Columns}}</td>
+                <td class="num">{{.RowCount}}</td>
+                <td>{{formatDate .UpdatedAt}}</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+    {{end}}
+
+    {{range $folderName, $folderNode := .Children}}
+    <details {{if lt .Level 3}}open{{end}} class="note-tree-folder">
+        <summary class="note-tree-folder-summary{{if eq .Level 1}} note-tree-folder-root-summary{{end}}">
+            <span class="icon-sm icon-folder text-muted" aria-hidden="true"></span>
+            {{$folderName}}
+        </summary>
+        <div class="mt-1">
+            {{template "table_folder" $folderNode}}
+        </div>
+    </details>
+    {{end}}
+{{end}}
+
 {{define "add_article_form"}}
 <form method="post" action="/api/articles/add" class="add-article-form">
     <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />

@@ -67,47 +67,6 @@ func GetNote(ctx context.Context, db *sql.DB, id, ownerID uuid.UUID) (*core.Note
 	return &n, nil
 }
 
-// EnsurePath traverses the virtual path (e.g., "/home/solar") and creates missing folders.
-// It returns the UUID of the final folder, or nil if the path is empty (root).
-func EnsurePath(ctx context.Context, tx *sql.Tx, ownerID uuid.UUID, path string) (*uuid.UUID, error) {
-	cleanPath := strings.Trim(path, "/")
-	if cleanPath == "" {
-		return nil, nil // Root level
-	}
-
-	parts := strings.Split(cleanPath, "/")
-	var currentParentID *uuid.UUID
-
-	for _, part := range parts {
-		var folderID uuid.UUID
-		slug := core.LimitRunes(strings.ToLower(strings.ReplaceAll(part, " ", "-")), core.MaxSlugLength)
-		folderUUID := core.NewUUID()
-
-		queryInsert := `
-        INSERT INTO entities (id, parent_id, owner_id, type, visibility, title, slug, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $8)
-        ON CONFLICT (owner_id, type, title, COALESCE(parent_id, '00000000-0000-0000-0000-000000000000')) WHERE deleted_at IS NULL
-        DO NOTHING
-    `
-		_, err := tx.ExecContext(ctx, queryInsert,
-			folderUUID, currentParentID, ownerID, core.TypeFolder, core.VisibilityPrivate, part, slug, time.Now().UTC(),
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to upsert folder '%s': %w", part, err)
-		}
-
-		queryFind := `SELECT id FROM entities WHERE owner_id = $1 AND type = $2 AND title = $3 AND parent_id IS NOT DISTINCT FROM $4 AND deleted_at IS NULL`
-		err = tx.QueryRowContext(ctx, queryFind, ownerID, core.TypeFolder, part, currentParentID).Scan(&folderID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to retrieve folder id for '%s': %w", part, err)
-		}
-
-		currentParentID = &folderID
-	}
-
-	return currentParentID, nil
-}
-
 // CreateNote creates a new markdown note, ensuring its virtual path exists.
 func CreateNote(ctx context.Context, db *sql.DB, ownerID uuid.UUID, title, path, content string) (*core.Entity, error) {
 	// Start a transaction
@@ -118,7 +77,7 @@ func CreateNote(ctx context.Context, db *sql.DB, ownerID uuid.UUID, title, path,
 	defer func() { _ = tx.Rollback() }() // Safe to call even if committed
 
 	// 1. Resolve or create the folder structure
-	parentID, err := EnsurePath(ctx, tx, ownerID, path)
+	parentID, err := core.EnsurePath(ctx, tx, ownerID, path)
 	if err != nil {
 		return nil, err
 	}
@@ -328,7 +287,7 @@ func UpdateNote(ctx context.Context, db *sql.DB, ownerID, noteID uuid.UUID, titl
 	}
 	defer func() { _ = tx.Rollback() }()
 
-	parentID, err := EnsurePath(ctx, tx, ownerID, path)
+	parentID, err := core.EnsurePath(ctx, tx, ownerID, path)
 	if err != nil {
 		return err
 	}

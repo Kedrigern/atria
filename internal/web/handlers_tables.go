@@ -16,6 +16,31 @@ import (
 
 // --- Pages -------------------------------------------------------------
 
+// TableFolder is one folder of the table list, like TreeNode for notes.
+type TableFolder struct {
+	Level    int
+	Tables   []tables.Table
+	Children map[string]*TableFolder
+}
+
+// tableTree groups tables by the folder path they are in.
+func tableTree(list []tables.Table) *TableFolder {
+	root := &TableFolder{Children: map[string]*TableFolder{}}
+	for _, t := range list {
+		current := root
+		if clean := strings.Trim(t.Path, "/"); clean != "" {
+			for _, part := range strings.Split(clean, "/") {
+				if current.Children[part] == nil {
+					current.Children[part] = &TableFolder{Level: current.Level + 1, Children: map[string]*TableFolder{}}
+				}
+				current = current.Children[part]
+			}
+		}
+		current.Tables = append(current.Tables, t)
+	}
+	return root
+}
+
 func (s *Server) handleTableList(c *gin.Context) {
 	user := s.getUser(c)
 	if user == nil {
@@ -28,6 +53,7 @@ func (s *Server) handleTableList(c *gin.Context) {
 	}
 	s.render(c, "table_list.html", gin.H{
 		"Tables":    list,
+		"TreeRoot":  tableTree(list),
 		"MaxRows":   tables.MaxRows,
 		"MaxCols":   tables.MaxColumns,
 		"PageTitle": "Tables",
@@ -66,7 +92,44 @@ func (s *Server) handleTableCreate(c *gin.Context) {
 		c.Redirect(http.StatusSeeOther, "/tables")
 		return
 	}
+	s.moveNewTable(c, user, t.ID)
 	s.redirectTo(c, "/tables/"+t.ID.String())
+}
+
+// moveNewTable puts a just created table into the folder from the "path" form
+// field. A failure keeps the table at the top level and shows a flash message.
+func (s *Server) moveNewTable(c *gin.Context, user *core.User, tableID uuid.UUID) {
+	path := strings.TrimSpace(c.PostForm("path"))
+	if strings.Trim(path, "/") == "" {
+		return
+	}
+	if err := tables.MoveToFolder(c.Request.Context(), s.db, user.ID, tableID, path); err != nil {
+		s.flashError(c, "The table was created, but not moved to the folder", err)
+	}
+}
+
+// handleTableMove moves a table to the folder typed into the htmx prompt.
+// An empty answer or "/" moves the table out of any folder.
+func (s *Server) handleTableMove(c *gin.Context) {
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+	t, ok := s.loadTable(c, user)
+	if !ok {
+		return
+	}
+	path := decodePromptTitle(c.GetHeader("HX-Prompt"))
+	if err := tables.MoveToFolder(c.Request.Context(), s.db, user.ID, t.ID, path); err != nil {
+		s.renderError(c, http.StatusInternalServerError, "Could not move the table")
+		return
+	}
+	if c.GetHeader("HX-Request") == "true" {
+		c.Header("HX-Refresh", "true")
+		c.Status(http.StatusOK)
+		return
+	}
+	c.Redirect(http.StatusSeeOther, "/tables/"+t.ID.String())
 }
 
 func (s *Server) handleTableImport(c *gin.Context) {
@@ -99,6 +162,7 @@ func (s *Server) handleTableImport(c *gin.Context) {
 		return
 	}
 	s.setFlash(c, "success", "Imported rows: "+strconv.Itoa(res.Rows))
+	s.moveNewTable(c, user, res.Table.ID)
 	s.redirectTo(c, "/tables/"+res.Table.ID.String())
 }
 
