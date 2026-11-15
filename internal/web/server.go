@@ -504,6 +504,7 @@ func (s *Server) render(c *gin.Context, tmplName string, data gin.H) {
 	if user != nil {
 		data["User"] = user
 		data["Theme"] = user.Preferences.Theme
+		data["Hidden"] = user.Preferences.HiddenSectionSet()
 
 		fontSize := user.Preferences.FontSize
 		if fontSize == 0 {
@@ -672,6 +673,7 @@ func (s *Server) handleProfile(c *gin.Context) {
 		"NoteCount":        noteCount,
 		"ArticleCount":     articleCount,
 		"TagCount":         tagCount,
+		"Sections":         core.Sections,
 	})
 }
 
@@ -702,6 +704,18 @@ func (s *Server) handleProfilePreferencesUpdate(c *gin.Context) {
 	}
 
 	prefs.RSSInlineDetails = c.PostForm("rss_inline_details") == "on"
+
+	// The form has one checkbox per section; an unchecked section is hidden.
+	shown := map[string]bool{}
+	for _, key := range c.PostFormArray("section") {
+		shown[key] = true
+	}
+	prefs.HiddenSections = nil
+	for _, section := range core.Sections {
+		if !shown[section.Key] {
+			prefs.HiddenSections = append(prefs.HiddenSections, section.Key)
+		}
+	}
 
 	err := users.UpdatePreferences(c.Request.Context(), s.db, user.ID, prefs)
 	if err != nil {

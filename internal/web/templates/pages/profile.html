@@ -60,6 +60,17 @@
             Show the full text of RSS items in the list
         </label>
 
+        <fieldset class="profile-sections">
+            <legend>Sections in the menu and on the home page</legend>
+            {{range .Sections}}
+            <label class="checkbox-label">
+                <input type="checkbox" name="section" value="{{.Key}}" {{if not (index $.Hidden .Key)}}checked{{end}}>
+                {{.Title}}
+            </label>
+            {{end}}
+            <p class="form-help">A hidden section still works by its address.</p>
+        </fieldset>
+
         <div class="form-actions">
             <button type="submit" class="btn-primary">Save</button>
         </div>

@@ -5,24 +5,31 @@
         <img src="/static/atria-text-dark.png" alt="Atria" class="theme-logo-dark" />
     </h1>
 
-    {{template "add_article_form" .}}
+    {{if not .Hidden.read}}{{template "add_article_form" .}}{{end}}
 
     <div class="dashboard-grid">
+        {{if not .Hidden.rss}}
         <a href="/rss" hx-get="/rss" hx-target="#main-content" hx-push-url="true" class="dashboard-card">
             <h2 class="dashboard-title"><span class="icon icon-rss" aria-hidden="true"></span> RSS</h2>
             <p>Unread items: <strong>{{.UnreadCount}}</strong></p>
         </a>
+        {{end}}
 
+        {{if not .Hidden.read}}
         <a href="/read" hx-get="/read" hx-target="#main-content" hx-push-url="true" class="dashboard-card">
             <h2 class="dashboard-title"><span class="icon icon-bookmark" aria-hidden="true"></span> Read-it-later</h2>
             <p>Saved articles: <strong>{{.InboxCount}}</strong></p>
         </a>
+        {{end}}
 
+        {{if not .Hidden.games}}
         <a href="/games" hx-get="/games" hx-target="#main-content" hx-push-url="true" class="dashboard-card">
             <h2 class="dashboard-title"><span class="icon icon-dice" aria-hidden="true"></span> Cryptograms</h2>
             <p>Solve a short quote, one letter at a time.</p>
         </a>
+        {{end}}
 
+        {{if not .Hidden.notes}}
         <div class="dashboard-card full-width">
             <h2 class="dashboard-title"><span class="icon icon-note" aria-hidden="true"></span> Recent notes</h2>
             <ul class="dashboard-list">
@@ -33,6 +40,7 @@
                 {{end}}
             </ul>
         </div>
+        {{end}}
     </div>
 </div>
 {{end}}
