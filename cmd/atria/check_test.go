@@ -62,7 +62,7 @@ func TestCheckReportsProblemsOfAConvertedBook(t *testing.T) {
 	out := mustCLI(t, "check", path)
 
 	assert.Contains(t, out, "2 chapters, 3 footnotes,", "chapters are ## under one # title; footnotes count each label once")
-	assert.Contains(t, out, "7 original pages, 10 warnings", "the last marker is page 6 and text follows it, so the original has 7 pages")
+	assert.Contains(t, out, "6 original pages, 10 warnings", "a marker starts its page, so Arabic pages 1 to 6 make 6 pages")
 	for _, want := range []string{
 		"line 11 [text] a word is broken across lines with a hyphen",
 		"line 15 [pages] page 3 is missing between 2 and 4",

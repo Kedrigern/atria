@@ -76,7 +76,7 @@ Used to manage instance accounts and access. No user context required.
 
 ### Markdown check (`check`)
 * `atria check <file.md> [<file.md> ...]`
-  Checks Markdown files of converted books without a database or a user: headings that skip a level, footnotes without a definition, gaps in the page markers of the original (`<!-- 15 -->`) and words broken across lines. It prints the chapters, footnotes, standard pages and original pages, then each warning with its line. Warnings do not change the exit status. See `docs/architecture/manuscripts.md` §3 and §3a.
+  Checks Markdown files of converted books without a database or a user. It reports headings that skip a level, footnotes without a definition, gaps in the page markers and words broken across lines. A page marker starts its page of the original: `<!-- 15 -->` or `<!-- page 41 (pdf 38) -->`. The marker `<!-- page ? (pdf 12) -->` is a page with an unknown number. It prints the chapters, footnotes, standard pages and original pages, then each warning with its line. YAML front matter is skipped. Warnings do not change the exit status. See `docs/architecture/manuscripts.md` §3 and §3a.
 
 ### Spreadsheets (`table` or alias `tab`)
 * `atria table list`

@@ -15,8 +15,9 @@ var checkCmd = &cobra.Command{
 	Long: `Checks Markdown files for problems that are common in books converted from
 print, without a database or a user. It reports headings that skip a level,
 footnotes without a definition, gaps in the page markers of the original
-(<!-- 15 -->) and words broken across lines. Warnings do not change the exit
-status; only a file that cannot be read does.`,
+(<!-- 15 -->, <!-- page 41 (pdf 38) -->, <!-- page ? (pdf 12) -->) and words
+broken across lines. A page marker starts its page. Warnings do not change
+the exit status; only a file that cannot be read does.`,
 	Args: cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		out := cmd.OutOrStdout()

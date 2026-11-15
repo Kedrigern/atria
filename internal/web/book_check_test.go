@@ -21,7 +21,7 @@ func TestNotePageShowsOriginalPagesOfAConvertedBook(t *testing.T) {
 	asUser(t, user)
 
 	book, err := notes.CreateNote(ctx, db, user.ID, "Paměti mlynáře", "/knihy",
-		"# Paměti mlynáře\n\nMlýn stál u řeky.\n<!-- 1 -->\nKupec přijel z Plzně.\n<!-- 3 -->\nKonec.\n")
+		"# Paměti mlynáře\n\n<!-- 1 -->\nMlýn stál u řeky.\n<!-- 3 -->\nKupec přijel z Plzně.\n")
 	require.NoError(t, err)
 	plain, err := notes.CreateNote(ctx, db, user.ID, "Nákup", "/", "mléko, chleba")
 	require.NoError(t, err)
@@ -29,7 +29,7 @@ func TestNotePageShowsOriginalPagesOfAConvertedBook(t *testing.T) {
 	page := getWithCookie(r, "/notes/"+book.ID.String(), nil)
 	require.Equal(t, http.StatusOK, page.Code)
 	main := mainContent(page.Body.String())
-	assert.Contains(t, main, "4 original pages", "the last marker is page 3 and text follows it")
+	assert.Contains(t, main, "3 original pages", "a marker starts its page, so pages 1 to 3 make 3 pages")
 	assert.Contains(t, main, "Markdown check: 1 warnings", "the gap between pages 1 and 3 is reported")
 	assert.Contains(t, main, "page 2 is missing between 1 and 3")
 
