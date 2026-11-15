@@ -392,3 +392,34 @@ func sortWarnings(w []Warning) {
 		}
 	}
 }
+
+// Marker is a page marker in a line: the byte range of the comment and the
+// page label, for example "15" or "xiv". The label is empty for a page whose
+// printed number is not known ("?").
+type Marker struct {
+	Start, End int
+	Label      string
+}
+
+// FindMarkers returns the page markers of one line. It does not know about
+// code blocks; the caller skips them.
+func FindMarkers(line string) []Marker {
+	var markers []Marker
+	for _, loc := range markerRe.FindAllStringSubmatchIndex(line, -1) {
+		label := strings.ToLower(line[loc[2]:loc[3]])
+		if label == "?" {
+			label = ""
+		} else if _, err := strconv.Atoi(label); err != nil {
+			if _, ok := romanValue(label); !ok {
+				continue
+			}
+		}
+		markers = append(markers, Marker{Start: loc[0], End: loc[1], Label: label})
+	}
+	return markers
+}
+
+// IsFence reports whether a line opens or closes a fenced code block.
+func IsFence(line string) bool {
+	return fenceRe.MatchString(line)
+}

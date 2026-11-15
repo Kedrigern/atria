@@ -87,6 +87,10 @@ Books stored as Markdown files, one file per book. See `docs/architecture/manusc
   Lists the manuscripts with their folder, author, language and standard pages.
 * `atria manuscript show <uuid|short-uuid|"Title">`
   Prints the Markdown file of a manuscript.
+* `atria manuscript export <uuid|short-uuid|"Title"> [--format=epub|docx|pdf|md] [--out=FILE]`
+  Writes the manuscript to a file. The EPUB has the pages of the original as a page list. DOCX and PDF need pandoc, and PDF also typst. They show the pages of the original in brackets, for example `[15]`.
+* `atria manuscript publish <uuid|short-uuid|"Title">`
+  Makes a new e-book from the manuscript, with its title, author and language.
 * `atria manuscript rename <uuid|short-uuid|"Title"> <new title>` and `atria manuscript rm <uuid|short-uuid|"Title">`
   Renames a manuscript or moves it to the trash.
 

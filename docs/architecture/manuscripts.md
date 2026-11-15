@@ -51,7 +51,7 @@ Atria reads the markers as follows:
 * **Check:** the numbers must grow by one. A page with an unknown number (`?`) fills one place in a gap. Atria lists gaps, repeats and numbers that go back, with the line number. This finds conversion errors. The converter can put a block of notes at the end and mark each note with its page. Such a run of markers that go back gives only one warning.
 * **Display:** the web page of a manuscript shows each marker as a small page number in the margin.
 * **EPUB:** each marker becomes an EPUB 3 page break (`epub:type="pagebreak"`), and the navigation document gets a `page-list`. E-book readers then show the page of the original, so citations work there too.
-* **DOCX and PDF:** each marker becomes a small page number in the text, for example `[15]`. The exact form is decided in step 6.
+* **DOCX and PDF:** each marker becomes the page number in brackets, for example `[15]`. A marker on its own line goes to the start of the next paragraph. Before a heading, a list or another block, it is a paragraph of its own, so that a page number never goes into a heading or the table of contents. A page with an unknown number (`?`) gets no number.
 
 Other HTML comments stay comments. A note can use the same markers. The parser is shared code, so notes can show original pages too.
 
@@ -91,11 +91,15 @@ CREATE TABLE manuscripts (
 | Format | How |
 | --- | --- |
 | Markdown | The source file, unchanged. |
-| EPUB | The existing EPUB generator in Atria, with the page markers from §3. |
-| DOCX | `pandoc`, as a separate process. |
-| PDF | `pandoc` with `typst` as the PDF engine, as a separate process. |
+| EPUB | The EPUB generator of Atria (go-epub). Each chapter is one section with its own footnotes. Each marker is an EPUB 3 page break, and the navigation has a `page-list`. |
+| DOCX | `pandoc`, as a separate process, with a Lua filter that removes images and raw HTML. |
+| PDF | `pandoc --sandbox` with `typst` as the PDF engine and the font Libertinus Serif, which typst has built in. |
 
-`pandoc` and `typst` are optional, like DuckDB for table views. If a tool is not installed, the page does not offer that export. Installing them on dakara is a separate Ansible change.
+`pandoc` and `typst` are optional, like DuckDB for table views. If a tool is not installed, the page does not offer that export. On dakara, the `publishing` role of `infra` installs them.
+
+pandoc must not read other files on the server, because a manuscript can link any path as an image. For PDF, `--sandbox` stops that, and typst reads only its working directory. The pandoc of Fedora cannot write DOCX in the sandbox, so for DOCX a Lua filter removes all images and raw formats before the writer reads files. Images are not part of a manuscript anyway: a manuscript is one Markdown file, so EPUB, DOCX and PDF leave images out.
+
+"Publish as e-book" makes an EPUB snapshot as a new e-book with the title, author, language and description of the manuscript. The e-book links to the manuscript. Each publish makes a new e-book.
 
 ## 6. Section settings
 
@@ -108,12 +112,11 @@ Small steps first. Each step is one pull request and can be released alone.
 1. **Section settings** (§6): a preference with the hidden sections, the sidebar and the home page use it, the profile page sets it.
 2. **Markdown check and page markers** (§3, §3a): the shared parser and check, the CLI `atria check book.md`, and the original page count and the check report on the note page.
 3. **Manuscripts, basic:** migration, service, the CLI (`atria manuscript import` for many files at once, `list`, `show`, `rename`, `rm`), and the web: list and detail pages, Markdown upload with the check report, editing of the metadata, replacing the file, Markdown download, a section in the profile settings, and search. Atria keeps each file exactly as it is, front matter included.
-4. **Manuscript export:** EPUB download, "Publish as e-book".
+4. **Manuscript export:** EPUB download, "Publish as e-book". Done with steps 5 and 6.
 5. **EPUB page list** (§3): page breaks and `page-list` in generated EPUBs.
-6. **pandoc and typst:** the server change on dakara first, then DOCX and PDF export.
+6. **pandoc and typst:** the server change on dakara first (role `publishing`), then DOCX and PDF export.
 
 ## 8. Open questions
 
 * The interface of Atria is in English only (`docs/architecture/ui.md`). The first user of manuscripts reads Czech. Is that acceptable, or is a translation needed?
-* The form of page markers in DOCX and PDF (§3).
 * The marker forms in §3 come from seven books converted with the PDF converter (2026-11-15). On these books, the rules in §3a gave no false warnings except one per notes block that is marked with pages. Books that were converted by hand can use other forms.

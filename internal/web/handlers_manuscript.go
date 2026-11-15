@@ -7,6 +7,9 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
+	"slices"
 
 	"github.com/gin-gonic/gin"
 
@@ -52,6 +55,7 @@ func (s *Server) handleManuscriptDetail(c *gin.Context) {
 		"Manuscript":    m,
 		"ID":            m.ID.String(),
 		"Check":         mdcheck.Check([]byte(m.Markdown)),
+		"Formats":       manuscripts.Formats(),
 		"Content":       template.HTML(html),
 		"Tags":          tags,
 		"OutgoingLinks": outgoing,
@@ -187,4 +191,58 @@ func readUpload(file *multipart.FileHeader) ([]byte, error) {
 	}
 	defer f.Close()
 	return io.ReadAll(io.LimitReader(f, manuscripts.MaxBytes+1))
+}
+
+// handleManuscriptExport sends the manuscript as EPUB, or as DOCX or PDF when
+// pandoc (and typst for PDF) are installed.
+func (s *Server) handleManuscriptExport(c *gin.Context) {
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+	m, ok := s.loadManuscript(c, user)
+	if !ok {
+		return
+	}
+	format := c.Param("format")
+	if format != "epub" && !slices.Contains(manuscripts.Formats(), format) {
+		s.renderError(c, http.StatusNotFound, "This export format is not available")
+		return
+	}
+	dir, err := os.MkdirTemp("", "atria-export-*")
+	if err != nil {
+		s.respondError(c, http.StatusInternalServerError, "Failed to export the manuscript", err)
+		return
+	}
+	defer os.RemoveAll(dir)
+	path := filepath.Join(dir, "book."+format)
+	if format == "epub" {
+		_, err = manuscripts.WriteEPUB(m, path)
+	} else {
+		err = manuscripts.Convert(c.Request.Context(), m, format, path)
+	}
+	if err != nil {
+		s.respondError(c, http.StatusInternalServerError, "Failed to export the manuscript", err)
+		return
+	}
+	c.FileAttachment(path, m.Slug+"."+format)
+}
+
+// handleManuscriptPublish makes an e-book from the manuscript and opens it.
+func (s *Server) handleManuscriptPublish(c *gin.Context) {
+	user := s.getUser(c)
+	if user == nil {
+		return
+	}
+	m, ok := s.loadManuscript(c, user)
+	if !ok {
+		return
+	}
+	book, err := manuscripts.Publish(c.Request.Context(), s.db, user.ID, m)
+	if err != nil {
+		s.respondError(c, http.StatusInternalServerError, "Failed to publish the manuscript", err)
+		return
+	}
+	s.setFlash(c, "success", "E-book created from the manuscript.")
+	s.redirectTo(c, "/ebooks/"+book.ID.String())
 }

@@ -48,6 +48,9 @@ type ImportInput struct {
 	Language    string
 	Path        string
 	Filename    string
+	// SourceEntityIDs links the e-book to the entities it was made from, for
+	// example a manuscript. Empty for an EPUB from outside Atria.
+	SourceEntityIDs []uuid.UUID
 }
 
 // Detail contains an e-book and the source entities recorded for it.
@@ -209,7 +212,8 @@ func Generate(ctx context.Context, db *sql.DB, ownerID uuid.UUID, input Generate
 	return book, err
 }
 
-// Import stores an existing EPUB and creates an e-book without source entity links.
+// Import stores an existing EPUB and creates an e-book. It links the sources
+// given in the input, if any.
 func Import(ctx context.Context, db *sql.DB, ownerID uuid.UUID, input ImportInput) (*core.Ebook, error) {
 	mimeType, err := mimetype.DetectFile(input.Path)
 	if err != nil {
@@ -250,6 +254,7 @@ func Import(ctx context.Context, db *sql.DB, ownerID uuid.UUID, input ImportInpu
 			Language:          input.Language,
 			CoverAttachmentID: coverID,
 			EPUBAttachmentID:  epubID,
+			SourceEntityIDs:   input.SourceEntityIDs,
 		})
 		return err
 	})
@@ -392,9 +397,9 @@ func createTx(ctx context.Context, tx *sql.Tx, ownerID uuid.UUID, input CreateIn
 			INSERT INTO rel_entity_links (source_id, target_id, context)
 			SELECT $1, id, 'ebook-source'
 			FROM entities
-			WHERE id = $2 AND owner_id = $3 AND type IN ($4, $5) AND deleted_at IS NULL
+			WHERE id = $2 AND owner_id = $3 AND type IN ($4, $5, $6) AND deleted_at IS NULL
 			ON CONFLICT (source_id, target_id) DO NOTHING
-		`, ebookID, sourceID, ownerID, core.TypeArticle, core.TypeNote); err != nil {
+		`, ebookID, sourceID, ownerID, core.TypeArticle, core.TypeNote, core.TypeManuscript); err != nil {
 			return nil, fmt.Errorf("link e-book source: %w", err)
 		}
 	}
