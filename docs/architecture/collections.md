@@ -20,13 +20,29 @@ Until PR #72, the level `users` worked only in search and for attachments: anoth
 
 ## 2. Concept
 
-A **collection** is a named, ordered list of items of any type: e-books, manuscripts, notes, tables, articles. It is an entity of its own (type `collection`), with a title, a description and a cover.
+A **collection** is a named list of items of any type: e-books, manuscripts, notes, tables, articles. It is an entity of its own (type `collection`), with a title, a description and a cover.
 
 * One item can be in many collections. A collection does not move or copy its items.
 * The owner can **share** a collection with chosen users of the same Atria. They can then read every item in it.
 * Folders stay as they are. A folder puts each note or table in one place. A collection is a selection for reading or sharing.
 
+* A collection can have a manual order, for example a book series (§2a).
+
 Example: the user filters the e-books by the author "Max Scheler", selects "Add all to collection", creates the collection "Scheler" and shares it with Martin. Martin sees "Scheler" under "Shared with me" and can read and download the e-books.
+
+## 2a. Order
+
+Each collection has one of two orders:
+
+| Order | Use | How items are sorted |
+| --- | --- | --- |
+| Manual | A book series ("Zeměplocha", "Trhlinová sága"), a reading list | The owner moves items up and down with arrows, as columns in the Columns dialog of tables. Each item shows its number: "Zeměplocha 3". |
+| Automatic | A selection ("for father", "sci-fi") | By title, author or date added. The owner picks one. No numbers. |
+
+* The position belongs to the membership, not to the item. One e-book can be number 3 in "Zeměplocha" and number 1 in "To read at Christmas".
+* A new item goes to the end of a manual collection.
+* Switching a collection from automatic to manual keeps the current automatic order as the start.
+* A series replaces a series field on e-books: the titles stay clean ("Barva kouzel"), and the number comes from the collection. The series numbers were removed from the titles of the production e-books on 2026-11-21 with this plan in mind.
 
 ## 3. Other options
 
@@ -66,13 +82,16 @@ A reader gets read-only pages, like the shared page from PR #72. Edits of shared
 CREATE TABLE collections (
     id UUID PRIMARY KEY REFERENCES entities(id) ON DELETE CASCADE,
     description TEXT,
-    cover_attachment_id UUID REFERENCES attachments(id) ON DELETE SET NULL
+    cover_attachment_id UUID REFERENCES attachments(id) ON DELETE SET NULL,
+    -- manual, or automatic by title, author or added
+    sort_order VARCHAR(10) NOT NULL DEFAULT 'manual'
+        CHECK (sort_order IN ('manual', 'title', 'author', 'added'))
 );
 
 CREATE TABLE collection_items (
     collection_id UUID NOT NULL REFERENCES collections(id) ON DELETE CASCADE,
     entity_id UUID NOT NULL REFERENCES entities(id) ON DELETE CASCADE,
-    position DOUBLE PRECISION NOT NULL,
+    position DOUBLE PRECISION NOT NULL, -- used by manual order; gaps let a move change one row
     added_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (collection_id, entity_id)
 );
@@ -96,7 +115,18 @@ CREATE TABLE collection_shares (
 * On each item page: "Add to collection" in the sidebar, next to tags.
 * On filtered lists (e-books by author, manuscripts in a folder): "Add all to collection".
 * **Shared with me**: the collections that other users shared with the logged-in user, with the name of the owner.
-* CLI: `atria collection create|add|rm|list|share|unshare`.
+* CLI: `atria collection create|add|rm|move|list|share|unshare`.
+
+### 7a. The e-book list
+
+Today the e-book list has an author filter and two views, list and tiles. With collections it gets:
+
+* **Collection filter** next to the author filter. A manual collection shows its items in its order.
+* **Series on the card**: under the title, the manual collections of the e-book with the number, for example "Zeměplocha 3". The link opens the collection.
+* **Sort**: by title, author or recently added. Today the list has a fixed order (newest first).
+* **Shelves** (later): one row of covers for each collection.
+
+The author filter already lists each author of a book with several authors on its own (PR #76).
 
 ## 8. Open questions
 
@@ -109,7 +139,7 @@ CREATE TABLE collection_shares (
 ## 9. Steps
 
 1. Central access rule (§5) for the existing levels `users` and `public`, with search, read-only pages and attachments using it. No visible change.
-2. Collections without sharing: data, service, collection page, "Add to collection", CLI.
+2. Collections without sharing, for e-books and manuscripts first: data, service, collection page with manual and automatic order, "Add to collection", the collection filter and the series on the e-book cards, CLI.
 3. Sharing: `collection_shares`, "Share with", "Shared with me", the access rule reads the shares.
-4. "Add all to collection" on filtered lists.
+4. "Add all to collection" on filtered lists, and sorting of the e-book list.
 5. Later: smart collections, editing rights.
