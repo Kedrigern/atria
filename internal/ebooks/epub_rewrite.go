@@ -145,6 +145,12 @@ func RewriteEPUB(src, dst string, metadata *EPUBMetadata, cover image.Image) (*C
 
 	coverDone := false
 	for _, file := range archive.File {
+		// calibre stores directory entries such as "META-INF/" with a
+		// compressed empty stream, which zip.Writer.Copy refuses ("write to
+		// directory"). An EPUB needs no directory entries, so leave them out.
+		if strings.HasSuffix(file.Name, "/") {
+			continue
+		}
 		switch file.Name {
 		case "mimetype":
 			continue
