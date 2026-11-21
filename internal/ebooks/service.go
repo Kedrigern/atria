@@ -120,7 +120,7 @@ func List(ctx context.Context, db *sql.DB, ownerID uuid.UUID, author string) ([]
 		LEFT JOIN attachments cover ON cover.id = eb.cover_attachment_id
 		LEFT JOIN rel_entity_links l ON l.source_id = e.id AND l.context = 'ebook-source'
 		WHERE e.owner_id = $1 AND e.type = $2 AND e.deleted_at IS NULL
-		  AND ($3 = '' OR $3 IN (SELECT trim(name) FROM regexp_split_to_table(eb.author, '`+authorSeparator+`') AS name))
+		  AND ($3 = '' OR $3 IN (SELECT trim(name) FROM regexp_split_to_table(eb.author, '` + authorSeparator + `') AS name))
 		GROUP BY e.id, e.title, eb.description, eb.author, eb.language, a.filename, cover.disk_path, eb.generated_at
 		ORDER BY eb.generated_at DESC
 	`
