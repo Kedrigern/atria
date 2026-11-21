@@ -115,10 +115,16 @@ func splitBook(title, body string) ([]chapter, []string) {
 		}
 		if !inFence {
 			if footnoteDefRe.MatchString(line) {
-				// A definition goes on over indented and blank lines.
+				// A definition goes on over indented lines, and over blank
+				// lines that an indented line follows.
 				def := []string{line}
-				for i+1 < len(lines) && (strings.TrimSpace(lines[i+1]) == "" || strings.HasPrefix(lines[i+1], "    ") || strings.HasPrefix(lines[i+1], "\t")) {
-					if strings.TrimSpace(lines[i+1]) == "" && (i+2 >= len(lines) || !(strings.HasPrefix(lines[i+2], "    ") || strings.HasPrefix(lines[i+2], "\t"))) {
+				for i+1 < len(lines) {
+					next := lines[i+1]
+					blank := strings.TrimSpace(next) == ""
+					if !blank && !indented(next) {
+						break
+					}
+					if blank && (i+2 >= len(lines) || !indented(lines[i+2])) {
 						break
 					}
 					i++
@@ -275,4 +281,9 @@ func addPageList(src, dst string, pages []page) error {
 		return err
 	}
 	return out.Close()
+}
+
+// indented reports whether a line continues a footnote definition.
+func indented(line string) bool {
+	return strings.HasPrefix(line, "    ") || strings.HasPrefix(line, "\t")
 }

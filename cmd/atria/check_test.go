@@ -78,6 +78,14 @@ func TestCheckReportsProblemsOfAConvertedBook(t *testing.T) {
 		assert.Contains(t, out, want, "each problem of §3a is reported with its line")
 	}
 	assert.NotContains(t, out, "line 19 ", "a dash -- inside the text is not a broken word")
-	assert.NotContains(t, out, "99", "a marker inside a code block is ignored")
+	// Only the warnings: the summary line has the temporary path, which can
+	// contain "99" by chance.
+	var warnings []string
+	for _, line := range strings.Split(out, "\n") {
+		if strings.HasPrefix(line, "  line ") {
+			warnings = append(warnings, line)
+		}
+	}
+	assert.NotContains(t, strings.Join(warnings, "\n"), "99", "a marker inside a code block is ignored")
 	assert.NotContains(t, out, "line 5 ", "Roman front matter pages iii and iv are in order")
 }
