@@ -21,6 +21,7 @@ func runCLI(t *testing.T, args ...string) (string, error) {
 	showLong, searchIn, searchAll = false, "", false
 	noteEditFile, noteEditTitle, noteEditPath = "", "", ""
 	manuscriptPath, manuscriptReplace, manuscriptFormat, manuscriptOut = "/", false, "epub", ""
+	collectionOrder, collectionDescription = "manual", ""
 	for _, name := range []string{"title", "path", "file"} {
 		noteEditCmd.Flags().Lookup(name).Changed = false
 	}

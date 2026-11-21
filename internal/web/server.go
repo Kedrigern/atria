@@ -281,6 +281,10 @@ func (s *Server) SetupRouter() *gin.Engine {
 		ebooks.GET("/:id/download", s.handleEbookDownload)
 	}
 
+	// Collections
+	auth.GET("/collections", s.handleCollectionList)
+	auth.GET("/collections/:id", s.handleCollectionDetail)
+
 	// Manuscripts
 	manuscriptPages := auth.Group("/manuscripts")
 	{
@@ -372,6 +376,17 @@ func (s *Server) SetupRouter() *gin.Engine {
 			apiEbooks.POST("/:id/cover", s.handleEbookReplace("cover"))
 			apiEbooks.POST("/:id/file", s.handleEbookReplace("epub"))
 			apiEbooks.POST("/:id/delete", s.handleEbookDelete)
+		}
+
+		// API: Collections
+		apiCollections := api.Group("/collections")
+		{
+			apiCollections.POST("/create", s.handleCollectionCreate)
+			apiCollections.POST("/add-item", s.handleCollectionAddItem)
+			apiCollections.POST("/:id/update", s.handleCollectionUpdate)
+			apiCollections.POST("/:id/delete", s.handleCollectionDelete)
+			apiCollections.POST("/:id/items/:item/remove", s.handleCollectionRemoveItem)
+			apiCollections.POST("/:id/items/:item/move", s.handleCollectionMoveItem)
 		}
 
 		// API: Manuscripts

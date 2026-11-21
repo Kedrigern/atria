@@ -1,6 +1,6 @@
 # Collections and sharing
 
-Status: idea. Nothing in this document is built yet. The decisions in §8 are open.
+Status: step 2 of §9 is built (collections without sharing, for e-books and manuscripts). The other steps and the decisions in §8 are open.
 
 ## 1. Problem
 

@@ -225,6 +225,8 @@ def seed(binary, env, work):
         run(binary, env, "games", "import", str(work / "campaign.json"))
         (work / "mlynar.md").write_text(MANUSCRIPT)
         run(binary, env, "manuscript", "import", "--path", "/books", str(work / "mlynar.md"))
+        run(binary, env, "collection", "create", "Reading list")
+        run(binary, env, "collection", "add", "Reading list", "Weekend reading", "Paměti mlynáře")
     finally:
         server.shutdown()
 
@@ -245,6 +247,7 @@ def pages(base):
         "table": first_link(base, "/tables", "/tables"),
         "campaign": first_link(base, "/games", "/games/campaigns"),
         "manuscript": first_link(base, "/manuscripts", "/manuscripts"),
+        "collection": first_link(base, "/collections", "/collections"),
     }
     result = [
         ("01-home", "/"), ("02-notes", "/notes"), ("03-note", found["note"]),
@@ -256,6 +259,7 @@ def pages(base):
         ("16-storage", "/settings/storage"), ("17-profile", "/profile"), ("18-login", "/login"),
         ("19-campaign", found["campaign"]), ("20-games-single", "/games?tab=single"), ("21-book", "/games/books/sample-stories"),
         ("22-manuscripts", "/manuscripts"), ("23-manuscript", found["manuscript"]),
+        ("24-collections", "/collections"), ("25-collection", found["collection"]),
     ]
     return [(name, path) for name, path in result if path]
 

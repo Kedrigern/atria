@@ -94,6 +94,20 @@ Books stored as Markdown files, one file per book. See `docs/architecture/manusc
 * `atria manuscript rename <uuid|short-uuid|"Title"> <new title>` and `atria manuscript rm <uuid|short-uuid|"Title">`
   Renames a manuscript or moves it to the trash.
 
+### Collections (`collection`)
+Lists of e-books and manuscripts, for example a book series. See `docs/architecture/collections.md`.
+
+* `atria collection create <title> [--order=manual|title|author|added] [--description=TEXT]`
+  Creates an empty collection. A manual order numbers the items.
+* `atria collection list [--format=table|csv|json]` and `atria collection show <collection>`
+  Lists the collections, or the items of one collection in its order.
+* `atria collection add <collection> <item>...`
+  Adds e-books or manuscripts to the end of the collection.
+* `atria collection move <collection> <item> <up|down>`
+  Moves an item of a manual collection one place.
+* `atria collection remove <collection> <item>`, `atria collection rename <collection> <new title>`, `atria collection rm <collection>`
+  Takes an item out, renames the collection, or moves the collection to the trash. The items stay.
+
 ### Spreadsheets (`table` or alias `tab`)
 * `atria table list`
   Lists all saved tabular data embedded in the knowledge base.

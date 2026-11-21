@@ -1,6 +1,7 @@
 package web
 
 import (
+	"atria/internal/collections"
 	"atria/internal/core"
 	"atria/internal/ebooks"
 	"fmt"
@@ -32,7 +33,51 @@ func (s *Server) handleEbookList(c *gin.Context) {
 		s.respondError(c, http.StatusInternalServerError, "Failed to load e-book authors", err)
 		return
 	}
-	s.render(c, "ebook_list.html", gin.H{"Ebooks": books, "Authors": authors, "SelectedAuthor": author})
+
+	// The collection filter keeps the e-books of one collection, in its order.
+	ctx := c.Request.Context()
+	allCollections, err := collections.List(ctx, s.db, user.ID)
+	if err != nil {
+		s.respondError(c, http.StatusInternalServerError, "Failed to load collections", err)
+		return
+	}
+	selectedCollection := c.Query("collection")
+	if id, err := core.ParseUUID(selectedCollection); err == nil {
+		items, err := collections.Items(ctx, s.db, user.ID, id)
+		if err != nil {
+			s.renderError(c, http.StatusNotFound, "Collection not found")
+			return
+		}
+		byID := make(map[uuid.UUID]ebooks.Summary, len(books))
+		for _, b := range books {
+			byID[b.ID] = b
+		}
+		filtered := make([]ebooks.Summary, 0, len(items))
+		for _, it := range items {
+			if b, ok := byID[it.ID]; ok {
+				filtered = append(filtered, b)
+			}
+		}
+		books = filtered
+	}
+
+	ids := make([]uuid.UUID, len(books))
+	for i, b := range books {
+		ids[i] = b.ID
+	}
+	memberships, err := collections.Memberships(ctx, s.db, user.ID, ids)
+	if err != nil {
+		s.respondError(c, http.StatusInternalServerError, "Failed to load collections", err)
+		return
+	}
+	s.render(c, "ebook_list.html", gin.H{
+		"Ebooks":             books,
+		"Authors":            authors,
+		"SelectedAuthor":     author,
+		"Collections":        allCollections,
+		"SelectedCollection": selectedCollection,
+		"Memberships":        memberships,
+	})
 }
 
 func (s *Server) handleEbookNew(c *gin.Context) {
@@ -204,7 +249,7 @@ func (s *Server) handleEbookDetail(c *gin.Context) {
 		s.renderError(c, http.StatusNotFound, "E-book not found")
 		return
 	}
-	s.render(c, "ebook_detail.html", gin.H{"Ebook": book})
+	s.render(c, "ebook_detail.html", gin.H{"Ebook": book, "CollectionSection": s.collectionSection(c, user, book.ID)})
 }
 
 func (s *Server) handleEbookEdit(c *gin.Context) {
