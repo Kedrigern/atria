@@ -148,7 +148,9 @@ func TestRewriteEPUBOfCalibreFileWithDirectoryEntries(t *testing.T) {
 	check, err := zip.OpenReader(src)
 	require.NoError(t, err)
 	require.Equal(t, "META-INF/", check.File[0].Name)
-	require.Equal(t, uint64(2), check.File[0].CompressedSize64, "the test file has a directory entry with data, as calibre writes it")
+	// calibre writes 2 bytes; the exact size of an empty deflate stream
+	// depends on the Go version.
+	require.NotZero(t, check.File[0].CompressedSize64, "the test file has a directory entry with data, as calibre writes it")
 	check.Close()
 
 	_, err = RewriteEPUB(src, dst, &EPUBMetadata{Title: "Šifra mistra Leonarda", Author: "Dan Brown", Language: "cs"}, testImage(t, 30, 40))
