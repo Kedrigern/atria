@@ -1,0 +1,7 @@
+{{define "content"}}
+<div class="centered-view" style="--content-scale: {{.ContentFontScale}}" data-mobile-title="ATRIA: Shared">
+    <h1 class="reading-title">{{.Title}}</h1>
+    <p class="reading-meta">Shared by {{.Owner}} · read-only{{if .SourceURL}} · <a href="{{.SourceURL}}" target="_blank" rel="noopener noreferrer">Open original</a>{{end}}</p>
+    <article class="reading-body" {{if .RenderMath}}data-render-math{{end}}>{{.Content}}</article>
+</div>
+{{end}}

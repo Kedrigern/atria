@@ -125,15 +125,22 @@ func (s *Server) handleProtectedAttachment(c *gin.Context) {
 
 	// Several users can own the same file (dedup is per owner, the disk path
 	// is content-addressed), so check access across all matching rows.
-	query := `SELECT mime_type, filename FROM attachments
-		WHERE disk_path = $1 AND deleted_at IS NULL AND visibility = 'public'
+	// A file is also readable through an entity it is attached to: the
+	// images of a shared note load for everyone who can read the note.
+	query := `SELECT a.mime_type, a.filename FROM attachments a
+		WHERE a.disk_path = $1 AND a.deleted_at IS NULL
+		  AND (a.visibility = 'public' OR EXISTS (
+		      SELECT 1 FROM rel_entity_attachments rea JOIN entities e ON e.id = rea.entity_id
+		      WHERE rea.attachment_id = a.id AND e.deleted_at IS NULL AND e.visibility = 'public'))
 		LIMIT 1`
 	args := []any{relDiskPath}
 	if user != nil {
-		query = `SELECT mime_type, filename FROM attachments
-			WHERE disk_path = $1 AND deleted_at IS NULL
-			  AND (owner_id = $2 OR visibility IN ('users', 'public'))
-			ORDER BY (owner_id = $2) DESC
+		query = `SELECT a.mime_type, a.filename FROM attachments a
+			WHERE a.disk_path = $1 AND a.deleted_at IS NULL
+			  AND (a.owner_id = $2 OR a.visibility IN ('users', 'public') OR EXISTS (
+			      SELECT 1 FROM rel_entity_attachments rea JOIN entities e ON e.id = rea.entity_id
+			      WHERE rea.attachment_id = a.id AND e.deleted_at IS NULL AND e.visibility IN ('users', 'public')))
+			ORDER BY (a.owner_id = $2) DESC
 			LIMIT 1`
 		args = append(args, user.ID)
 	}

@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gofrs/uuid/v5"
 )
 
 func (s *Server) handlePublicArticle(c *gin.Context) {
@@ -57,5 +58,22 @@ func (s *Server) handlePublicNote(c *gin.Context) {
 	s.render(c, "public_detail.html", gin.H{
 		"Title":   note.Title,
 		"Content": template.HTML(htmlContent),
+	})
+}
+
+// renderShared shows a note or an article of another user, which its owner
+// made visible to all users, read-only: no editing, tags, links or notes of
+// the owner.
+func (s *Server) renderShared(c *gin.Context, ownerID uuid.UUID, title string, content template.HTML, sourceURL string, renderMath bool) {
+	ownerName := "another user"
+	if owner, err := core.FindUser(c.Request.Context(), s.db, ownerID.String()); err == nil && owner.DisplayName != "" {
+		ownerName = owner.DisplayName
+	}
+	s.render(c, "shared_detail.html", gin.H{
+		"Title":      title,
+		"Owner":      ownerName,
+		"Content":    content,
+		"SourceURL":  sourceURL,
+		"RenderMath": renderMath,
 	})
 }

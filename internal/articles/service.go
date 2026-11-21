@@ -430,6 +430,29 @@ func GetPublicArticle(ctx context.Context, db *sql.DB, id uuid.UUID) (*core.Arti
 	return &a, nil
 }
 
+// GetSharedArticle loads an article of another user that is visible to all
+// users of this Atria (visibility users or public), for a read-only view.
+func GetSharedArticle(ctx context.Context, db *sql.DB, id, viewerID uuid.UUID) (*core.Article, error) {
+	query := `
+		SELECT id, short_id, parent_id, owner_id, type, visibility, title, slug, path, created_at, updated_at, deleted_at,
+		       original_url, domain, is_archived, user_note, html_content, text_content
+		FROM articles_full_view
+		WHERE id = $1 AND owner_id <> $2 AND visibility IN ($3, $4)
+	`
+	var a core.Article
+	err := db.QueryRowContext(ctx, query, id, viewerID, core.VisibilityUsers, core.VisibilityPublic).Scan(
+		&a.ID, &a.ShortID, &a.ParentID, &a.OwnerID, &a.Type, &a.Visibility, &a.Title, &a.Slug, &a.Path, &a.CreatedAt, &a.UpdatedAt, &a.DeletedAt,
+		&a.OriginalURL, &a.Domain, &a.IsArchived, &a.UserNote, &a.HTMLContent, &a.TextContent,
+	)
+	if err == sql.ErrNoRows {
+		return nil, core.NewUserError("article not found")
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch shared article: %w", err)
+	}
+	return &a, nil
+}
+
 // GetArticle loads the full article entity including content and metadata.
 func GetArticle(ctx context.Context, db *sql.DB, id, ownerID uuid.UUID) (*core.Article, error) {
 	query := `

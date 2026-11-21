@@ -70,7 +70,17 @@ func (s *Server) handleArticleDetail(c *gin.Context) {
 
 	article, err := articles.GetArticle(c.Request.Context(), s.db, id, user.ID)
 	if err != nil {
-		s.renderError(c, http.StatusNotFound, "Article not found")
+		// An article of another user that is visible to all users opens read-only.
+		shared, sharedErr := articles.GetSharedArticle(c.Request.Context(), s.db, id, user.ID)
+		if sharedErr != nil {
+			s.renderError(c, http.StatusNotFound, "Article not found")
+			return
+		}
+		var content template.HTML
+		if shared.HTMLContent != nil {
+			content = template.HTML(core.SanitizeHTML(*shared.HTMLContent))
+		}
+		s.renderShared(c, shared.OwnerID, shared.Title, content, shared.OriginalURL, false)
 		return
 	}
 
