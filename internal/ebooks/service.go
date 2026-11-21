@@ -53,6 +53,11 @@ type ImportInput struct {
 	SourceEntityIDs []uuid.UUID
 }
 
+// authorSeparator splits the author field of an e-book with several authors,
+// for example "Terry Pratchett, Neil Gaiman" or "A & B" from calibre. The
+// author filter lists and matches each name on its own.
+const authorSeparator = `\s*[,;&]\s*`
+
 // Detail contains an e-book and the source entities recorded for it.
 type Detail struct {
 	ID            uuid.UUID
@@ -115,7 +120,7 @@ func List(ctx context.Context, db *sql.DB, ownerID uuid.UUID, author string) ([]
 		LEFT JOIN attachments cover ON cover.id = eb.cover_attachment_id
 		LEFT JOIN rel_entity_links l ON l.source_id = e.id AND l.context = 'ebook-source'
 		WHERE e.owner_id = $1 AND e.type = $2 AND e.deleted_at IS NULL
-		  AND ($3 = '' OR eb.author = $3)
+		  AND ($3 = '' OR $3 IN (SELECT trim(name) FROM regexp_split_to_table(eb.author, '` + authorSeparator + `') AS name))
 		GROUP BY e.id, e.title, eb.description, eb.author, eb.language, a.filename, cover.disk_path, eb.generated_at
 		ORDER BY eb.generated_at DESC
 	`
@@ -139,9 +144,15 @@ func List(ctx context.Context, db *sql.DB, ownerID uuid.UUID, author string) ([]
 	return ebooks, nil
 }
 
-// Authors returns distinct e-book authors owned by a user.
+// Authors returns the distinct authors of a user's e-books. A field with
+// several authors gives each name once (see authorSeparator).
 func Authors(ctx context.Context, db *sql.DB, ownerID uuid.UUID) ([]string, error) {
-	rows, err := db.QueryContext(ctx, `SELECT DISTINCT author FROM ebooks eb JOIN entities e ON e.id = eb.id WHERE e.owner_id = $1 AND e.deleted_at IS NULL AND author IS NOT NULL AND author <> '' ORDER BY author`, ownerID)
+	rows, err := db.QueryContext(ctx, `
+		SELECT DISTINCT trim(name) AS name
+		FROM ebooks eb JOIN entities e ON e.id = eb.id,
+		     regexp_split_to_table(eb.author, '`+authorSeparator+`') AS name
+		WHERE e.owner_id = $1 AND e.deleted_at IS NULL AND trim(name) <> ''
+		ORDER BY name`, ownerID)
 	if err != nil {
 		return nil, fmt.Errorf("list e-book authors: %w", err)
 	}
