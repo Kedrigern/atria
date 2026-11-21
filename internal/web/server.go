@@ -315,11 +315,7 @@ func (s *Server) SetupRouter() *gin.Engine {
 			entity.POST("/tags", s.handleTagAttach)
 			entity.POST("/attachments", s.handleEntityAttachmentUpload)
 			entity.POST("/links", s.handleEntityLinkAdd)
-<<<<<<< Updated upstream
 			entity.POST("/rename", s.handleEntityRename)
-=======
-			entity.PUT("/entities/:id/visibility", s.handleUpdateVisibility)
->>>>>>> Stashed changes
 		}
 
 		// API: RSS
