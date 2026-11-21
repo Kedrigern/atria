@@ -28,6 +28,8 @@
         <dt>File</dt><dd>{{.Ebook.Filename}}</dd>
     </dl>
 
+    {{template "collections_section" .CollectionSection}}
+
     <h2 class="section-title">Chapters</h2>
     <ol class="meta-list">
         {{range .Ebook.Sources}}

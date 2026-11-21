@@ -450,3 +450,35 @@
 <p class="page-empty-hint">Enter a word to search for.</p>
 {{end}}
 {{end}}
+
+{{/* Collections of an e-book or a manuscript, with "Add to collection". Data: collectionSection. */}}
+{{define "collections_section"}}
+<div class="meta-section">
+    <h2 class="meta-section-title">Collections</h2>
+    {{if .Memberships}}
+    <ul class="meta-list">
+        {{range .Memberships}}
+        <li class="meta-list-item">
+            <span class="icon-sm icon-layers text-muted" aria-hidden="true"></span>
+            <a href="/collections/{{.CollectionID}}" class="meta-list-link">{{.Title}}{{if .Number}} {{.Number}}{{end}}</a>
+        </li>
+        {{end}}
+    </ul>
+    {{else}}
+    <p class="meta-empty">In no collection.</p>
+    {{end}}
+    <form method="post" action="/api/collections/add-item" class="meta-form meta-form-stack">
+        <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
+        <input type="hidden" name="entity_id" value="{{.EntityID}}" />
+        {{if .Others}}
+        <label for="add-to-collection-{{.EntityID}}" class="visually-hidden">Collection</label>
+        <select id="add-to-collection-{{.EntityID}}" name="collection_id" class="form-control">
+            {{range .Others}}<option value="{{.ID}}">{{.Title}}</option>{{end}}
+        </select>
+        {{end}}
+        <label for="new-collection-{{.EntityID}}" class="visually-hidden">New collection</label>
+        <input id="new-collection-{{.EntityID}}" name="new_title" class="form-control" placeholder="{{if .Others}}or a new collection{{else}}New collection{{end}}" />
+        <button type="submit" class="outline btn-sm">Add to collection</button>
+    </form>
+</div>
+{{end}}

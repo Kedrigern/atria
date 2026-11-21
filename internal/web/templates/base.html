@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Atria - Personal Mind Palace</title>
         <link rel="stylesheet" href="/static/water.css?v=2" />
-        <link rel="stylesheet" href="/static/style.css?v=26" />
+        <link rel="stylesheet" href="/static/style.css?v=27" />
         <link rel="icon" type="image/png" href="/static/atria.png" />
         <link rel="manifest" href="/manifest.webmanifest" />
         <meta name="theme-color" content="#0d1117" />
@@ -35,6 +35,7 @@
                 {{if not .Hidden.notes}}<a href="/notes" hx-get="/notes" hx-target="#main-content" hx-push-url="true" class="nav-link" title="Notes" aria-label="Notes"><span class="icon icon-note" aria-hidden="true"></span></a>{{end}}
                 {{if not .Hidden.manuscripts}}<a href="/manuscripts" hx-get="/manuscripts" hx-target="#main-content" hx-push-url="true" class="nav-link" title="Manuscripts" aria-label="Manuscripts"><span class="icon icon-file" aria-hidden="true"></span></a>{{end}}
                 {{if not .Hidden.ebooks}}<a href="/ebooks" hx-get="/ebooks" hx-target="#main-content" hx-push-url="true" class="nav-link" title="E-books" aria-label="E-books"><span class="icon icon-book" aria-hidden="true"></span></a>{{end}}
+                {{if not .Hidden.collections}}<a href="/collections" hx-get="/collections" hx-target="#main-content" hx-push-url="true" class="nav-link" title="Collections" aria-label="Collections"><span class="icon icon-layers" aria-hidden="true"></span></a>{{end}}
                 {{if not .Hidden.games}}<a href="/games" hx-get="/games" hx-target="#main-content" hx-push-url="true" class="nav-link" title="Games" aria-label="Games"><span class="icon icon-dice" aria-hidden="true"></span></a>{{end}}
                 {{if not .Hidden.tables}}<a href="/tables" hx-get="/tables" hx-target="#main-content" hx-push-url="true" class="nav-link" title="Tables" aria-label="Tables"><span class="icon icon-table" aria-hidden="true"></span></a>{{end}}
                 <a href="/search" hx-get="/search" hx-target="#main-content" hx-push-url="true" class="nav-link" title="Search" aria-label="Search"><span class="icon icon-search" aria-hidden="true"></span></a>

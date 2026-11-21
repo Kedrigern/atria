@@ -1,0 +1,85 @@
+{{define "content"}}
+<div class="centered-view" data-mobile-title="ATRIA: Collection">
+    {{template "flash_message" .}}
+
+    <header class="page-header">
+        <div>
+            <h1 class="page-title">{{.Collection.Title}}</h1>
+            <p class="page-subtitle">{{len .Items}} items · {{.OrderLabel}}</p>
+        </div>
+        <div class="page-actions">
+            <a href="/collections" hx-get="/collections" hx-target="#main-content" hx-push-url="true" class="button-link outline btn-sm">
+                <span class="icon-sm icon-chevron-left" aria-hidden="true"></span> Collections
+            </a>
+            <form method="post" action="/api/collections/{{.Collection.ID}}/delete" class="inline-action-form" data-confirm="Move this collection to the trash? Its e-books and manuscripts stay.">
+                <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
+                <button type="submit" class="outline btn-sm btn-danger" title="Move to trash" aria-label="Move to trash"><span class="icon-sm icon-trash" aria-hidden="true"></span></button>
+            </form>
+        </div>
+    </header>
+
+    {{if .Collection.Description}}<p>{{.Collection.Description}}</p>{{end}}
+
+    {{if .Items}}
+    <ol class="collection-items">
+        {{range $i, $item := .Items}}
+        <li class="collection-item">
+            {{if $.Manual}}<span class="collection-number">{{.Number}}</span>{{end}}
+            <div class="collection-cover">
+                {{if .CoverDiskPath}}<img src="/data/attachments/{{.CoverDiskPath}}" alt="Cover of {{.Title}}" />{{else}}<span class="icon icon-{{if eq .Type "manuscript"}}file{{else}}book{{end}}" aria-hidden="true"></span>{{end}}
+            </div>
+            <div class="collection-item-body">
+                <a href="/{{if eq .Type "manuscript"}}manuscripts{{else}}ebooks{{end}}/{{.ID}}" class="list-item-title">{{.Title}}</a>
+                <p class="list-item-meta">{{if .Author}}{{.Author}} · {{end}}{{if eq .Type "manuscript"}}manuscript{{else}}e-book{{end}}</p>
+            </div>
+            <div class="list-item-actions">
+                {{if $.Manual}}
+                <form method="post" action="/api/collections/{{$.Collection.ID}}/items/{{.ID}}/move" class="inline-action-form">
+                    <input type="hidden" name="_csrf" value="{{$.CSRFToken}}" />
+                    <input type="hidden" name="step" value="-1" />
+                    <button type="submit" class="outline btn-sm" title="Move up" aria-label="Move {{.Title}} up" {{if eq $i 0}}disabled{{end}}><span class="icon-sm icon-chevron-up" aria-hidden="true"></span></button>
+                </form>
+                <form method="post" action="/api/collections/{{$.Collection.ID}}/items/{{.ID}}/move" class="inline-action-form">
+                    <input type="hidden" name="_csrf" value="{{$.CSRFToken}}" />
+                    <input type="hidden" name="step" value="1" />
+                    <button type="submit" class="outline btn-sm" title="Move down" aria-label="Move {{.Title}} down" {{if eq .Number (len $.Items)}}disabled{{end}}><span class="icon-sm icon-chevron-down" aria-hidden="true"></span></button>
+                </form>
+                {{end}}
+                <form method="post" action="/api/collections/{{$.Collection.ID}}/items/{{.ID}}/remove" class="inline-action-form">
+                    <input type="hidden" name="_csrf" value="{{$.CSRFToken}}" />
+                    <button type="submit" class="outline btn-sm" title="Remove from the collection" aria-label="Remove {{.Title}} from the collection"><span class="icon-sm icon-trash" aria-hidden="true"></span></button>
+                </form>
+            </div>
+        </li>
+        {{end}}
+    </ol>
+    {{else}}
+    <p class="page-empty-hint">This collection is empty. Add e-books and manuscripts from their pages.</p>
+    {{end}}
+
+    <details class="mt-3">
+        <summary>Edit collection</summary>
+        <form method="post" action="/api/collections/{{.Collection.ID}}/update">
+            <input type="hidden" name="_csrf" value="{{.CSRFToken}}" />
+            <div class="form-group">
+                <label for="collection-edit-title">Title</label>
+                <input id="collection-edit-title" name="title" value="{{.Collection.Title}}" class="form-control" required />
+            </div>
+            <div class="form-group">
+                <label for="collection-edit-description">Description</label>
+                <textarea id="collection-edit-description" name="description" class="form-control" rows="2">{{.Collection.Description}}</textarea>
+            </div>
+            <div class="form-group">
+                <label for="collection-edit-order">Order</label>
+                <select id="collection-edit-order" name="sort_order" class="form-control">
+                    {{range .SortOrders}}<option value="{{.Value}}" {{if eq .Value $.Collection.SortOrder}}selected{{end}}>{{.Label}}</option>{{end}}
+                </select>
+                <p class="form-help">A collection that becomes manual starts with its current order.</p>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn-primary">Save</button>
+            </div>
+        </form>
+    </details>
+</div>
+{{end}}

@@ -14,13 +14,26 @@
         </div>
     </header>
 
-    {{if .Authors}}
-    <form method="get" action="/ebooks" class="form-group filter-form">
-        <label for="ebook-author-filter">Author</label>
-        <select id="ebook-author-filter" name="author" class="form-control" data-auto-submit>
-            <option value="">All authors</option>
-            {{range .Authors}}<option value="{{.}}" {{if eq . $.SelectedAuthor}}selected{{end}}>{{.}}</option>{{end}}
-        </select>
+    {{if or .Authors .Collections}}
+    <form method="get" action="/ebooks" class="filter-form ebook-filters">
+        {{if .Authors}}
+        <div class="form-group">
+            <label for="ebook-author-filter">Author</label>
+            <select id="ebook-author-filter" name="author" class="form-control" data-auto-submit>
+                <option value="">All authors</option>
+                {{range .Authors}}<option value="{{.}}" {{if eq . $.SelectedAuthor}}selected{{end}}>{{.}}</option>{{end}}
+            </select>
+        </div>
+        {{end}}
+        {{if .Collections}}
+        <div class="form-group">
+            <label for="ebook-collection-filter">Collection</label>
+            <select id="ebook-collection-filter" name="collection" class="form-control" data-auto-submit>
+                <option value="">All collections</option>
+                {{range .Collections}}<option value="{{.ID}}" {{if eq .ID.String $.SelectedCollection}}selected{{end}}>{{.Title}}</option>{{end}}
+            </select>
+        </div>
+        {{end}}
     </form>
     {{end}}
 
@@ -33,6 +46,7 @@
             <div class="ebook-card-body">
                 <h2 class="list-item-title"><a href="/ebooks/{{.ID}}" hx-get="/ebooks/{{.ID}}" hx-target="#main-content" hx-push-url="true">{{.Title}}</a></h2>
                 <p class="list-item-meta">{{if .Author}}{{.Author}}{{else}}Unknown author{{end}}{{if .Language}} · {{.Language}}{{end}}</p>
+                {{with index $.Memberships .ID}}<p class="list-item-meta ebook-series">{{range $i, $m := .}}{{if $i}} · {{end}}<a href="/collections/{{$m.CollectionID}}">{{$m.Title}}{{if $m.Number}} {{$m.Number}}{{end}}</a>{{end}}</p>{{end}}
             </div>
             <div class="list-item-actions ebook-actions">
                 {{if .Description}}

@@ -52,14 +52,15 @@ func (s *Server) handleManuscriptDetail(c *gin.Context) {
 	tags, _ := core.GetEntityTags(ctx, s.db, user.ID, m.ID)
 	outgoing, incoming, _ := links.GetEntityLinks(ctx, s.db, user.ID, m.ID)
 	s.render(c, "manuscript_detail.html", gin.H{
-		"Manuscript":    m,
-		"ID":            m.ID.String(),
-		"Check":         mdcheck.Check([]byte(m.Markdown)),
-		"Formats":       manuscripts.Formats(),
-		"Content":       template.HTML(html),
-		"Tags":          tags,
-		"OutgoingLinks": outgoing,
-		"IncomingLinks": incoming,
+		"Manuscript":        m,
+		"ID":                m.ID.String(),
+		"Check":             mdcheck.Check([]byte(m.Markdown)),
+		"Formats":           manuscripts.Formats(),
+		"Content":           template.HTML(html),
+		"Tags":              tags,
+		"OutgoingLinks":     outgoing,
+		"CollectionSection": s.collectionSection(c, user, m.ID),
+		"IncomingLinks":     incoming,
 	})
 }
 
