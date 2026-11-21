@@ -45,6 +45,29 @@ func GetPublicNote(ctx context.Context, db *sql.DB, id uuid.UUID) (*core.Note, e
 	return &n, nil
 }
 
+// GetSharedNote loads a note of another user that is visible to all users
+// of this Atria (visibility users or public), for a read-only view.
+func GetSharedNote(ctx context.Context, db *sql.DB, id, viewerID uuid.UUID) (*core.Note, error) {
+	query := `
+		SELECT id, short_id, parent_id, owner_id, type, visibility, title, slug, path, created_at, updated_at, deleted_at,
+		       icon, markdown_content
+		FROM notes_full_view
+		WHERE id = $1 AND owner_id <> $2 AND visibility IN ($3, $4)
+	`
+	var n core.Note
+	err := db.QueryRowContext(ctx, query, id, viewerID, core.VisibilityUsers, core.VisibilityPublic).Scan(
+		&n.ID, &n.ShortID, &n.ParentID, &n.OwnerID, &n.Type, &n.Visibility, &n.Title, &n.Slug, &n.Path, &n.CreatedAt, &n.UpdatedAt, &n.DeletedAt,
+		&n.Icon, &n.MarkdownContent,
+	)
+	if err == sql.ErrNoRows {
+		return nil, core.NewUserError("note not found")
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch shared note: %w", err)
+	}
+	return &n, nil
+}
+
 // GetNote loads the full note entity including content and metadata.
 func GetNote(ctx context.Context, db *sql.DB, id, ownerID uuid.UUID) (*core.Note, error) {
 	query := `

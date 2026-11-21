@@ -85,7 +85,18 @@ func (s *Server) handleNoteDetail(c *gin.Context) {
 	// Load the full note model (includes all fields).
 	note, err := notes.GetNote(c.Request.Context(), s.db, id, user.ID)
 	if err != nil {
-		s.renderError(c, http.StatusNotFound, "Note not found")
+		// A note of another user that is visible to all users opens read-only.
+		shared, sharedErr := notes.GetSharedNote(c.Request.Context(), s.db, id, user.ID)
+		if sharedErr != nil {
+			s.renderError(c, http.StatusNotFound, "Note not found")
+			return
+		}
+		html, _, err := core.RenderMarkdown([]byte(shared.MarkdownContent))
+		if err != nil {
+			s.renderError(c, http.StatusInternalServerError, "Failed to render markdown")
+			return
+		}
+		s.renderShared(c, shared.OwnerID, shared.Title, template.HTML(html), "", true)
 		return
 	}
 
